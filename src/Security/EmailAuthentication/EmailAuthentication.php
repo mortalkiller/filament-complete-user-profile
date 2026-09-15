@@ -31,7 +31,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
     public function sendCode(HasEmailAuthentication $user): bool
     {
         $model = $this->getEmailAuthenticationModel($user);
-        $rateLimitingKey = $this->getResendRateLimitKey($user);
+        $rateLimitingKey = $this->getResendRateLimitKey($model);
 
         if (RateLimiter::tooManyAttempts($rateLimitingKey, maxAttempts: 1)) {
             return false;
@@ -42,10 +42,16 @@ class EmailAuthentication extends FilamentEmailAuthentication
         $code = $this->generateCode();
         $codeExpiryMinutes = $this->getCodeExpiryMinutes();
 
-        session()->put($this->getCodeSessionKey($user), Hash::make($code));
-        session()->put($this->getCodeExpirySessionKey($user), now()->addMinutes($codeExpiryMinutes));
+        session()->put($this->getCodeSessionKey($model), Hash::make($code));
+        session()->put($this->getCodeExpirySessionKey($model), now()->addMinutes($codeExpiryMinutes));
 
-        $model->notify(app($this->getCodeNotification(), [
+        $notify = [$model, 'notify'];
+
+        if (! is_callable($notify)) {
+            throw new LogicException("Model [{$model::class}] does not have a [notify()] method.");
+        }
+
+        $notify(app($this->getCodeNotification(), [
             'code' => $code,
             'codeExpiryMinutes' => $codeExpiryMinutes,
         ]));
@@ -60,6 +66,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
         return "filament-complete-user-profile:email-authentication:send:{$model->getKey()}";
     }
 
+    /** @return Model&HasEmailAuthentication */
     protected function getEmailAuthenticationModel(HasEmailAuthentication $user): Model
     {
         if (! $user instanceof Model) {
