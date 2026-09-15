@@ -219,7 +219,7 @@ class ApiTokensTest extends TestCase
         $plainTextToken = $component->getCreatedPlainTextToken();
         self::assertNotNull($plainTextToken);
         self::assertStringContainsString('|', $plainTextToken);
-        self::assertNotSame($plainTextToken, $user->tokens()->first()?->token);
+        self::assertNotSame($plainTextToken, $user->tokens()->first()?->getAttribute('token'));
 
         $component->dismissCreatedToken();
         self::assertNull($component->getCreatedPlainTextToken());
