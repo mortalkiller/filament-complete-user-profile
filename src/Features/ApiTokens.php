@@ -81,15 +81,15 @@ class ApiTokens extends AbstractFeature
         }
 
         if (class_exists('Laravel\\Sanctum\\Sanctum') === false) {
-            return 'Laravel Sanctum must be installed to enable API token management.';
+            return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.sanctum');
         }
 
         if (method_exists($user, 'createToken') === false || method_exists($user, 'tokens') === false) {
-            return 'The authenticated user model must use Laravel\\Sanctum\\HasApiTokens when API token management is enabled.';
+            return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.user_model');
         }
 
         if ($this->abilities === []) {
-            return 'Configure at least one allowed API token ability before enabling API token management.';
+            return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.abilities');
         }
 
         if ($this->tenantScoped) {
@@ -98,14 +98,25 @@ class ApiTokens extends AbstractFeature
                 || Schema::hasColumn('personal_access_tokens', 'context_type') === false
                 || Schema::hasColumn('personal_access_tokens', 'context_id') === false
             ) {
-                return 'Publish and run the filament-complete-user-profile token-context migration before enabling tenant-scoped API tokens.';
+                return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.context_migration');
             }
 
             if (app()->bound(TokenContextResolver::class) === false) {
-                return 'Bind '.TokenContextResolver::class.' before enabling tenant-scoped API tokens.';
+                return static::translate(
+                    'filament-complete-user-profile::profile.api_tokens.requirements.context_resolver',
+                    ['contract' => TokenContextResolver::class],
+                );
             }
         }
 
         return null;
+    }
+
+    /** @param array<string, scalar> $replace */
+    protected static function translate(string $key, array $replace = []): string
+    {
+        $translation = __($key, $replace);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
