@@ -25,6 +25,48 @@ return [
             'confirmation' => 'Confirm new password',
         ],
     ],
+    'sessions' => [
+        'columns' => [
+            'device' => 'Device',
+            'ip' => 'IP',
+            'last_activity' => 'Last activity',
+            'status' => 'Status',
+        ],
+        'status' => [
+            'current' => 'Current',
+            'active' => 'Active',
+        ],
+        'actions' => [
+            'revoke' => 'Revoke',
+            'revoke_others' => 'Revoke other sessions',
+        ],
+        'empty' => 'No browser sessions found',
+    ],
+    'api_tokens' => [
+        'columns' => [
+            'name' => 'Name',
+            'permissions' => 'Permissions',
+            'last_used' => 'Last used',
+            'expires' => 'Expires',
+        ],
+        'never' => 'Never',
+        'fields' => [
+            'name' => 'Name',
+            'permissions' => 'Permissions',
+            'expiration' => 'Expires in days',
+        ],
+        'actions' => [
+            'create' => 'Create token',
+            'revoke' => 'Revoke',
+            'done' => 'Done',
+        ],
+        'created' => [
+            'heading' => 'API token created',
+            'description' => 'Copy this token now. You will not be able to see it again.',
+            'token' => 'Token',
+        ],
+        'empty' => 'No API tokens',
+    ],
     'features' => [
         'overview' => [
             'label' => 'Overview',
