@@ -24,6 +24,13 @@ return [
             'new' => 'New password',
             'confirmation' => 'Confirm new password',
         ],
+        'reauthentication' => [
+            'current_password' => 'Current password',
+            'unavailable' => 'This account cannot be reauthenticated with a local password.',
+        ],
+        'mfa' => [
+            'requirement' => 'The authenticatable model must implement :contract when multi-factor authentication is enabled.',
+        ],
     ],
     'sessions' => [
         'columns' => [
@@ -39,6 +46,17 @@ return [
         'actions' => [
             'revoke' => 'Revoke',
             'revoke_others' => 'Revoke other sessions',
+        ],
+        'requirements' => [
+            'database_driver' => 'Browser session management requires SESSION_DRIVER=database.',
+            'table' => 'The configured Laravel sessions table does not exist.',
+        ],
+        'device' => [
+            'unknown_browser' => 'Unknown browser',
+            'unknown_platform' => 'Unknown platform',
+            'tablet' => 'Tablet',
+            'mobile' => 'Mobile',
+            'desktop' => 'Desktop',
         ],
         'empty' => 'No browser sessions found',
     ],
@@ -64,6 +82,13 @@ return [
             'heading' => 'API token created',
             'description' => 'Copy this token now. You will not be able to see it again.',
             'token' => 'Token',
+        ],
+        'requirements' => [
+            'sanctum' => 'Laravel Sanctum must be installed to enable API token management.',
+            'user_model' => 'The authenticated user model must use Laravel\\Sanctum\\HasApiTokens when API token management is enabled.',
+            'abilities' => 'Configure at least one allowed API token ability before enabling API token management.',
+            'context_migration' => 'Publish and run the filament-complete-user-profile token-context migration before enabling tenant-scoped API tokens.',
+            'context_resolver' => 'Bind :contract before enabling tenant-scoped API tokens.',
         ],
         'empty' => 'No API tokens',
     ],
