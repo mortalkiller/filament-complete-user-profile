@@ -34,4 +34,14 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Run static analysis
-        run: vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
+        shell: bash
+        run: |
+          set -o pipefail
+          vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G 2>&1 | tee phpstan-${{ matrix.php }}.log
+
+      - name: Upload static analysis log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpstan-${{ matrix.php }}
+          path: phpstan-${{ matrix.php }}.log

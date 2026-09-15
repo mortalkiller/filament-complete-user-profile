@@ -2,12 +2,14 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests;
 
+use Illuminate\Foundation\Application;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfileServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
     /**
+     * @param  Application  $app
      * @return array<class-string>
      */
     protected function getPackageProviders($app): array
@@ -17,6 +19,7 @@ abstract class TestCase extends Orchestra
         ];
     }
 
+    /** @param Application $app */
     protected function defineEnvironment($app): void
     {
         $app['config']->set('database.default', 'testing');
