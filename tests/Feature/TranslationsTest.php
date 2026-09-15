@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -62,8 +63,10 @@ class TranslationsTest extends TestCase
 
         $reauthentication = app(PasswordReauthentication::class);
         $schema = $reauthentication->getFormSchema();
+        $currentPassword = $schema[0] ?? null;
 
-        self::assertSame('Palavra-passe atual', $schema[0]->getLabel());
+        self::assertInstanceOf(TextInput::class, $currentPassword);
+        self::assertSame('Palavra-passe atual', $currentPassword->getLabel());
 
         try {
             $reauthentication->confirm(new User, ['current_password' => 'secret']);
