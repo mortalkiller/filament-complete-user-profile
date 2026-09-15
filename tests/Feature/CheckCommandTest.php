@@ -5,6 +5,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 use Filament\Panel;
 use Filament\PanelRegistry;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -37,23 +38,25 @@ class CheckCommandTest extends TestCase
 
     public function test_command_fails_when_plugin_is_not_registered_on_any_panel(): void
     {
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('FAIL')
-            ->expectsOutputToContain('Register CompleteUserProfilePlugin on at least one Filament panel.')
-            ->assertExitCode(1);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('Register CompleteUserProfilePlugin on at least one Filament panel.', $output);
     }
 
     public function test_default_enabled_features_pass_with_valid_storage(): void
     {
         $this->registerPlugin(CompleteUserProfilePlugin::make());
 
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('PASS')
-            ->expectsOutputToContain('User model')
-            ->expectsOutputToContain('Profile storage')
-            ->expectsOutputToContain('Avatar column')
-            ->expectsOutputToContain('Locale column')
-            ->assertExitCode(0);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('PASS', $output);
+        self::assertStringContainsString('User model', $output);
+        self::assertStringContainsString('Profile storage', $output);
+        self::assertStringContainsString('Avatar column', $output);
+        self::assertStringContainsString('Locale column', $output);
     }
 
     public function test_mfa_requirement_failure_is_actionable(): void
@@ -63,10 +66,11 @@ class CheckCommandTest extends TestCase
                 ->security(fn (Security $security): Security => $security->multiFactorAuthentication()),
         );
 
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('FAIL')
-            ->expectsOutputToContain('HasMultiFactorAuthentication')
-            ->assertExitCode(1);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('HasMultiFactorAuthentication', $output);
     }
 
     public function test_sessions_requirement_failure_is_actionable(): void
@@ -74,10 +78,11 @@ class CheckCommandTest extends TestCase
         config()->set('session.driver', 'file');
         $this->registerPlugin(CompleteUserProfilePlugin::make()->sessions());
 
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('FAIL')
-            ->expectsOutputToContain('SESSION_DRIVER=database')
-            ->assertExitCode(1);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('SESSION_DRIVER=database', $output);
     }
 
     public function test_api_token_requirement_failure_is_actionable(): void
@@ -88,10 +93,11 @@ class CheckCommandTest extends TestCase
                     ->abilities(['customers:read' => 'Read customers'])),
         );
 
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('FAIL')
-            ->expectsOutputToContain('HasApiTokens')
-            ->assertExitCode(1);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('HasApiTokens', $output);
     }
 
     public function test_tenant_scoped_token_requirements_fail_closed_when_infrastructure_is_missing(): void
@@ -116,11 +122,12 @@ class CheckCommandTest extends TestCase
                     ->abilities(['customers:read' => 'Read customers'])),
         );
 
-        $this->artisan('filament-complete-user-profile:check')
-            ->expectsOutputToContain('FAIL')
-            ->expectsOutputToContain('token-context migration')
-            ->expectsOutputToContain('TokenContextResolver')
-            ->assertExitCode(1);
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('token-context migration', $output);
+        self::assertStringContainsString('TokenContextResolver', $output);
     }
 
     protected function registerPlugin(CompleteUserProfilePlugin $plugin): void
@@ -130,5 +137,13 @@ class CheckCommandTest extends TestCase
                 ->id('admin')
                 ->plugin($plugin),
         );
+    }
+
+    /** @return array{0: int, 1: string} */
+    protected function runCheck(): array
+    {
+        $exitCode = Artisan::call('filament-complete-user-profile:check');
+
+        return [$exitCode, Artisan::output()];
     }
 }
