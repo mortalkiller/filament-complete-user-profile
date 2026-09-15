@@ -2,9 +2,13 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tokens;
 
+use Filament\Facades\Filament;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 
 class TokenManager
@@ -17,10 +21,18 @@ class TokenManager
         array $abilities,
         ?int $expirationDays = null,
     ): mixed {
-        if (! class_exists('Laravel\\Sanctum\\Sanctum')) {
+        if (class_exists('Laravel\\Sanctum\\Sanctum') === false) {
             throw ValidationException::withMessages([
                 'tokens' => 'Laravel Sanctum must be installed to create API tokens.',
             ]);
+        }
+
+        $relation = $this->relationFor($user);
+        $context = null;
+
+        if ($feature->isTenantScoped()) {
+            $this->ensureContextColumns($relation);
+            $context = $this->resolveManagementContext();
         }
 
         $allowedAbilities = array_keys($feature->getAbilities());
@@ -56,33 +68,116 @@ class TokenManager
 
         $createToken = [$user, 'createToken'];
 
-        if (! is_callable($createToken)) {
+        if (is_callable($createToken) === false) {
             throw ValidationException::withMessages([
                 'tokens' => 'The authenticated user model must use Laravel\\Sanctum\\HasApiTokens.',
             ]);
         }
 
-        return $createToken(
+        $newToken = $createToken(
             $name,
             $abilities,
             $expirationDays === null ? null : now()->addDays($expirationDays),
         );
+
+        if ($context !== null) {
+            $accessToken = data_get($newToken, 'accessToken');
+
+            if ($accessToken instanceof Model === false) {
+                throw new LogicException('Sanctum did not return a persisted access token model.');
+            }
+
+            $accessToken->forceFill([
+                'context_type' => $context->type,
+                'context_id' => $context->id,
+            ])->save();
+        }
+
+        return $newToken;
     }
 
-    public function revoke(Authenticatable $user, string $tokenId): void
+    /** @return Collection<int, Model> */
+    public function tokensFor(Authenticatable $user, ApiTokens $feature): Collection
+    {
+        $relation = $this->relationFor($user);
+        $query = $relation->getQuery();
+
+        if ($feature->isTenantScoped()) {
+            $this->ensureContextColumns($relation);
+            $context = $this->resolveManagementContext();
+
+            $query
+                ->where('context_type', $context->type)
+                ->where('context_id', $context->id);
+        }
+
+        return $query->get();
+    }
+
+    public function revoke(Authenticatable $user, string $tokenId, ?ApiTokens $feature = null): void
+    {
+        $relation = $this->relationFor($user);
+        $query = $relation->getQuery()->whereKey($tokenId);
+
+        if ($feature?->isTenantScoped()) {
+            $this->ensureContextColumns($relation);
+            $context = $this->resolveManagementContext();
+
+            $query
+                ->where('context_type', $context->type)
+                ->where('context_id', $context->id);
+        }
+
+        $query->delete();
+    }
+
+    protected function relationFor(Authenticatable $user): MorphMany
     {
         $tokens = [$user, 'tokens'];
 
-        if (! is_callable($tokens)) {
-            return;
+        if (is_callable($tokens) === false) {
+            throw ValidationException::withMessages([
+                'tokens' => 'The authenticated user model must use Laravel\\Sanctum\\HasApiTokens.',
+            ]);
         }
 
         $relation = $tokens();
 
         if ($relation instanceof MorphMany === false) {
-            return;
+            throw ValidationException::withMessages([
+                'tokens' => 'The authenticated user model must expose the Sanctum tokens relationship.',
+            ]);
         }
 
-        $relation->getQuery()->whereKey($tokenId)->delete();
+        return $relation;
+    }
+
+    protected function ensureContextColumns(MorphMany $relation): void
+    {
+        $related = $relation->getRelated();
+        $schema = $related->getConnection()->getSchemaBuilder();
+        $table = $related->getTable();
+
+        if (
+            $schema->hasColumn($table, 'context_type') === false
+            || $schema->hasColumn($table, 'context_id') === false
+        ) {
+            throw ValidationException::withMessages([
+                'tokens' => 'Publish and run the filament-complete-user-profile token-context migration before using tenant-scoped API tokens.',
+            ]);
+        }
+    }
+
+    protected function resolveManagementContext(): TokenContext
+    {
+        $tenant = Filament::getTenant();
+
+        if ($tenant instanceof Model === false) {
+            throw ValidationException::withMessages([
+                'tokens' => 'An active Filament tenant is required for tenant-scoped API tokens.',
+            ]);
+        }
+
+        return TokenContext::fromModel($tenant);
     }
 }
