@@ -22,7 +22,7 @@ class PasswordReauthentication implements Reauthentication
     {
         return [
             TextInput::make('current_password')
-                ->label('Current password')
+                ->label(static::translate('filament-complete-user-profile::profile.security.reauthentication.current_password'))
                 ->password()
                 ->revealable(filament()->arePasswordsRevealable())
                 ->autocomplete('current-password')
@@ -36,7 +36,7 @@ class PasswordReauthentication implements Reauthentication
     {
         if (! $this->isAvailable($user)) {
             throw ValidationException::withMessages([
-                'current_password' => 'This account cannot be reauthenticated with a local password.',
+                'current_password' => static::translate('filament-complete-user-profile::profile.security.reauthentication.unavailable'),
             ]);
         }
 
@@ -47,5 +47,12 @@ class PasswordReauthentication implements Reauthentication
                 'current_password:'.Filament::getAuthGuard(),
             ],
         ])->validate();
+    }
+
+    protected static function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
