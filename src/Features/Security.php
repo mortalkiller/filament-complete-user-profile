@@ -14,7 +14,7 @@ class Security extends AbstractFeature
 
     protected bool|Closure $password = true;
 
-    protected bool|Closure $multiFactorAuthentication = false;
+    protected bool|Closure $appAuthentication = false;
 
     protected bool|Closure $emailAuthentication = false;
 
@@ -30,9 +30,9 @@ class Security extends AbstractFeature
         return $this;
     }
 
-    public function multiFactorAuthentication(bool|Closure $value = true): static
+    public function appAuthentication(bool|Closure $value = true): static
     {
-        $this->multiFactorAuthentication = $value;
+        $this->appAuthentication = $value;
 
         return $this;
     }
@@ -49,9 +49,9 @@ class Security extends AbstractFeature
         return (bool) $this->evaluate($this->password);
     }
 
-    public function hasMultiFactorAuthentication(): bool
+    public function hasAppAuthentication(): bool
     {
-        return (bool) $this->evaluate($this->multiFactorAuthentication);
+        return (bool) $this->evaluate($this->appAuthentication);
     }
 
     public function hasEmailAuthentication(): bool
@@ -59,9 +59,9 @@ class Security extends AbstractFeature
         return (bool) $this->evaluate($this->emailAuthentication);
     }
 
-    public function getMultiFactorAuthenticationRequirementIssue(Authenticatable $user): ?string
+    public function getAppAuthenticationRequirementIssue(Authenticatable $user): ?string
     {
-        if (! $this->hasMultiFactorAuthentication()) {
+        if (! $this->hasAppAuthentication()) {
             return null;
         }
 
