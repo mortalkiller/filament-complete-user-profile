@@ -38,6 +38,15 @@ return [
                 'label' => 'Enviar un nuevo código por correo electrónico',
                 'sent' => 'Se ha enviado un nuevo código de verificación.',
             ],
+            'email' => [
+                'subject' => 'Tu código de verificación de :app',
+                'heading' => 'Confirma tu identidad',
+                'intro' => 'Se ha solicitado un código de verificación para tu cuenta de :app. Introduce el código siguiente para continuar.',
+                'expiry' => 'Este código caduca en :minutes minuto.|Este código caduca en :minutes minutos.',
+                'warning' => 'No compartas nunca este código. Nuestro equipo nunca te lo pedirá.',
+                'ignore' => 'Si no has solicitado este código, puedes ignorar este correo de forma segura.',
+                'footer' => 'Mensaje de seguridad de :app.',
+            ],
         ],
     ],
     'sessions' => [
