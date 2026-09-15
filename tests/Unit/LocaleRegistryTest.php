@@ -37,6 +37,7 @@ class LocaleRegistryTest extends TestCase
 
     private function localeNameMethod(): ReflectionMethod
     {
+        /** @var class-string $registryClass */
         $registryClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Support\\LocaleRegistry';
 
         if (! class_exists($registryClass)) {
