@@ -36,39 +36,40 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     public function table(Table $table): Table
     {
         $feature = $this->feature();
+        $never = static::translate('filament-complete-user-profile::profile.api_tokens.never');
 
         return $table
             ->records(fn (): array => $this->getTokenRecords())
             ->columns([
                 TextColumn::make('name')
-                    ->label('Name'),
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.columns.name')),
                 TextColumn::make('abilities')
-                    ->label('Permissions')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.columns.permissions'))
                     ->badge(),
                 TextColumn::make('last_used_at')
-                    ->label('Last used')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.columns.last_used'))
                     ->dateTime()
-                    ->placeholder('Never'),
+                    ->placeholder($never),
                 TextColumn::make('expires_at')
-                    ->label('Expires')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.columns.expires'))
                     ->dateTime()
-                    ->placeholder('Never'),
+                    ->placeholder($never),
             ])
             ->headerActions([
                 Action::make('create')
-                    ->label('Create token')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.actions.create'))
                     ->schema([
                         TextInput::make('name')
-                            ->label('Name')
+                            ->label(static::translate('filament-complete-user-profile::profile.api_tokens.fields.name'))
                             ->required()
                             ->maxLength(255),
                         CheckboxList::make('abilities')
-                            ->label('Permissions')
+                            ->label(static::translate('filament-complete-user-profile::profile.api_tokens.fields.permissions'))
                             ->options($feature->getAbilities())
                             ->required()
                             ->columns(1),
                         TextInput::make('expiration')
-                            ->label('Expires in days')
+                            ->label(static::translate('filament-complete-user-profile::profile.api_tokens.fields.expiration'))
                             ->numeric()
                             ->minValue(1)
                             ->maxValue($feature->getMaxExpiration())
@@ -82,7 +83,7 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
             ])
             ->recordActions([
                 Action::make('revoke')
-                    ->label('Revoke')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.actions.revoke'))
                     ->requiresConfirmation()
                     ->action(function (array $record): void {
                         app(TokenManager::class)->revoke(
@@ -94,17 +95,17 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
                     }),
             ])
             ->paginated(false)
-            ->emptyStateHeading('No API tokens');
+            ->emptyStateHeading(static::translate('filament-complete-user-profile::profile.api_tokens.empty'));
     }
 
     public function showCreatedTokenAction(): Action
     {
         return Action::make('showCreatedToken')
-            ->modalHeading('API token created')
-            ->modalDescription('Copy this token now. You will not be able to see it again.')
+            ->modalHeading(static::translate('filament-complete-user-profile::profile.api_tokens.created.heading'))
+            ->modalDescription(static::translate('filament-complete-user-profile::profile.api_tokens.created.description'))
             ->schema([
                 TextEntry::make('plain_text_token')
-                    ->label('Token')
+                    ->label(static::translate('filament-complete-user-profile::profile.api_tokens.created.token'))
                     ->state(fn (): ?string => $this->createdPlainTextToken)
                     ->copyable(),
             ])
@@ -112,7 +113,7 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
             ->closeModalByEscaping(false)
             ->modalCloseButton(false)
             ->modalCancelAction(false)
-            ->modalSubmitActionLabel('Done')
+            ->modalSubmitActionLabel(static::translate('filament-complete-user-profile::profile.api_tokens.actions.done'))
             ->action(fn (): null => $this->dismissCreatedToken());
     }
 
@@ -210,5 +211,12 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
         }
 
         return $user;
+    }
+
+    protected static function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
