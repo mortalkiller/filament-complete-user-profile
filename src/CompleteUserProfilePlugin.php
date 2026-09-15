@@ -3,9 +3,9 @@
 namespace Mortalkiller\FilamentCompleteUserProfile;
 
 use Closure;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
-use InvalidArgumentException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
@@ -18,7 +18,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 class CompleteUserProfilePlugin implements Plugin
 {
     /** @var array<string, ProfileFeature> */
-    protected array $features;
+    protected array $features = [];
 
     public function __construct()
     {
@@ -36,14 +36,6 @@ class CompleteUserProfilePlugin implements Plugin
         return app(static::class);
     }
 
-    public static function get(): static
-    {
-        /** @var static $plugin */
-        $plugin = filament(app(static::class)->getId());
-
-        return $plugin;
-    }
-
     public function getId(): string
     {
         return 'filament-complete-user-profile';
@@ -54,11 +46,92 @@ class CompleteUserProfilePlugin implements Plugin
         $panel
             ->profile(CompleteUserProfile::class, isSimple: false)
             ->authMiddleware([SetUserLocale::class]);
+
+        $security = $this->getFeature('security');
+
+        if ($security instanceof Security && $security->hasMultiFactorAuthentication()) {
+            $panel->multiFactorAuthentication([
+                AppAuthentication::make()->recoverable(),
+            ]);
+        }
     }
 
     public function boot(Panel $panel): void
     {
-        // Feature-specific panel boot hooks are added by their respective features.
+    }
+
+    public static function get(): static
+    {
+        /** @var static $plugin */
+        $plugin = filament()->getCurrentOrDefaultPanel()->getPlugin('filament-complete-user-profile');
+
+        return $plugin;
+    }
+
+    public function overview(bool|Closure $condition = true): static
+    {
+        return $this->configureFeature('overview', $condition);
+    }
+
+    public function profile(bool|Closure $condition = true): static
+    {
+        return $this->configureFeature('profile', $condition);
+    }
+
+    public function security(bool|Closure $condition = true): static
+    {
+        return $this->configureFeature('security', $condition);
+    }
+
+    public function sessions(bool|Closure $condition = true): static
+    {
+        return $this->configureFeature('sessions', $condition);
+    }
+
+    public function apiTokens(bool|Closure $condition = true): static
+    {
+        return $this->configureFeature('api-tokens', $condition);
+    }
+
+    public function overviewWith(?Closure $configure = null): static
+    {
+        return $this->configureTypedFeature('overview', $configure);
+    }
+
+    public function profileWith(?Closure $configure = null): static
+    {
+        return $this->configureTypedFeature('profile', $configure);
+    }
+
+    public function securityWith(?Closure $configure = null): static
+    {
+        return $this->configureTypedFeature('security', $configure);
+    }
+
+    public function sessionsWith(?Closure $configure = null): static
+    {
+        return $this->configureTypedFeature('sessions', $configure);
+    }
+
+    public function apiTokensWith(?Closure $configure = null): static
+    {
+        return $this->configureTypedFeature('api-tokens', $configure);
+    }
+
+    public function multiFactorAuthentication(bool|Closure $condition = true): static
+    {
+        $security = $this->getFeature('security');
+
+        if ($security instanceof Security) {
+            $security->multiFactorAuthentication($condition);
+        }
+
+        return $this;
+    }
+
+    public function getFeature(string $id): ProfileFeature
+    {
+        return $this->features[$id];
     }
 
     /** @return array<string, ProfileFeature> */
@@ -72,99 +145,49 @@ class CompleteUserProfilePlugin implements Plugin
     {
         $features = array_filter(
             $this->features,
-            fn (ProfileFeature $feature): bool => $feature->isEnabled() && $feature->isVisible(),
+            static fn (ProfileFeature $feature): bool => $feature->isEnabled() && $feature->isVisible(),
         );
 
         uasort(
             $features,
-            fn (ProfileFeature $first, ProfileFeature $second): int => $first->getSort() <=> $second->getSort(),
+            static fn (ProfileFeature $first, ProfileFeature $second): int => $first->getSort() <=> $second->getSort(),
         );
 
         return $features;
     }
 
-    public function getFeature(string $id): ProfileFeature
-    {
-        return $this->features[$id] ?? throw new InvalidArgumentException("Unknown profile feature [{$id}].");
-    }
-
-    /** @param array<int, ProfileFeature> $features */
-    public function features(array $features): static
-    {
-        foreach ($features as $feature) {
-            $this->features[$feature->getId()] = $feature;
-        }
-
-        return $this;
-    }
-
-    public function overview(bool|Closure $configuration = true): static
-    {
-        $this->configureFeature('overview', $configuration);
-
-        return $this;
-    }
-
-    public function profile(bool|Closure $configuration = true): static
-    {
-        $this->configureFeature('profile', $configuration);
-
-        return $this;
-    }
-
-    public function security(bool|Closure $configuration = true): static
-    {
-        $this->configureFeature('security', $configuration);
-
-        return $this;
-    }
-
-    public function sessions(bool|Closure $configuration = true): static
-    {
-        $this->configureFeature('sessions', $configuration);
-
-        return $this;
-    }
-
-    public function apiTokens(bool|Closure $configuration = true): static
-    {
-        $this->configureFeature('api-tokens', $configuration);
-
-        return $this;
-    }
-
-    public function multiFactorAuthentication(bool|Closure $condition = true): static
-    {
-        $feature = $this->getFeature('security');
-
-        if ($feature instanceof Security === false) {
-            throw new InvalidArgumentException('The security feature must be an instance of '.Security::class.'.');
-        }
-
-        $feature->enabled()->multiFactorAuthentication($condition);
-
-        return $this;
-    }
-
-    protected function configureFeature(string $id, bool|Closure $configuration): void
+    protected function configureFeature(string $id, bool|Closure $condition): static
     {
         $feature = $this->getFeature($id);
 
-        if (is_bool($configuration)) {
-            if (method_exists($feature, 'enabled') === false) {
-                throw new InvalidArgumentException("Profile feature [{$id}] cannot be toggled.");
+        if ($condition instanceof Closure) {
+            $configured = $condition($feature);
+
+            if ($configured instanceof ProfileFeature) {
+                $this->features[$id] = $configured;
             }
 
-            $feature->enabled($configuration);
-
-            return;
+            return $this;
         }
 
-        if (method_exists($feature, 'enabled') === false) {
-            throw new InvalidArgumentException("Profile feature [{$id}] cannot be configured.");
-        }
+        $feature->enabled($condition);
 
+        return $this;
+    }
+
+    protected function configureTypedFeature(string $id, ?Closure $configure): static
+    {
+        $feature = $this->getFeature($id);
         $feature->enabled();
-        $configuration($feature);
+
+        if ($configure !== null) {
+            $configured = $configure($feature);
+
+            if ($configured instanceof ProfileFeature) {
+                $this->features[$id] = $configured;
+            }
+        }
+
+        return $this;
     }
 }

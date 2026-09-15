@@ -3,6 +3,8 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Features;
 
 use Closure;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\HasMultiFactorAuthentication;
 
 class Security extends AbstractFeature
 {
@@ -17,16 +19,16 @@ class Security extends AbstractFeature
         return 'security';
     }
 
-    public function password(bool|Closure $condition = true): static
+    public function password(bool|Closure $value = true): static
     {
-        $this->password = $condition;
+        $this->password = $value;
 
         return $this;
     }
 
-    public function multiFactorAuthentication(bool|Closure $condition = true): static
+    public function multiFactorAuthentication(bool|Closure $value = true): static
     {
-        $this->multiFactorAuthentication = $condition;
+        $this->multiFactorAuthentication = $value;
 
         return $this;
     }
@@ -39,5 +41,18 @@ class Security extends AbstractFeature
     public function hasMultiFactorAuthentication(): bool
     {
         return (bool) $this->evaluate($this->multiFactorAuthentication);
+    }
+
+    public function getMultiFactorAuthenticationRequirementIssue(Authenticatable $user): ?string
+    {
+        if (! $this->hasMultiFactorAuthentication()) {
+            return null;
+        }
+
+        if ($user instanceof HasMultiFactorAuthentication) {
+            return null;
+        }
+
+        return 'The authenticatable model must implement '.HasMultiFactorAuthentication::class.' when multi-factor authentication is enabled.';
     }
 }
