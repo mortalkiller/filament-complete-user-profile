@@ -108,6 +108,8 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_sidebar_layout_uses_filament_native_sub_navigation(): void
     {
+        $this->registerProfileRoute();
+
         if (enum_exists(AccountNavigationLayout::class) === false) {
             self::fail('AccountNavigationLayout enum is missing.');
         }
@@ -129,9 +131,8 @@ class CompleteUserProfilePageTest extends TestCase
         app(PanelRegistry::class)->register($panel);
         Filament::setCurrentPanel($panel);
 
-        request()->query->set('section', 'security');
-
         $page = app(CompleteUserProfile::class);
+        $page->section = 'security';
         $navigation = $page->getSubNavigation();
         $labels = [];
         $activeStates = [];
@@ -151,6 +152,8 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_sidebar_section_is_component_state_during_livewire_requests(): void
     {
+        $this->registerProfileRoute();
+
         $plugin = CompleteUserProfilePlugin::make()
             ->navigationLayout(AccountNavigationLayout::Sidebar);
 
@@ -181,8 +184,7 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_sidebar_navigation_urls_always_target_the_profile_route(): void
     {
-        Route::get('/profile', static fn (): string => 'profile')
-            ->name('filament.admin.auth.profile');
+        $this->registerProfileRoute();
 
         $plugin = CompleteUserProfilePlugin::make()
             ->navigationLayout(AccountNavigationLayout::Sidebar);
@@ -209,5 +211,11 @@ class CompleteUserProfilePageTest extends TestCase
         foreach ($urls as $url) {
             self::assertStringNotContainsString('/livewire-', (string) $url);
         }
+    }
+
+    private function registerProfileRoute(): void
+    {
+        Route::get('/profile', static fn (): string => 'profile')
+            ->name('filament.admin.auth.profile');
     }
 }
