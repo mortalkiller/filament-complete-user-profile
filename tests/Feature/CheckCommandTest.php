@@ -2,8 +2,8 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
-use Filament\Facades\Filament;
 use Filament\Panel;
+use Filament\PanelRegistry;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
@@ -125,7 +125,7 @@ class CheckCommandTest extends TestCase
 
     protected function registerPlugin(CompleteUserProfilePlugin $plugin): void
     {
-        Filament::registerPanel(
+        app(PanelRegistry::class)->register(
             Panel::make()
                 ->id('admin')
                 ->plugin($plugin),
