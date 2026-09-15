@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Notifications\VerifyEmailAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\EmailMfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
@@ -148,34 +149,19 @@ class EmailAuthenticationTest extends TestCase
 
     public function test_provider_uses_a_package_owned_queued_verification_email(): void
     {
-        $notificationClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Security\\EmailAuthentication\\Notifications\\VerifyEmailAuthentication';
+        $notification = new VerifyEmailAuthentication('483921', 4);
 
-        self::assertSame($notificationClass, $this->makeProvider()->getCodeNotification());
-        self::assertTrue(class_exists($notificationClass));
-
-        $notification = app($notificationClass, [
-            'code' => '483921',
-            'codeExpiryMinutes' => 4,
-        ]);
-
+        self::assertSame(VerifyEmailAuthentication::class, $this->makeProvider()->getCodeNotification());
         self::assertInstanceOf(ShouldQueue::class, $notification);
         self::assertSame(['mail'], $notification->via(new EmailMfaUser));
     }
 
     public function test_verification_email_uses_app_branding_and_a_dedicated_otp_view(): void
     {
-        $notificationClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Security\\EmailAuthentication\\Notifications\\VerifyEmailAuthentication';
-
-        self::assertTrue(class_exists($notificationClass));
-
         config()->set('app.name', 'Acme Portal');
         app()->setLocale('en');
 
-        $notification = app($notificationClass, [
-            'code' => '483921',
-            'codeExpiryMinutes' => 4,
-        ]);
-        $mail = $notification->toMail(new EmailMfaUser);
+        $mail = (new VerifyEmailAuthentication('483921', 4))->toMail(new EmailMfaUser);
 
         self::assertInstanceOf(MailMessage::class, $mail);
         self::assertSame('Your Acme Portal verification code', $mail->subject);
