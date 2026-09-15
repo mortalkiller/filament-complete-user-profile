@@ -1,5 +1,14 @@
 # Filament Complete User Profile
 
+[![Package tests](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+
+[![Scanned by Plumb](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/scanned.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
+[![Plumb ecosystem score](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/ecosystem.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
+[![Plumb maintenance score](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/maintenance.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
+[![Plumb security score](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/security.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
+[![Plumb score](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/composite.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
+
 A complete, modular account center for Filament 5 and Laravel 13.
 
 It replaces Filament's simple profile screen with a normal panel page and lets you opt into account-security features such as multi-factor authentication, browser session management, Sanctum API tokens, and tenant-scoped tokens while keeping the default setup small.
@@ -337,15 +346,19 @@ The package deliberately keeps authentication and tenancy integration replaceabl
 
 ## Development
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and maintenance guidance.
+
 ```bash
 composer validate --strict
-vendor/bin/pint --test
-vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
-vendor/bin/phpunit
+composer check
 ```
 
-The GitHub Actions matrix validates supported PHP versions.
+The GitHub Actions matrix validates supported PHP versions. A separate code-quality workflow verifies formatting, static analysis and tracked PHP syntax.
+
+## Security
+
+Please report vulnerabilities privately using the process in [SECURITY.md](SECURITY.md). Use GitHub Issues for ordinary bugs and feature requests.
 
 ## License
 
-MIT. See `LICENSE.md`.
+MIT. See [LICENSE.md](LICENSE.md).
