@@ -38,6 +38,15 @@ return [
                 'label' => 'Envoyer un nouveau code par e-mail',
                 'sent' => 'Un nouveau code de vérification a été envoyé.',
             ],
+            'email' => [
+                'subject' => 'Votre code de vérification :app',
+                'heading' => 'Confirmez votre identité',
+                'intro' => 'Un code de vérification a été demandé pour votre compte :app. Saisissez le code ci-dessous pour continuer.',
+                'expiry' => 'Ce code expire dans :minutes minute.|Ce code expire dans :minutes minutes.',
+                'warning' => 'Ne partagez jamais ce code. Notre équipe ne vous le demandera jamais.',
+                'ignore' => 'Si vous n’avez pas demandé ce code, vous pouvez ignorer cet e-mail en toute sécurité.',
+                'footer' => 'Message de sécurité de :app.',
+            ],
         ],
     ],
     'sessions' => [
