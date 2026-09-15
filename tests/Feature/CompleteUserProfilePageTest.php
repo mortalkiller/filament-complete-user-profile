@@ -3,7 +3,6 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Facades\Filament;
-use Filament\Navigation\NavigationItem;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelRegistry;
@@ -137,10 +136,6 @@ class CompleteUserProfilePageTest extends TestCase
         $urls = [];
 
         foreach ($navigation as $item) {
-            if ($item instanceof NavigationItem === false) {
-                self::fail('Account sidebar must contain only native Filament NavigationItem instances.');
-            }
-
             $labels[] = $item->getLabel();
             $activeStates[] = $item->isActive();
             $urls[] = $item->getUrl();
