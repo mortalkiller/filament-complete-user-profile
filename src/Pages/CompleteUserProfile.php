@@ -156,7 +156,7 @@ class CompleteUserProfile extends EditProfile
         $record = parent::handleRecordUpdate($record, $data);
 
         if ($profileData !== []) {
-            app(ProfileStorage::class)->putMany($record, $profileData);
+            app(ProfileStorage::class)->putMany($this->getUser(), $profileData);
         }
 
         $this->savedProfileData = [...$data, ...$profileData];

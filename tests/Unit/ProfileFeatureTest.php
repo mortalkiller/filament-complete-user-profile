@@ -58,6 +58,7 @@ class ProfileFeatureTest extends TestCase
 
         self::assertTrue($profile->hasAvatar());
         self::assertFalse($profile->hasLocale());
+        self::assertInstanceOf(FileUpload::class, $avatar);
         self::assertSame('custom-avatars', $avatar->getDirectory());
     }
 
