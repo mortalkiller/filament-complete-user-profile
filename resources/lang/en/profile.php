@@ -13,6 +13,18 @@ return [
         'avatar' => 'Avatar',
         'locale' => 'Preferred language',
     ],
+    'overview' => [
+        'name' => 'Name',
+        'email' => 'Email',
+        'locale' => 'Preferred language',
+    ],
+    'security' => [
+        'password' => [
+            'action' => 'Change password',
+            'new' => 'New password',
+            'confirmation' => 'Confirm new password',
+        ],
+    ],
     'features' => [
         'overview' => [
             'label' => 'Overview',

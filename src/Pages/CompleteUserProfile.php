@@ -2,20 +2,30 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Pages;
 
+use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
+use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use SensitiveParameter;
 
 class CompleteUserProfile extends EditProfile
@@ -169,16 +179,51 @@ class CompleteUserProfile extends EditProfile
         $this->getProfileFeature()->runAfterSave($this->getUser(), $this->savedProfileData);
     }
 
+    /** @param array<string, mixed> $data */
+    protected function updatePassword(#[SensitiveParameter] array $data): void
+    {
+        $user = $this->getUser();
+        app(Reauthentication::class)->confirm($user, $data);
+
+        $validated = Validator::make($data, [
+            'password' => ['required', 'string', 'confirmed', PasswordRule::default()],
+        ])->validate();
+
+        $hashedPassword = Hash::make($validated['password']);
+
+        $user->forceFill(['password' => $hashedPassword])->save();
+
+        if (request()->hasSession()) {
+            request()->session()->put(
+                'password_hash_'.filament()->getAuthGuard(),
+                $hashedPassword,
+            );
+        }
+    }
+
+    /** @return array<string, mixed> */
+    protected function getOverviewData(): array
+    {
+        $user = $this->getUser();
+        $storage = app(ProfileStorage::class);
+        $data = [
+            'avatar' => $storage->get($user, 'avatar'),
+            'name' => $user->getAttribute('name'),
+            'email' => $user->getAttribute('email'),
+            'locale' => $storage->get($user, 'locale'),
+        ];
+
+        return array_filter($data, static fn (mixed $value): bool => filled($value));
+    }
+
     protected function getFeatureContentComponent(ProfileFeature $feature): Component
     {
         $component = match ($feature->getId()) {
             'profile' => Section::make($this->getFeatureLabel($feature))
                 ->description(static::translate('filament-complete-user-profile::profile.features.profile.description'))
                 ->schema([Group::make([$this->getFormContentComponent()])]),
-            'overview' => Section::make($this->getFeatureLabel($feature))
-                ->description(static::translate('filament-complete-user-profile::profile.features.overview.description')),
-            'security' => Section::make($this->getFeatureLabel($feature))
-                ->description(static::translate('filament-complete-user-profile::profile.features.security.description')),
+            'overview' => $this->getOverviewContentComponent($feature),
+            'security' => $this->getSecurityContentComponent($feature),
             'sessions' => Section::make($this->getFeatureLabel($feature))
                 ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description')),
             'api-tokens' => Section::make($this->getFeatureLabel($feature))
@@ -192,12 +237,91 @@ class CompleteUserProfile extends EditProfile
         ]);
     }
 
+    protected function getOverviewContentComponent(ProfileFeature $feature): Component
+    {
+        $data = $this->getOverviewData();
+        $entries = [];
+
+        if (array_key_exists('avatar', $data)) {
+            $entries[] = ImageEntry::make('avatar')
+                ->label(static::translate('filament-complete-user-profile::profile.fields.avatar'))
+                ->state($data['avatar'])
+                ->circular();
+        }
+
+        foreach (['name', 'email', 'locale'] as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
+            $entries[] = TextEntry::make($key)
+                ->label(static::translate("filament-complete-user-profile::profile.overview.{$key}"))
+                ->state($data[$key]);
+        }
+
+        return Section::make($this->getFeatureLabel($feature))
+            ->description(static::translate('filament-complete-user-profile::profile.features.overview.description'))
+            ->schema($entries);
+    }
+
+    protected function getSecurityContentComponent(ProfileFeature $feature): Component
+    {
+        $security = $this->getSecurityFeature();
+        $components = [];
+
+        if ($security->hasPassword()) {
+            $components[] = Actions::make([$this->getUpdatePasswordAction()]);
+        }
+
+        return Section::make($this->getFeatureLabel($feature))
+            ->description(static::translate('filament-complete-user-profile::profile.features.security.description'))
+            ->schema($components);
+    }
+
+    protected function getUpdatePasswordAction(): Action
+    {
+        $reauthentication = app(Reauthentication::class);
+
+        return Action::make('updatePassword')
+            ->label(static::translate('filament-complete-user-profile::profile.security.password.action'))
+            ->schema([
+                ...$reauthentication->getFormSchema(),
+                TextInput::make('password')
+                    ->label(static::translate('filament-complete-user-profile::profile.security.password.new'))
+                    ->password()
+                    ->revealable(filament()->arePasswordsRevealable())
+                    ->autocomplete('new-password')
+                    ->rule(PasswordRule::default())
+                    ->required(),
+                TextInput::make('password_confirmation')
+                    ->label(static::translate('filament-complete-user-profile::profile.security.password.confirmation'))
+                    ->password()
+                    ->revealable(filament()->arePasswordsRevealable())
+                    ->autocomplete('new-password')
+                    ->same('password')
+                    ->required(),
+            ])
+            ->disabled(fn (): bool => ! $reauthentication->isAvailable($this->getUser()))
+            ->action(fn (array $data): mixed => $this->updatePassword($data));
+    }
+
     protected function getProfileFeature(): Profile
     {
         $feature = CompleteUserProfilePlugin::get()->getFeature('profile');
 
         if (! $feature instanceof Profile) {
             throw new LogicException('The profile feature must be an instance of '.Profile::class.'.');
+        }
+
+        return $feature;
+    }
+
+    protected function getSecurityFeature(): Security
+    {
+        $feature = CompleteUserProfilePlugin::get()->getFeature('security');
+
+        if (! $feature instanceof Security) {
+            throw new LogicException('The security feature must be an instance of '.Security::class.'.');
         }
 
         return $feature;

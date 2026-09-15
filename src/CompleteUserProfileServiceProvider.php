@@ -5,6 +5,8 @@ namespace Mortalkiller\FilamentCompleteUserProfile;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Security\PasswordReauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\SeparateProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\UserProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
@@ -21,6 +23,7 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
 
         $this->app->singleton(UserModelResolver::class);
         $this->app->singleton(ProfileColumnMap::class);
+        $this->app->bind(Reauthentication::class, PasswordReauthentication::class);
 
         $this->app->bind(ProfileStorage::class, function (): ProfileStorage {
             return match (config('filament-complete-user-profile.storage', 'user')) {
