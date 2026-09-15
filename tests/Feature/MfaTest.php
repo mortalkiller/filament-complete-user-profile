@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication as FilamentHasEmailAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Panel;
 use Illuminate\Database\Schema\Blueprint;
@@ -124,6 +125,14 @@ class MfaTest extends TestCase
         self::assertTrue(trait_exists('Mortalkiller\\FilamentCompleteUserProfile\\Concerns\\InteractsWithMultiFactorAuthentication'));
     }
 
+    public function test_package_exposes_email_authentication_storage_trait(): void
+    {
+        self::assertTrue(
+            trait_exists('Mortalkiller\\FilamentCompleteUserProfile\\Concerns\\InteractsWithEmailAuthentication'),
+            'The package must provide an email-authentication storage trait compatible with its profile storage modes.',
+        );
+    }
+
     public function test_security_reports_missing_user_contract_clearly(): void
     {
         $security = Security::make()->multiFactorAuthentication();
@@ -133,6 +142,56 @@ class MfaTest extends TestCase
             'The authenticatable model must implement '.HasMultiFactorAuthentication::class.' when multi-factor authentication is enabled.',
             $security->getMultiFactorAuthenticationRequirementIssue($user),
         );
+    }
+
+    public function test_security_reports_missing_email_authentication_contract_clearly(): void
+    {
+        $security = Security::make()->emailAuthentication();
+
+        self::assertTrue(
+            method_exists($security, 'getEmailAuthenticationRequirementIssue'),
+            Security::class.' must expose getEmailAuthenticationRequirementIssue().',
+        );
+
+        $issue = (new ReflectionMethod($security, 'getEmailAuthenticationRequirementIssue'))
+            ->invoke($security, new User);
+
+        self::assertSame(
+            'The authenticatable model must implement '.FilamentHasEmailAuthentication::class.' when email authentication is enabled.',
+            $issue,
+        );
+    }
+
+    public function test_email_authentication_readiness_requires_notifications(): void
+    {
+        $security = Security::make()->emailAuthentication();
+        $user = new class extends User implements FilamentHasEmailAuthentication
+        {
+            public function hasEmailAuthentication(): bool
+            {
+                return false;
+            }
+
+            public function toggleEmailAuthentication(bool $condition): void {}
+        };
+
+        self::assertTrue(method_exists($security, 'getEmailAuthenticationRequirementIssue'));
+
+        $issue = (new ReflectionMethod($security, 'getEmailAuthenticationRequirementIssue'))
+            ->invoke($security, $user);
+
+        self::assertSame(
+            'The authenticated user model must support Laravel notifications to use email authentication.',
+            $issue,
+        );
+    }
+
+    public function test_security_page_includes_native_mfa_management_for_email_authentication(): void
+    {
+        $source = file_get_contents(dirname(__DIR__, 2).'/src/Pages/CompleteUserProfile.php');
+
+        self::assertIsString($source);
+        self::assertStringContainsString('$security->hasEmailAuthentication()', $source);
     }
 
     public function test_mfa_trait_encrypts_and_hides_user_storage_values(): void
