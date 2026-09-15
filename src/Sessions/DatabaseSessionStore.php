@@ -78,11 +78,11 @@ class DatabaseSessionStore implements SessionStore
     public function getUnsupportedReason(): ?string
     {
         if (config('session.driver') !== 'database') {
-            return 'Browser session management requires SESSION_DRIVER=database.';
+            return static::translate('filament-complete-user-profile::profile.sessions.requirements.database_driver');
         }
 
         if (! $this->isSupported()) {
-            return 'The configured Laravel sessions table does not exist.';
+            return static::translate('filament-complete-user-profile::profile.sessions.requirements.table');
         }
 
         return null;
@@ -128,7 +128,7 @@ class DatabaseSessionStore implements SessionStore
             str_contains($userAgent, 'Firefox/') => 'Firefox',
             str_contains($userAgent, 'Chrome/') => 'Chrome',
             str_contains($userAgent, 'Safari/') => 'Safari',
-            default => 'Unknown browser',
+            default => static::translate('filament-complete-user-profile::profile.sessions.device.unknown_browser'),
         };
 
         $platform = match (true) {
@@ -137,15 +137,22 @@ class DatabaseSessionStore implements SessionStore
             str_contains($userAgent, 'Windows') => 'Windows',
             str_contains($userAgent, 'Macintosh'), str_contains($userAgent, 'Mac OS') => 'macOS',
             str_contains($userAgent, 'Linux') => 'Linux',
-            default => 'Unknown platform',
+            default => static::translate('filament-complete-user-profile::profile.sessions.device.unknown_platform'),
         };
 
         $device = match (true) {
-            str_contains($userAgent, 'iPad'), str_contains($userAgent, 'Tablet') => 'Tablet',
-            str_contains($userAgent, 'Mobile'), str_contains($userAgent, 'iPhone'), str_contains($userAgent, 'Android') => 'Mobile',
-            default => 'Desktop',
+            str_contains($userAgent, 'iPad'), str_contains($userAgent, 'Tablet') => static::translate('filament-complete-user-profile::profile.sessions.device.tablet'),
+            str_contains($userAgent, 'Mobile'), str_contains($userAgent, 'iPhone'), str_contains($userAgent, 'Android') => static::translate('filament-complete-user-profile::profile.sessions.device.mobile'),
+            default => static::translate('filament-complete-user-profile::profile.sessions.device.desktop'),
         };
 
         return "{$browser} · {$platform} · {$device}";
+    }
+
+    protected static function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
