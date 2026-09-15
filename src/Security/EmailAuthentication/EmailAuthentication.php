@@ -17,11 +17,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Actions\SetUpEmailAuthenticationAction;
+use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Notifications\VerifyEmailAuthentication;
 use SensitiveParameter;
 
 class EmailAuthentication extends FilamentEmailAuthentication
 {
     protected int $resendCooldownSeconds = 60;
+
+    public static function make(): static
+    {
+        return parent::make()
+            ->codeNotification(VerifyEmailAuthentication::class);
+    }
 
     public function getResendCooldownSeconds(): int
     {
