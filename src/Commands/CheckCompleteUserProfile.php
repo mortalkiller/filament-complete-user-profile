@@ -186,8 +186,8 @@ class CheckCompleteUserProfile extends Command
         foreach ($plugins as $panelId => $plugin) {
             $security = $plugin->getFeature('security');
 
-            if ($security instanceof Security && $security->isEnabled() && $security->hasMultiFactorAuthentication()) {
-                $issue = $security->getMultiFactorAuthenticationRequirementIssue($user);
+            if ($security instanceof Security && $security->isEnabled() && $security->hasAppAuthentication()) {
+                $issue = $security->getAppAuthenticationRequirementIssue($user);
                 $this->requirement("Panel [{$panelId}] MFA", $issue, 'Native Filament MFA requirements are satisfied.');
             } else {
                 $this->infoCheck("Panel [{$panelId}] MFA", 'Disabled.');
