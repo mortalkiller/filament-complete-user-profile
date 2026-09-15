@@ -14,6 +14,7 @@ class ProfileColumnMap
             'locale' => config('filament-complete-user-profile.columns.locale'),
             'mfa_secret' => config('filament-complete-user-profile.columns.mfa.secret'),
             'mfa_recovery_codes' => config('filament-complete-user-profile.columns.mfa.recovery_codes'),
+            'mfa_email_enabled' => config('filament-complete-user-profile.columns.mfa.email_enabled'),
             default => throw new InvalidArgumentException("Unknown profile storage key [{$key}]."),
         };
 
@@ -32,6 +33,7 @@ class ProfileColumnMap
             'locale' => $this->get('locale'),
             'mfa_secret' => $this->get('mfa_secret'),
             'mfa_recovery_codes' => $this->get('mfa_recovery_codes'),
+            'mfa_email_enabled' => $this->get('mfa_email_enabled'),
         ];
     }
 }
