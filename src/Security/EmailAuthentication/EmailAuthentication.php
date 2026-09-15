@@ -2,12 +2,22 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication;
 
+use Closure;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Auth\MultiFactor\Email\Actions\DisableEmailAuthenticationAction;
 use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Auth\MultiFactor\Email\EmailAuthentication as FilamentEmailAuthentication;
+use Filament\Forms\Components\OneTimeCodeInput;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Component;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Actions\SetUpEmailAuthenticationAction;
+use SensitiveParameter;
 
 class EmailAuthentication extends FilamentEmailAuthentication
 {
@@ -59,6 +69,70 @@ class EmailAuthentication extends FilamentEmailAuthentication
         ]));
 
         return true;
+    }
+
+    public function makeResendAction(HasEmailAuthentication $user): Action
+    {
+        return Action::make('resend')
+            ->label(function () use ($user): string {
+                $label = (string) __('filament-complete-user-profile::profile.security.email_authentication.resend.label');
+                $remaining = $this->getResendAvailableIn($user);
+
+                return $remaining > 0 ? "{$label} ({$remaining}s)" : $label;
+            })
+            ->link()
+            ->disabled(fn (): bool => ! $this->canSendCode($user))
+            ->extraAttributes(fn (): array => $this->canSendCode($user)
+                ? []
+                : ['wire:poll.1s' => '$refresh'])
+            ->action(function () use ($user): void {
+                if (! $this->sendCode($user)) {
+                    return;
+                }
+
+                Notification::make()
+                    ->title(__('filament-complete-user-profile::profile.security.email_authentication.resend.sent'))
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /** @return array<Action> */
+    public function getActions(): array
+    {
+        /** @var Authenticatable&HasEmailAuthentication $user */
+        $user = filament()->auth()->user();
+
+        return [
+            SetUpEmailAuthenticationAction::make($this)
+                ->hidden(fn (): bool => $this->isEnabled($user)),
+            DisableEmailAuthenticationAction::make($this)
+                ->visible(fn (): bool => $this->isEnabled($user)),
+        ];
+    }
+
+    /**
+     * @param  Authenticatable&HasEmailAuthentication  $user
+     * @return array<Component|Action|ActionGroup>
+     */
+    public function getChallengeFormComponents(Authenticatable $user): array
+    {
+        return [
+            OneTimeCodeInput::make('code')
+                ->label(__('filament-panels::auth/multi-factor/email/provider.login_form.code.label'))
+                ->validationAttribute('code')
+                ->belowContent($this->makeResendAction($user))
+                ->required()
+                ->rule(function () use ($user): Closure {
+                    return function (string $attribute, #[SensitiveParameter] $value, Closure $fail) use ($user): void {
+                        if (is_string($value) && $this->verifyCode($value, $user)) {
+                            return;
+                        }
+
+                        $fail(__('filament-panels::auth/multi-factor/email/provider.login_form.code.messages.invalid'));
+                    };
+                }),
+        ];
     }
 
     protected function getResendRateLimitKey(HasEmailAuthentication $user): string
