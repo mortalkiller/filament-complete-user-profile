@@ -6,6 +6,7 @@ use Closure;
 use Filament\Schemas\Components\Component;
 use Illuminate\Contracts\Auth\Authenticatable;
 use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\Support\LocaleRegistry;
 
 class Profile extends AbstractFeature
 {
@@ -81,7 +82,7 @@ class Profile extends AbstractFeature
     }
 
     /**
-     * @param  bool|array<string, string>|Closure  $value
+     * @param  bool|array<int|string, string>|Closure  $value
      */
     public function locale(bool|array|Closure $value = true): static
     {
@@ -89,7 +90,7 @@ class Profile extends AbstractFeature
             $this->localeEnabled = $value;
         } elseif (is_array($value)) {
             $this->localeEnabled = true;
-            $this->localeOptions = $value;
+            $this->localeOptions = $this->resolveLocaleOptions($value);
         } else {
             $this->localeEnabled = true;
             $this->localeModifier = $value;
@@ -154,18 +155,14 @@ class Profile extends AbstractFeature
             return $this->localeOptions;
         }
 
-        $configured = config('app.supported_locales');
+        foreach (['app.available_locales', 'app.supported_locales'] as $configKey) {
+            $configured = config($configKey);
 
-        if (is_array($configured) && $configured !== []) {
-            $options = [];
-
-            foreach ($configured as $key => $value) {
-                if (is_int($key) && is_string($value)) {
-                    $options[$value] = $value;
-                } elseif (is_string($key) && is_string($value)) {
-                    $options[$key] = $value;
-                }
+            if (! is_array($configured) || $configured === []) {
+                continue;
             }
+
+            $options = $this->resolveLocaleOptions($configured);
 
             if ($options !== []) {
                 return $options;
@@ -174,7 +171,11 @@ class Profile extends AbstractFeature
 
         $locale = config('app.locale', 'en');
 
-        return is_string($locale) && $locale !== '' ? [$locale => $locale] : ['en' => 'en'];
+        if (! is_string($locale) || $locale === '') {
+            $locale = 'en';
+        }
+
+        return [$locale => LocaleRegistry::name($locale)];
     }
 
     public function configureAvatar(Component $field): Component
@@ -278,5 +279,28 @@ class Profile extends AbstractFeature
         $modified = $modifier($field);
 
         return $modified instanceof Component ? $modified : $field;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $locales
+     * @return array<string, string>
+     */
+    protected function resolveLocaleOptions(array $locales): array
+    {
+        $options = [];
+
+        foreach ($locales as $key => $value) {
+            if (is_int($key) && is_string($value) && $value !== '') {
+                $options[$value] = LocaleRegistry::name($value);
+
+                continue;
+            }
+
+            if (is_string($key) && $key !== '' && is_string($value) && $value !== '') {
+                $options[$key] = $value;
+            }
+        }
+
+        return $options;
     }
 }
