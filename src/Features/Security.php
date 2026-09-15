@@ -14,6 +14,8 @@ class Security extends AbstractFeature
 
     protected bool|Closure $multiFactorAuthentication = false;
 
+    protected bool|Closure $emailAuthentication = false;
+
     public function getId(): string
     {
         return 'security';
@@ -33,6 +35,13 @@ class Security extends AbstractFeature
         return $this;
     }
 
+    public function emailAuthentication(bool|Closure $value = true): static
+    {
+        $this->emailAuthentication = $value;
+
+        return $this;
+    }
+
     public function hasPassword(): bool
     {
         return (bool) $this->evaluate($this->password);
@@ -41,6 +50,11 @@ class Security extends AbstractFeature
     public function hasMultiFactorAuthentication(): bool
     {
         return (bool) $this->evaluate($this->multiFactorAuthentication);
+    }
+
+    public function hasEmailAuthentication(): bool
+    {
+        return (bool) $this->evaluate($this->emailAuthentication);
     }
 
     public function getMultiFactorAuthenticationRequirementIssue(Authenticatable $user): ?string
