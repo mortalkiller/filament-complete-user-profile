@@ -290,12 +290,17 @@ class CheckCompleteUserProfile extends Command
     {
         $this->table(['Status', 'Check', 'Message'], $this->checks);
 
-        foreach ($this->checks as [$status]) {
-            if ($status === 'FAIL') {
-                return self::FAILURE;
+        $hasFailures = false;
+
+        foreach ($this->checks as [$status, $check, $message]) {
+            if ($status !== 'FAIL') {
+                continue;
             }
+
+            $hasFailures = true;
+            $this->line("FAIL {$check}: {$message}");
         }
 
-        return self::SUCCESS;
+        return $hasFailures ? self::FAILURE : self::SUCCESS;
     }
 }
