@@ -1,0 +1,167 @@
+<?php
+
+namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
+
+use Filament\Facades\Filament;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
+use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\EnsureTokenContext;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\Tenant;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenManager;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+class TenantScopedTokensTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Schema::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('email')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('tenants', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('personal_access_tokens', function (Blueprint $table): void {
+            $table->id();
+            $table->morphs('tokenable');
+            $table->text('name');
+            $table->string('token', 64)->unique();
+            $table->text('abilities')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->string('context_type')->nullable()->index();
+            $table->string('context_id')->nullable()->index();
+            $table->timestamps();
+        });
+    }
+
+    public function test_tenant_context_is_persisted_and_required_for_creation(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenant = Tenant::query()->create(['name' => 'Tenant A']);
+        $feature = $this->feature();
+        $manager = app(TokenManager::class);
+
+        Filament::setTenant($tenant);
+
+        $token = $manager->create($user, $feature, 'Tenant A CLI', ['customers:read']);
+
+        self::assertSame($tenant->getMorphClass(), $token->accessToken->getAttribute('context_type'));
+        self::assertSame((string) $tenant->getKey(), (string) $token->accessToken->getAttribute('context_id'));
+
+        Filament::setTenant(null);
+        $this->expectException(ValidationException::class);
+
+        $manager->create($user, $feature, 'No context', ['customers:read']);
+    }
+
+    public function test_listing_and_revocation_are_scoped_to_active_tenant(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+        $feature = $this->feature();
+        $manager = app(TokenManager::class);
+
+        Filament::setTenant($tenantA);
+        $tokenA = $manager->create($user, $feature, 'A', ['customers:read']);
+
+        Filament::setTenant($tenantB);
+        $tokenB = $manager->create($user, $feature, 'B', ['customers:read']);
+
+        Filament::setTenant($tenantA);
+        $visible = $manager->tokensFor($user, $feature);
+
+        self::assertSame([(string) $tokenA->accessToken->getKey()], $visible->pluck('id')->map(fn ($id): string => (string) $id)->all());
+
+        $manager->revoke($user, (string) $tokenB->accessToken->getKey(), $feature);
+        self::assertTrue($user->tokens()->whereKey($tokenB->accessToken->getKey())->exists());
+
+        $manager->revoke($user, (string) $tokenA->accessToken->getKey(), $feature);
+        self::assertFalse($user->tokens()->whereKey($tokenA->accessToken->getKey())->exists());
+    }
+
+    public function test_missing_context_columns_fail_closed(): void
+    {
+        Schema::table('personal_access_tokens', function (Blueprint $table): void {
+            $table->dropColumn(['context_type', 'context_id']);
+        });
+
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenant = Tenant::query()->create(['name' => 'Tenant A']);
+        Filament::setTenant($tenant);
+
+        $this->expectException(ValidationException::class);
+
+        app(TokenManager::class)->create($user, $this->feature(), 'CLI', ['customers:read']);
+    }
+
+    public function test_api_middleware_rejects_mismatched_or_missing_context(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+        $manager = app(TokenManager::class);
+
+        Filament::setTenant($tenantA);
+        $token = $manager->create($user, $this->feature(), 'CLI', ['customers:read']);
+        $user->withAccessToken($token->accessToken);
+
+        app()->bind(TokenContextResolver::class, fn (): TokenContextResolver => new class($tenantB) implements TokenContextResolver
+        {
+            public function __construct(private Tenant $tenant) {}
+
+            public function resolve(): ?\Illuminate\Database\Eloquent\Model
+            {
+                return $this->tenant;
+            }
+        });
+
+        $request = Request::create('/api/customers');
+        $request->setUserResolver(fn (): TokenUser => $user);
+
+        try {
+            app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
+            self::fail('Expected a mismatched API token context to be rejected.');
+        } catch (HttpException $exception) {
+            self::assertSame(403, $exception->getStatusCode());
+        }
+
+        app()->bind(TokenContextResolver::class, fn (): TokenContextResolver => new class implements TokenContextResolver
+        {
+            public function resolve(): ?\Illuminate\Database\Eloquent\Model
+            {
+                return null;
+            }
+        });
+
+        $this->expectException(HttpException::class);
+        app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
+    }
+
+    public function test_token_context_migration_is_shipped_as_opt_in_stub(): void
+    {
+        self::assertFileExists(__DIR__.'/../../database/migrations/add_context_columns_to_personal_access_tokens.php.stub');
+    }
+
+    protected function feature(): ApiTokens
+    {
+        return ApiTokens::make()
+            ->enabled()
+            ->tenantScoped()
+            ->abilities(['customers:read' => 'Read customers']);
+    }
+}
