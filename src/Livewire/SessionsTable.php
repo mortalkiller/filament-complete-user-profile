@@ -30,25 +30,26 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
     public function table(Table $table): Table
     {
         $reauthentication = app(Reauthentication::class);
+        $currentLabel = static::translate('filament-complete-user-profile::profile.sessions.status.current');
 
         return $table
             ->records(fn (): array => $this->getSessionRecords())
             ->columns([
                 TextColumn::make('device')
-                    ->label('Device'),
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.columns.device')),
                 TextColumn::make('ip_address')
-                    ->label('IP'),
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.columns.ip')),
                 TextColumn::make('last_activity')
-                    ->label('Last activity')
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.columns.last_activity'))
                     ->dateTime(),
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.columns.status'))
                     ->badge()
-                    ->color(fn (string $state): string => $state === 'Current' ? 'success' : 'gray'),
+                    ->color(fn (string $state): string => $state === $currentLabel ? 'success' : 'gray'),
             ])
             ->headerActions([
                 Action::make('revokeOtherSessions')
-                    ->label('Revoke other sessions')
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.actions.revoke_others'))
                     ->requiresConfirmation()
                     ->schema($reauthentication->getFormSchema())
                     ->disabled(fn (): bool => $this->isSupported() === false || $reauthentication->isAvailable($this->user()) === false)
@@ -59,7 +60,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
             ])
             ->recordActions([
                 Action::make('revoke')
-                    ->label('Revoke')
+                    ->label(static::translate('filament-complete-user-profile::profile.sessions.actions.revoke'))
                     ->requiresConfirmation()
                     ->visible(fn (array $record): bool => ($record['current'] ?? false) === false)
                     ->action(function (array $record): void {
@@ -68,7 +69,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
                     }),
             ])
             ->paginated(false)
-            ->emptyStateHeading('No browser sessions found');
+            ->emptyStateHeading(static::translate('filament-complete-user-profile::profile.sessions.empty'));
     }
 
     public function render(): View
@@ -110,6 +111,9 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
             return [];
         }
 
+        $currentLabel = static::translate('filament-complete-user-profile::profile.sessions.status.current');
+        $activeLabel = static::translate('filament-complete-user-profile::profile.sessions.status.active');
+
         return app(SessionStore::class)
             ->sessionsFor($this->user())
             ->map(static fn (SessionData $session): array => [
@@ -117,7 +121,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
                 'device' => $session->device,
                 'ip_address' => $session->ipAddress ?? '—',
                 'last_activity' => $session->lastActivity,
-                'status' => $session->current ? 'Current' : 'Active',
+                'status' => $session->current ? $currentLabel : $activeLabel,
                 'current' => $session->current,
             ])
             ->values()
@@ -142,5 +146,12 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
         }
 
         return request()->session()->getId();
+    }
+
+    protected static function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
