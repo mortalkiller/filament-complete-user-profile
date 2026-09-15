@@ -162,7 +162,7 @@ class SessionsTest extends TestCase
             array_keys($table->getColumns()),
         );
 
-        $headerAction = $table->getHeaderActions()[0] ?? null;
+        $headerAction = $table->getHeaderActions()['revokeOtherSessions'] ?? null;
         self::assertInstanceOf(Action::class, $headerAction);
         self::assertSame('revokeOtherSessions', $headerAction->getName());
 
