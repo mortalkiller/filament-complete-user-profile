@@ -9,13 +9,12 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\EmailMfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
 class EmailAuthenticationTest extends TestCase
 {
-    private const PROVIDER = 'Mortalkiller\\FilamentCompleteUserProfile\\Security\\EmailAuthentication\\EmailAuthentication';
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -35,12 +34,6 @@ class EmailAuthenticationTest extends TestCase
 
     public function test_email_authentication_registers_the_package_provider_under_filaments_native_id(): void
     {
-        self::assertTrue(class_exists(self::PROVIDER), 'The package email authentication provider is missing.');
-
-        if (! class_exists(self::PROVIDER)) {
-            return;
-        }
-
         $panel = Panel::make()
             ->id('admin')
             ->plugin(CompleteUserProfilePlugin::make()->security(
@@ -49,7 +42,7 @@ class EmailAuthenticationTest extends TestCase
 
         $provider = $panel->getMultiFactorAuthenticationProviders()['email_code'] ?? null;
 
-        self::assertInstanceOf(self::PROVIDER, $provider);
+        self::assertInstanceOf(EmailAuthentication::class, $provider);
         self::assertInstanceOf(FilamentEmailAuthentication::class, $provider);
     }
 
@@ -110,10 +103,8 @@ class EmailAuthenticationTest extends TestCase
         Notification::assertCount(2);
     }
 
-    private function makeProvider(): object
+    private function makeProvider(): EmailAuthentication
     {
-        self::assertTrue(class_exists(self::PROVIDER), 'The package email authentication provider is missing.');
-
-        return app(self::PROVIDER);
+        return app(EmailAuthentication::class);
     }
 }
