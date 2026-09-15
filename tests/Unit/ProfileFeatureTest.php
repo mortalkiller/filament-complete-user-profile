@@ -7,6 +7,7 @@ use Filament\Forms\Components\TextInput;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use ReflectionMethod;
 
 class ProfileFeatureTest extends TestCase
 {
@@ -53,13 +54,16 @@ class ProfileFeatureTest extends TestCase
 
     public function test_explicit_locale_codes_are_resolved_and_manual_labels_are_preserved(): void
     {
+        $profile = Profile::make();
+        (new ReflectionMethod(Profile::class, 'locale'))->invoke($profile, ['pt_PT', 'pt_BR', 'en']);
+
         self::assertSame(
             [
                 'pt_PT' => 'Português (Portugal)',
                 'pt_BR' => 'Português (Brasil)',
                 'en' => 'English',
             ],
-            Profile::make()->locale(['pt_PT', 'pt_BR', 'en'])->getLocaleOptions(),
+            $profile->getLocaleOptions(),
         );
 
         self::assertSame(
