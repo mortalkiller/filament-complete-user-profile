@@ -24,13 +24,15 @@ class PluginConfigurationTest extends TestCase
         $security = $plugin->getFeature('security');
         self::assertInstanceOf(Security::class, $security);
         self::assertTrue($security->hasPassword());
-        self::assertFalse($security->hasMultiFactorAuthentication());
+        self::assertFalse($security->hasAppAuthentication());
+        self::assertFalse($security->hasEmailAuthentication());
     }
 
     public function test_features_are_configured_through_the_fluent_api(): void
     {
         $plugin = CompleteUserProfilePlugin::make()
             ->profile(fn (Profile $profile): Profile => $profile->avatar(false))
+            ->security(fn (Security $security): Security => $security->appAuthentication())
             ->sessions()
             ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens->abilities([
                 'customers:read' => 'Read customers',
@@ -39,6 +41,10 @@ class PluginConfigurationTest extends TestCase
         $profile = $plugin->getFeature('profile');
         self::assertInstanceOf(Profile::class, $profile);
         self::assertFalse($profile->hasAvatar());
+
+        $security = $plugin->getFeature('security');
+        self::assertInstanceOf(Security::class, $security);
+        self::assertTrue($security->hasAppAuthentication());
 
         $sessions = $plugin->getFeature('sessions');
         self::assertInstanceOf(Sessions::class, $sessions);
@@ -70,14 +76,5 @@ class PluginConfigurationTest extends TestCase
         self::assertInstanceOf(Sessions::class, $sessions);
         self::assertTrue($sessions->isEnabled());
         self::assertFalse($sessions->isVisible());
-    }
-
-    public function test_mfa_shortcut_delegates_to_security_feature(): void
-    {
-        $plugin = CompleteUserProfilePlugin::make()->multiFactorAuthentication();
-
-        $security = $plugin->getFeature('security');
-        self::assertInstanceOf(Security::class, $security);
-        self::assertTrue($security->hasMultiFactorAuthentication());
     }
 }
