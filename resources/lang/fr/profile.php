@@ -31,6 +31,10 @@ return [
         'mfa' => [
             'requirement' => 'Le modèle authentifiable doit implémenter :contract lorsque l’authentification multifacteur est activée.',
         ],
+        'email_authentication' => [
+            'requirement' => 'Le modèle authentifiable doit implémenter :contract lorsque l’authentification par e-mail est activée.',
+            'notifications' => 'Le modèle utilisateur authentifié doit prendre en charge les notifications Laravel pour utiliser l’authentification par e-mail.',
+        ],
     ],
     'sessions' => [
         'columns' => [
