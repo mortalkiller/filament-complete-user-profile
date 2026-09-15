@@ -142,16 +142,21 @@ class CheckCompleteUserProfile extends Command
 
         $avatarRequired = false;
         $localeRequired = false;
+        $emailMfaRequired = false;
 
         foreach ($plugins as $plugin) {
-            $feature = $plugin->getFeature('profile');
+            $profile = $plugin->getFeature('profile');
 
-            if (! $feature instanceof Profile || ! $feature->isEnabled()) {
-                continue;
+            if ($profile instanceof Profile && $profile->isEnabled()) {
+                $avatarRequired = $avatarRequired || $profile->hasAvatar();
+                $localeRequired = $localeRequired || $profile->hasLocale();
             }
 
-            $avatarRequired = $avatarRequired || $feature->hasAvatar();
-            $localeRequired = $localeRequired || $feature->hasLocale();
+            $security = $plugin->getFeature('security');
+
+            if ($security instanceof Security && $security->isEnabled()) {
+                $emailMfaRequired = $emailMfaRequired || $security->hasEmailAuthentication();
+            }
         }
 
         $columns = app(ProfileColumnMap::class);
@@ -167,6 +172,12 @@ class CheckCompleteUserProfile extends Command
         } else {
             $this->infoCheck('Locale column', 'Locale is disabled on all registered panels.');
         }
+
+        if ($emailMfaRequired) {
+            $this->checkColumn('Email MFA column', $table, $columns->get('mfa_email_enabled'));
+        } else {
+            $this->infoCheck('Email MFA column', 'Email MFA is disabled on all registered panels.');
+        }
     }
 
     /** @param array<string, CompleteUserProfilePlugin> $plugins */
@@ -180,6 +191,17 @@ class CheckCompleteUserProfile extends Command
                 $this->requirement("Panel [{$panelId}] MFA", $issue, 'Native Filament MFA requirements are satisfied.');
             } else {
                 $this->infoCheck("Panel [{$panelId}] MFA", 'Disabled.');
+            }
+
+            if ($security instanceof Security && $security->isEnabled() && $security->hasEmailAuthentication()) {
+                $issue = $security->getEmailAuthenticationRequirementIssue($user);
+                $this->requirement(
+                    "Panel [{$panelId}] Email MFA",
+                    $issue,
+                    'Native Filament email MFA requirements are satisfied.',
+                );
+            } else {
+                $this->infoCheck("Panel [{$panelId}] Email MFA", 'Disabled.');
             }
 
             $sessions = $plugin->getFeature('sessions');
