@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\Tables\Table;
@@ -160,14 +161,14 @@ class SessionsTest extends TestCase
             ['device', 'ip_address', 'last_activity', 'status'],
             array_keys($table->getColumns()),
         );
-        self::assertContains(
-            'revokeOtherSessions',
-            array_map(static fn ($action): string => $action->getName(), $table->getHeaderActions()),
-        );
-        self::assertContains(
-            'revoke',
-            array_map(static fn ($action): string => $action->getName(), $table->getRecordActions()),
-        );
+
+        $headerAction = $table->getHeaderActions()[0] ?? null;
+        self::assertInstanceOf(Action::class, $headerAction);
+        self::assertSame('revokeOtherSessions', $headerAction->getName());
+
+        $recordAction = $table->getAction('revoke');
+        self::assertNotNull($recordAction);
+        self::assertSame('revoke', $recordAction->getName());
     }
 
     public function test_revoke_other_sessions_requires_shared_reauthentication(): void
