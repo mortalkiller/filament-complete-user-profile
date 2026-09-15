@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -21,6 +22,8 @@ class TenantScopedTokensTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Filament::setCurrentPanel(Panel::make()->id('admin'));
 
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
@@ -42,8 +45,8 @@ class TenantScopedTokensTest extends TestCase
             $table->text('abilities')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at')->nullable()->index();
-            $table->string('context_type')->nullable()->index();
-            $table->string('context_id')->nullable()->index();
+            $table->string('context_type')->nullable();
+            $table->string('context_id')->nullable();
             $table->timestamps();
         });
     }
