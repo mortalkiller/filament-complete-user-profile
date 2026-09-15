@@ -14,6 +14,8 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -69,10 +71,17 @@ class CompleteUserProfile extends EditProfile
 
     public function content(Schema $schema): Schema
     {
-        return $schema->components(array_map(
-            fn (ProfileFeature $feature): Component => $this->getFeatureContentComponent($feature),
+        $tabs = array_map(
+            fn (ProfileFeature $feature): Tab => Tab::make($this->getFeatureLabel($feature))
+                ->schema([$this->getFeatureContentComponent($feature)]),
             $this->getVisibleFeatures(),
-        ));
+        );
+
+        return $schema->components([
+            Tabs::make(static::translate('filament-complete-user-profile::profile.navigation.label'))
+                ->tabs(array_values($tabs))
+                ->contained(false),
+        ]);
     }
 
     public function form(Schema $schema): Schema
@@ -221,7 +230,7 @@ class CompleteUserProfile extends EditProfile
 
     protected function getFeatureContentComponent(ProfileFeature $feature): Component
     {
-        $component = match ($feature->getId()) {
+        return match ($feature->getId()) {
             'profile' => Section::make($this->getFeatureLabel($feature))
                 ->description(static::translate('filament-complete-user-profile::profile.features.profile.description'))
                 ->schema([Group::make([$this->getFormContentComponent()])]),
@@ -231,11 +240,6 @@ class CompleteUserProfile extends EditProfile
             'api-tokens' => $this->getApiTokensContentComponent($feature),
             default => Section::make($this->getFeatureLabel($feature)),
         };
-
-        return $component->extraAttributes([
-            'id' => "account-{$feature->getId()}",
-            'data-account-feature' => $feature->getId(),
-        ]);
     }
 
     protected function getOverviewContentComponent(ProfileFeature $feature): Component
