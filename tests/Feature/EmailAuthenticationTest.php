@@ -114,16 +114,21 @@ class EmailAuthenticationTest extends TestCase
         self::assertTrue($provider->sendCode($user));
 
         $action = $provider->makeResendAction($user);
+        $cooldownLabel = $action->getLabel();
 
+        self::assertIsString($cooldownLabel);
         self::assertTrue($action->isDisabled());
-        self::assertStringStartsWith('Send a new code by email (', (string) $action->getLabel());
-        self::assertStringEndsWith('s)', (string) $action->getLabel());
+        self::assertStringStartsWith('Send a new code by email (', $cooldownLabel);
+        self::assertStringEndsWith('s)', $cooldownLabel);
         self::assertSame('$refresh', $action->getExtraAttributes()['wire:poll.1s'] ?? null);
 
         $this->travel(61)->seconds();
 
+        $availableLabel = $action->getLabel();
+
+        self::assertIsString($availableLabel);
         self::assertFalse($action->isDisabled());
-        self::assertSame('Send a new code by email', $action->getLabel());
+        self::assertSame('Send a new code by email', $availableLabel);
         self::assertArrayNotHasKey('wire:poll.1s', $action->getExtraAttributes());
     }
 
