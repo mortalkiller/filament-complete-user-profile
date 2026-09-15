@@ -24,11 +24,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
 {
     protected int $resendCooldownSeconds = 60;
 
-    public static function make(): static
-    {
-        return parent::make()
-            ->codeNotification(VerifyEmailAuthentication::class);
-    }
+    protected string $codeNotification = VerifyEmailAuthentication::class;
 
     public function getResendCooldownSeconds(): int
     {
