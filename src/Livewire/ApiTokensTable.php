@@ -18,7 +18,6 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Livewire\Component;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
@@ -86,7 +85,11 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
                     ->label('Revoke')
                     ->requiresConfirmation()
                     ->action(function (array $record): void {
-                        app(TokenManager::class)->revoke($this->user(), (string) ($record['id'] ?? ''));
+                        app(TokenManager::class)->revoke(
+                            $this->user(),
+                            (string) ($record['id'] ?? ''),
+                            $this->feature(),
+                        );
                         $this->resetTable();
                     }),
             ])
@@ -170,19 +173,8 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     /** @return array<int, array<string, mixed>> */
     protected function getTokenRecords(): array
     {
-        $tokens = [$this->user(), 'tokens'];
-
-        if (is_callable($tokens) === false) {
-            return [];
-        }
-
-        $relation = $tokens();
-
-        if ($relation instanceof MorphMany === false) {
-            return [];
-        }
-
-        return $relation->get()
+        return app(TokenManager::class)
+            ->tokensFor($this->user(), $this->feature())
             ->map(static function (Model $token): array {
                 $abilities = $token->getAttribute('abilities');
 
