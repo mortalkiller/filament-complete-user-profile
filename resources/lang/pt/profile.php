@@ -34,6 +34,10 @@ return [
         'email_authentication' => [
             'requirement' => 'O modelo autenticável tem de implementar :contract quando a autenticação por e-mail está ativada.',
             'notifications' => 'O modelo de utilizador autenticado tem de suportar notificações do Laravel para usar autenticação por e-mail.',
+            'resend' => [
+                'label' => 'Enviar um novo código por e-mail',
+                'sent' => 'Foi enviado um novo código de verificação.',
+            ],
         ],
     ],
     'sessions' => [
