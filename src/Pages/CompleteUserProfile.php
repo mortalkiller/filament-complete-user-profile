@@ -27,6 +27,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
 use SensitiveParameter;
 
@@ -227,8 +228,7 @@ class CompleteUserProfile extends EditProfile
             'overview' => $this->getOverviewContentComponent($feature),
             'security' => $this->getSecurityContentComponent($feature),
             'sessions' => $this->getSessionsContentComponent($feature),
-            'api-tokens' => Section::make($this->getFeatureLabel($feature))
-                ->description(static::translate('filament-complete-user-profile::profile.features.api-tokens.description')),
+            'api-tokens' => $this->getApiTokensContentComponent($feature),
             default => Section::make($this->getFeatureLabel($feature)),
         };
 
@@ -293,6 +293,15 @@ class CompleteUserProfile extends EditProfile
             ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description'))
             ->schema([
                 LivewireComponent::make(SessionsTable::class),
+            ]);
+    }
+
+    protected function getApiTokensContentComponent(ProfileFeature $feature): Component
+    {
+        return Section::make($this->getFeatureLabel($feature))
+            ->description(static::translate('filament-complete-user-profile::profile.features.api-tokens.description'))
+            ->schema([
+                LivewireComponent::make(ApiTokensTable::class),
             ]);
     }
 
