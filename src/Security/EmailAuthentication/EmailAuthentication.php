@@ -48,7 +48,9 @@ class EmailAuthentication extends FilamentEmailAuthentication
         $notify = [$model, 'notify'];
 
         if (! is_callable($notify)) {
-            throw new LogicException("Model [{$model::class}] does not have a [notify()] method.");
+            $modelClass = $model::class;
+
+            throw new LogicException("Model [{$modelClass}] does not have a [notify()] method.");
         }
 
         $notify(app($this->getCodeNotification(), [
