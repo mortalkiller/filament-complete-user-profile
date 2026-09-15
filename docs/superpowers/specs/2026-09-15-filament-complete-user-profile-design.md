@@ -8,10 +8,10 @@ The package must reuse native Laravel 13 and Filament 5 capabilities whenever th
 
 ## Platform
 
-- Laravel 13
-- Filament 5
-- PHP compatible with both
-- Sanctum only when API tokens are enabled
+- PHP `^8.3`
+- Laravel `^13.0`
+- Filament `^5.7` (5.7.0 minimum; earlier Filament 5 releases contain a high-severity MFA recovery-code bypass)
+- Laravel Sanctum `^4.3` only when API tokens are enabled
 - Database sessions only when session management is enabled
 
 Optional features must not make their dependencies mandatory when disabled.
