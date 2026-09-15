@@ -12,6 +12,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use ReflectionClass;
 
 class CompleteUserProfilePageTest extends TestCase
 {
@@ -83,19 +84,25 @@ class CompleteUserProfilePageTest extends TestCase
             self::fail('AccountNavigationLayout enum is missing.');
         }
 
-        if (method_exists(CompleteUserProfilePlugin::class, 'navigationLayout') === false) {
+        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
+
+        if ($reflection->hasMethod('navigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
         }
 
-        if (method_exists(CompleteUserProfilePlugin::class, 'getNavigationLayout') === false) {
+        if ($reflection->hasMethod('getNavigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::getNavigationLayout() is missing.');
         }
 
         $plugin = CompleteUserProfilePlugin::make();
+        $tabs = constant(AccountNavigationLayout::class.'::Tabs');
+        $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
+        $setter = $reflection->getMethod('navigationLayout');
+        $getter = $reflection->getMethod('getNavigationLayout');
 
-        self::assertSame(AccountNavigationLayout::Tabs, $plugin->getNavigationLayout());
-        self::assertSame($plugin, $plugin->navigationLayout(AccountNavigationLayout::Sidebar));
-        self::assertSame(AccountNavigationLayout::Sidebar, $plugin->getNavigationLayout());
+        self::assertSame($tabs, $getter->invoke($plugin));
+        self::assertSame($plugin, $setter->invoke($plugin, $sidebar));
+        self::assertSame($sidebar, $getter->invoke($plugin));
     }
 
     public function test_sidebar_layout_uses_filament_native_sub_navigation(): void
@@ -104,12 +111,15 @@ class CompleteUserProfilePageTest extends TestCase
             self::fail('AccountNavigationLayout enum is missing.');
         }
 
-        if (method_exists(CompleteUserProfilePlugin::class, 'navigationLayout') === false) {
+        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
+
+        if ($reflection->hasMethod('navigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
         }
 
-        $plugin = CompleteUserProfilePlugin::make()
-            ->navigationLayout(AccountNavigationLayout::Sidebar);
+        $plugin = CompleteUserProfilePlugin::make();
+        $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
+        $reflection->getMethod('navigationLayout')->invoke($plugin, $sidebar);
 
         $panel = Panel::make()
             ->id('admin')
@@ -122,16 +132,23 @@ class CompleteUserProfilePageTest extends TestCase
 
         $page = app(CompleteUserProfile::class);
         $navigation = $page->getSubNavigation();
+        $labels = [];
+        $activeStates = [];
+        $urls = [];
+
+        foreach ($navigation as $item) {
+            if ($item instanceof NavigationItem === false) {
+                self::fail('Account sidebar must contain only native Filament NavigationItem instances.');
+            }
+
+            $labels[] = $item->getLabel();
+            $activeStates[] = $item->isActive();
+            $urls[] = $item->getUrl();
+        }
 
         self::assertSame(SubNavigationPosition::Start, CompleteUserProfile::getSubNavigationPosition());
-        self::assertSame(['Overview', 'Profile', 'Security'], array_map(
-            static fn (NavigationItem $item): string => $item->getLabel(),
-            $navigation,
-        ));
-        self::assertSame([false, false, true], array_map(
-            static fn (NavigationItem $item): bool => $item->isActive(),
-            $navigation,
-        ));
-        self::assertStringContainsString('section=profile', (string) $navigation[1]->getUrl());
+        self::assertSame(['Overview', 'Profile', 'Security'], $labels);
+        self::assertSame([false, false, true], $activeStates);
+        self::assertStringContainsString('section=profile', (string) $urls[1]);
     }
 }
