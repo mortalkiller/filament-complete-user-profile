@@ -56,8 +56,10 @@ class ProfileStorageTest extends TestCase
             'avatar' => 'avatars/pedro.png',
         ]);
 
-        self::assertSame('pt', $user->fresh()?->preferred_locale);
-        self::assertSame('avatars/pedro.png', $user->fresh()?->avatar_path);
+        $user->refresh();
+
+        self::assertSame('pt', $user->getAttribute('preferred_locale'));
+        self::assertSame('avatars/pedro.png', $user->getAttribute('avatar_path'));
 
         $migration->down();
         self::assertTrue(Schema::hasColumn('users', 'preferred_locale'));

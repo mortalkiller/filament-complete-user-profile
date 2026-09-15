@@ -30,8 +30,8 @@ class SeparateProfileStorage implements ProfileStorage
     public function putMany(Authenticatable $user, array $values): void
     {
         $profile = $this->queryFor($user)->firstOrNew();
-        $profile->user_type = $this->userType($user);
-        $profile->user_id = (string) $user->getAuthIdentifier();
+        $profile->setAttribute('user_type', $this->userType($user));
+        $profile->setAttribute('user_id', (string) $user->getAuthIdentifier());
 
         foreach ($values as $key => $value) {
             $profile->setAttribute($this->columns->get($key), $value);
