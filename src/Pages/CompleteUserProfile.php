@@ -321,7 +321,7 @@ class CompleteUserProfile extends EditProfile
             $components[] = Actions::make([$this->getUpdatePasswordAction()]);
         }
 
-        if ($security->hasMultiFactorAuthentication() || $security->hasEmailAuthentication()) {
+        if ($security->hasAppAuthentication() || $security->hasEmailAuthentication()) {
             $multiFactorAuthentication = $this->getMultiFactorAuthenticationContentComponent();
 
             if ($multiFactorAuthentication !== null) {
