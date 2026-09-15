@@ -67,7 +67,9 @@ class EmailAuthentication extends FilamentEmailAuthentication
         }
 
         if (! method_exists($user, 'notify')) {
-            throw new LogicException("Model [{$user::class}] does not have a [notify()] method.");
+            $userClass = $user::class;
+
+            throw new LogicException("Model [{$userClass}] does not have a [notify()] method.");
         }
 
         return $user;
