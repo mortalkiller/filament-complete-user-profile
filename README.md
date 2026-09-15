@@ -57,7 +57,7 @@ With only `CompleteUserProfilePlugin::make()`, the package enables:
 - Locale
 - Password management
 
-MFA, browser sessions, and API tokens are disabled by default because each requires additional application infrastructure.
+Authenticator-app MFA, email MFA, browser sessions, and API tokens are disabled by default because each requires additional application infrastructure.
 
 You can enable or disable the main areas from the panel provider:
 
@@ -87,17 +87,14 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 
 CompleteUserProfilePlugin::make()
-    ->navigationLayout(AccountNavigationLayout::Tabs);
+    ->navigation(AccountNavigationLayout::Tabs);
 ```
 
 To use Filament's native left-side page sub-navigation instead, select `AccountNavigationLayout::Sidebar`:
 
 ```php
-use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
-
 CompleteUserProfilePlugin::make()
-    ->navigationLayout(AccountNavigationLayout::Sidebar);
+    ->navigation(AccountNavigationLayout::Sidebar);
 ```
 
 `Tabs` renders the visible account areas inside a native Filament `Tabs` schema. `Sidebar` uses Filament's native page sub-navigation at the start of the content area and renders only the selected account area. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
@@ -106,20 +103,36 @@ Both layouts use Filament components and require no package-specific navigation 
 
 ## Enable MFA
 
-The package uses Filament's native authenticator-app MFA provider with recovery codes. It does not implement a separate TOTP system.
+MFA providers are configured inside the Security feature. The package uses Filament's native providers and does not implement its own TOTP or email-code system.
 
-Enable it on the plugin:
+Enable authenticator-app MFA with recovery codes:
 
 ```php
-use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 
 CompleteUserProfilePlugin::make()
     ->security(fn (Security $security): Security => $security
-        ->multiFactorAuthentication());
+        ->appAuthentication());
 ```
 
-Your authenticatable Eloquent model must implement the package MFA contract and use its storage adapter trait:
+Enable email-code MFA:
+
+```php
+CompleteUserProfilePlugin::make()
+    ->security(fn (Security $security): Security => $security
+        ->emailAuthentication());
+```
+
+Enable both and let Filament manage the available methods:
+
+```php
+CompleteUserProfilePlugin::make()
+    ->security(fn (Security $security): Security => $security
+        ->appAuthentication()
+        ->emailAuthentication());
+```
+
+For authenticator-app MFA, your authenticatable Eloquent model must implement the package MFA contract and use its storage adapter trait:
 
 ```php
 use Mortalkiller\FilamentCompleteUserProfile\Concerns\InteractsWithMultiFactorAuthentication;
@@ -131,7 +144,21 @@ class User extends Authenticatable implements HasMultiFactorAuthentication
 }
 ```
 
-The package-managed migration provides the default secret and recovery-code columns when `storage` is `user`. Existing configured columns are reused rather than replaced.
+For email MFA, implement Filament's native email-authentication contract, use the package storage trait, and ensure the model can send Laravel notifications:
+
+```php
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
+use Illuminate\Notifications\Notifiable;
+use Mortalkiller\FilamentCompleteUserProfile\Concerns\InteractsWithEmailAuthentication;
+
+class User extends Authenticatable implements HasEmailAuthentication
+{
+    use InteractsWithEmailAuthentication;
+    use Notifiable;
+}
+```
+
+The package-managed migrations provide the default authenticator-app secret, recovery-code, and email-MFA state columns when `storage` is `user`. Existing configured columns are reused rather than replaced.
 
 Because MFA is registered at the Filament panel level, all authentication flows entering that panel must continue through Filament's MFA challenge. Do not bypass the panel's authentication completion flow from a custom social-login callback.
 
@@ -261,18 +288,26 @@ A missing resolver, missing context, token without context metadata, or context 
 
 The package keeps Filament's native profile fields and exposes small extension points instead of requiring published views.
 
-Configure locale options:
+Configure locale options with locale codes; common language names are resolved automatically:
 
 ```php
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 
 CompleteUserProfilePlugin::make()
     ->profile(fn (Profile $profile): Profile => $profile
-        ->locale([
-            'pt' => 'Português',
-            'en' => 'English',
-        ]));
+        ->locale(['pt', 'en', 'es', 'fr']));
 ```
+
+Associative arrays remain available when you want custom labels:
+
+```php
+->locale([
+    'pt' => 'Português',
+    'en' => 'English',
+]);
+```
+
+Without explicit locale options, the package reads `app.available_locales`, then `app.supported_locales`, and finally falls back to `app.locale`.
 
 Disable a default field:
 
@@ -331,6 +366,7 @@ return [
         'mfa' => [
             'secret' => 'app_authentication_secret',
             'recovery_codes' => 'app_authentication_recovery_codes',
+            'email_enabled' => 'has_email_authentication',
         ],
     ],
 
@@ -340,7 +376,7 @@ return [
 
 `user_model => null` resolves the model from Laravel's default authentication provider. Set it explicitly when the package should use another authenticatable model.
 
-`storage => 'user'` stores avatar, locale, and MFA data on the configured user model. The migration checks each configured column before adding it.
+`storage => 'user'` stores avatar, locale, and package-managed MFA data on the configured user model. The migrations check each configured column before adding it.
 
 `storage => 'separate'` stores package profile data in the package-owned `filament_user_profiles` table. This is useful when the host application should not add package-specific profile columns to its user table.
 
@@ -354,7 +390,7 @@ Run the installation checker after configuring the package or enabling an option
 php artisan filament-complete-user-profile:check
 ```
 
-The command reports `PASS`, `INFO`, and `FAIL` checks for the registered panels, user model, profile storage, configured profile columns, MFA, database sessions, Sanctum, and tenant-token infrastructure.
+The command reports `PASS`, `INFO`, and `FAIL` checks for the registered panels, user model, profile storage, configured profile columns, authenticator-app MFA, email MFA, database sessions, Sanctum, and tenant-token infrastructure.
 
 It exits with code `0` when every enabled capability is ready and code `1` when an enabled capability is misconfigured. Disabled optional capabilities are informational and do not make the command fail.
 
@@ -369,6 +405,8 @@ The package deliberately keeps authentication and tenancy integration replaceabl
 `TokenContextResolver` resolves the active tenant/context for an authenticated API request when tenant-scoped tokens are enabled.
 
 `HasMultiFactorAuthentication` is the package-facing contract that connects the user model to Filament's native authenticator-app MFA storage. `InteractsWithMultiFactorAuthentication` is the provided implementation for the package storage modes.
+
+`InteractsWithEmailAuthentication` implements Filament's native email-MFA storage methods using the same package storage modes.
 
 ## Roadmap
 
