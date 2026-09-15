@@ -61,7 +61,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
                 Action::make('revoke')
                     ->label('Revoke')
                     ->requiresConfirmation()
-                    ->visible(fn (array $record): bool => (bool) ($record['current'] ?? false) === false)
+                    ->visible(fn (array $record): bool => ($record['current'] ?? false) === false)
                     ->action(function (array $record): void {
                         $this->revokeSession((string) ($record['id'] ?? ''));
                         $this->resetTable();
@@ -106,7 +106,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
     /** @return array<int, array<string, mixed>> */
     protected function getSessionRecords(): array
     {
-        if (! $this->isSupported()) {
+        if ($this->isSupported() === false) {
             return [];
         }
 
@@ -128,7 +128,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
     {
         $user = Filament::auth()->user();
 
-        if (! $user instanceof Authenticatable) {
+        if (($user instanceof Authenticatable) === false) {
             throw new LogicException('An authenticated Filament user is required to manage browser sessions.');
         }
 
@@ -137,7 +137,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
 
     protected function currentSessionId(): string
     {
-        if (! request()->hasSession()) {
+        if (request()->hasSession() === false) {
             throw new LogicException('An active Laravel session is required to revoke other browser sessions.');
         }
 
