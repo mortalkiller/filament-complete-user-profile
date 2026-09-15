@@ -56,4 +56,33 @@ class PublicApiTest extends TestCase
         self::assertFalse($reflection->hasMethod('hasMultiFactorAuthentication'));
         self::assertFalse($reflection->hasMethod('getMultiFactorAuthenticationRequirementIssue'));
     }
+
+    public function test_primary_documentation_uses_only_the_canonical_api(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $files = [
+            $root.'/README.md',
+            $root.'/docs/roadmap.md',
+            $root.'/docs/superpowers/specs/2026-09-15-filament-complete-user-profile-design.md',
+        ];
+
+        foreach ($files as $file) {
+            $contents = file_get_contents($file);
+
+            self::assertIsString($contents);
+            self::assertStringNotContainsString('->navigationLayout(', $contents, $file);
+            self::assertStringNotContainsString('->multiFactorAuthentication(', $contents, $file);
+            self::assertStringNotContainsString('->profileWith(', $contents, $file);
+            self::assertStringNotContainsString('->securityWith(', $contents, $file);
+            self::assertStringNotContainsString('->sessionsWith(', $contents, $file);
+            self::assertStringNotContainsString('->apiTokensWith(', $contents, $file);
+        }
+
+        $readme = file_get_contents($root.'/README.md');
+
+        self::assertIsString($readme);
+        self::assertStringContainsString('->navigation(', $readme);
+        self::assertStringContainsString('->appAuthentication()', $readme);
+        self::assertStringContainsString('->emailAuthentication()', $readme);
+    }
 }
