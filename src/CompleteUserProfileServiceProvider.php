@@ -46,5 +46,11 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/filament-complete-user-profile.php' => config_path('filament-complete-user-profile.php'),
         ], 'filament-complete-user-profile-config');
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/add_context_columns_to_personal_access_tokens.php.stub' => database_path(
+                'migrations/'.date('Y_m_d_His').'_add_context_columns_to_personal_access_tokens.php',
+            ),
+        ], 'filament-complete-user-profile-token-migrations');
     }
 }
