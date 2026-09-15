@@ -164,9 +164,11 @@ class CompleteUserProfilePageTest extends TestCase
         $page = app(CompleteUserProfile::class);
         $reflection = new ReflectionClass($page);
 
-        self::assertTrue($reflection->hasProperty('section'), 'The selected sidebar section must be persisted as Livewire component state.');
+        if (! $reflection->hasProperty('section')) {
+            self::fail('The selected sidebar section must be persisted as Livewire component state.');
+        }
 
-        $page->section = 'security';
+        $reflection->getProperty('section')->setValue($page, 'security');
         app()->instance('request', Request::create('/livewire-f64cae0d/update', 'POST'));
 
         $activeStates = array_map(
