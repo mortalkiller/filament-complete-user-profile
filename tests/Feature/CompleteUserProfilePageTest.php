@@ -2,8 +2,12 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Facades\Filament;
 use Filament\Panel;
+use Filament\PanelRegistry;
+use Filament\Pages\Enums\SubNavigationPosition;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -70,5 +74,63 @@ class CompleteUserProfilePageTest extends TestCase
         self::assertStringNotContainsString('<aside', $view);
         self::assertStringContainsString('use Filament\\Schemas\\Components\\Tabs;', $page);
         self::assertStringContainsString('Tabs::make(', $page);
+    }
+
+    public function test_navigation_layout_defaults_to_tabs_and_can_be_switched_to_sidebar(): void
+    {
+        if (! enum_exists(AccountNavigationLayout::class)) {
+            self::fail('AccountNavigationLayout enum is missing.');
+        }
+
+        if (! method_exists(CompleteUserProfilePlugin::class, 'navigationLayout')) {
+            self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
+        }
+
+        if (! method_exists(CompleteUserProfilePlugin::class, 'getNavigationLayout')) {
+            self::fail('CompleteUserProfilePlugin::getNavigationLayout() is missing.');
+        }
+
+        $plugin = CompleteUserProfilePlugin::make();
+
+        self::assertSame(AccountNavigationLayout::Tabs, $plugin->getNavigationLayout());
+        self::assertSame($plugin, $plugin->navigationLayout(AccountNavigationLayout::Sidebar));
+        self::assertSame(AccountNavigationLayout::Sidebar, $plugin->getNavigationLayout());
+    }
+
+    public function test_sidebar_layout_uses_filament_native_sub_navigation(): void
+    {
+        if (! enum_exists(AccountNavigationLayout::class)) {
+            self::fail('AccountNavigationLayout enum is missing.');
+        }
+
+        if (! method_exists(CompleteUserProfilePlugin::class, 'navigationLayout')) {
+            self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
+        }
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->navigationLayout(AccountNavigationLayout::Sidebar);
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        request()->query->set('section', 'security');
+
+        $page = app(CompleteUserProfile::class);
+        $navigation = $page->getSubNavigation();
+
+        self::assertSame(SubNavigationPosition::Start, CompleteUserProfile::getSubNavigationPosition());
+        self::assertSame(['Overview', 'Profile', 'Security'], array_map(
+            static fn ($item): string => $item->getLabel(),
+            $navigation,
+        ));
+        self::assertSame([false, false, true], array_map(
+            static fn ($item): bool => $item->isActive(),
+            $navigation,
+        ));
+        self::assertStringContainsString('section=profile', (string) $navigation[1]->getUrl());
     }
 }
