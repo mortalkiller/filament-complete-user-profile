@@ -5,6 +5,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Unit;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
 class ProfileFeatureTest extends TestCase
@@ -74,7 +75,7 @@ class ProfileFeatureTest extends TestCase
             $profile->mutateDataBeforeSave(['name' => 'Pedro']),
         );
 
-        $profile->runAfterSave(new \Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User, []);
+        $profile->runAfterSave(new User, []);
         self::assertTrue($called);
     }
 }
