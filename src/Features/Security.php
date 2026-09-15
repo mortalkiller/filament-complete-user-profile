@@ -53,6 +53,17 @@ class Security extends AbstractFeature
             return null;
         }
 
-        return 'The authenticatable model must implement '.HasMultiFactorAuthentication::class.' when multi-factor authentication is enabled.';
+        return static::translate(
+            'filament-complete-user-profile::profile.security.mfa.requirement',
+            ['contract' => HasMultiFactorAuthentication::class],
+        );
+    }
+
+    /** @param array<string, scalar> $replace */
+    protected static function translate(string $key, array $replace = []): string
+    {
+        $translation = __($key, $replace);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
