@@ -63,7 +63,7 @@ class CheckCommandTest extends TestCase
     {
         $this->registerPlugin(
             CompleteUserProfilePlugin::make()
-                ->security(fn (Security $security): Security => $security->multiFactorAuthentication()),
+                ->security(fn (Security $security): Security => $security->appAuthentication()),
         );
 
         [$exitCode, $output] = $this->runCheck();
@@ -76,7 +76,8 @@ class CheckCommandTest extends TestCase
     public function test_email_mfa_requirement_failure_is_actionable(): void
     {
         $this->registerPlugin(
-            CompleteUserProfilePlugin::make()->emailAuthentication(),
+            CompleteUserProfilePlugin::make()
+                ->security(fn (Security $security): Security => $security->emailAuthentication()),
         );
 
         [$exitCode, $output] = $this->runCheck();
