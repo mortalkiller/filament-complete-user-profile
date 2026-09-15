@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\HasMultiFactorAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\EmailMfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -131,6 +132,7 @@ class MfaTest extends TestCase
             trait_exists('Mortalkiller\\FilamentCompleteUserProfile\\Concerns\\InteractsWithEmailAuthentication'),
             'The package must provide an email-authentication storage trait compatible with its profile storage modes.',
         );
+        self::assertInstanceOf(FilamentHasEmailAuthentication::class, new EmailMfaUser);
     }
 
     public function test_security_reports_missing_user_contract_clearly(): void
@@ -148,17 +150,9 @@ class MfaTest extends TestCase
     {
         $security = Security::make()->emailAuthentication();
 
-        self::assertTrue(
-            method_exists($security, 'getEmailAuthenticationRequirementIssue'),
-            Security::class.' must expose getEmailAuthenticationRequirementIssue().',
-        );
-
-        $issue = (new ReflectionMethod($security, 'getEmailAuthenticationRequirementIssue'))
-            ->invoke($security, new User);
-
         self::assertSame(
             'The authenticatable model must implement '.FilamentHasEmailAuthentication::class.' when email authentication is enabled.',
-            $issue,
+            $security->getEmailAuthenticationRequirementIssue(new User),
         );
     }
 
@@ -175,14 +169,9 @@ class MfaTest extends TestCase
             public function toggleEmailAuthentication(bool $condition): void {}
         };
 
-        self::assertTrue(method_exists($security, 'getEmailAuthenticationRequirementIssue'));
-
-        $issue = (new ReflectionMethod($security, 'getEmailAuthenticationRequirementIssue'))
-            ->invoke($security, $user);
-
         self::assertSame(
             'The authenticated user model must support Laravel notifications to use email authentication.',
-            $issue,
+            $security->getEmailAuthenticationRequirementIssue($user),
         );
     }
 
