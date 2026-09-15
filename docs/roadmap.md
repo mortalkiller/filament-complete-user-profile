@@ -25,7 +25,7 @@ A future integration may expose an API similar to:
 ```php
 CompleteUserProfilePlugin::make()
     ->security(fn (Security $security): Security => $security
-        ->multiFactorAuthentication()
+        ->appAuthentication()
         ->emailAuthentication()
         ->passkeys());
 ```
