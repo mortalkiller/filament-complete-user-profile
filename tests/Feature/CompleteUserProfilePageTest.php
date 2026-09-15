@@ -56,4 +56,19 @@ class CompleteUserProfilePageTest extends TestCase
     {
         self::assertTrue(view()->exists('filament-complete-user-profile::pages.complete-user-profile'));
     }
+
+    public function test_account_navigation_uses_native_filament_tabs_without_custom_layout_markup(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $view = file_get_contents($root.'/resources/views/pages/complete-user-profile.blade.php');
+        $page = file_get_contents($root.'/src/Pages/CompleteUserProfile.php');
+
+        self::assertIsString($view);
+        self::assertIsString($page);
+        self::assertStringNotContainsString('fcup-account-layout', $view);
+        self::assertStringNotContainsString('fcup-account-navigation', $view);
+        self::assertStringNotContainsString('<aside', $view);
+        self::assertStringContainsString('use Filament\\Schemas\\Components\\Tabs;', $page);
+        self::assertStringContainsString('Tabs::make(', $page);
+    }
 }
