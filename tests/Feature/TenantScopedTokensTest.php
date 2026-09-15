@@ -58,14 +58,14 @@ class TenantScopedTokensTest extends TestCase
         $feature = $this->feature();
         $manager = app(TokenManager::class);
 
-        Filament::setTenant($tenant);
+        Filament::setTenant($tenant, isQuiet: true);
 
         $token = $manager->create($user, $feature, 'Tenant A CLI', ['customers:read']);
 
         self::assertSame($tenant->getMorphClass(), $token->accessToken->getAttribute('context_type'));
         self::assertSame((string) $tenant->getKey(), (string) $token->accessToken->getAttribute('context_id'));
 
-        Filament::setTenant(null);
+        Filament::setTenant(null, isQuiet: true);
         $this->expectException(ValidationException::class);
 
         $manager->create($user, $feature, 'No context', ['customers:read']);
@@ -79,13 +79,13 @@ class TenantScopedTokensTest extends TestCase
         $feature = $this->feature();
         $manager = app(TokenManager::class);
 
-        Filament::setTenant($tenantA);
+        Filament::setTenant($tenantA, isQuiet: true);
         $tokenA = $manager->create($user, $feature, 'A', ['customers:read']);
 
-        Filament::setTenant($tenantB);
+        Filament::setTenant($tenantB, isQuiet: true);
         $tokenB = $manager->create($user, $feature, 'B', ['customers:read']);
 
-        Filament::setTenant($tenantA);
+        Filament::setTenant($tenantA, isQuiet: true);
         $visible = $manager->tokensFor($user, $feature);
 
         self::assertSame([(string) $tokenA->accessToken->getKey()], $visible->pluck('id')->map(fn ($id): string => (string) $id)->all());
@@ -105,7 +105,7 @@ class TenantScopedTokensTest extends TestCase
 
         $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
         $tenant = Tenant::query()->create(['name' => 'Tenant A']);
-        Filament::setTenant($tenant);
+        Filament::setTenant($tenant, isQuiet: true);
 
         $this->expectException(ValidationException::class);
 
@@ -119,7 +119,7 @@ class TenantScopedTokensTest extends TestCase
         $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
         $manager = app(TokenManager::class);
 
-        Filament::setTenant($tenantA);
+        Filament::setTenant($tenantA, isQuiet: true);
         $token = $manager->create($user, $this->feature(), 'CLI', ['customers:read']);
         $user->withAccessToken($token->accessToken);
 
