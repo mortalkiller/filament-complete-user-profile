@@ -15,7 +15,6 @@ use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\EmailMfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
-use ReflectionMethod;
 
 class MfaTest extends TestCase
 {
@@ -44,11 +43,13 @@ class MfaTest extends TestCase
         self::assertSame([], $panel->getMultiFactorAuthenticationProviders());
     }
 
-    public function test_enabling_mfa_registers_filaments_recoverable_app_authentication(): void
+    public function test_enabling_app_authentication_registers_filaments_recoverable_provider(): void
     {
         $panel = Panel::make()
             ->id('admin')
-            ->plugin(CompleteUserProfilePlugin::make()->multiFactorAuthentication());
+            ->plugin(CompleteUserProfilePlugin::make()->security(
+                fn (Security $security): Security => $security->appAuthentication(),
+            ));
 
         $providers = $panel->getMultiFactorAuthenticationProviders();
 
@@ -59,12 +60,11 @@ class MfaTest extends TestCase
 
     public function test_enabling_email_authentication_registers_filaments_native_email_provider(): void
     {
-        $plugin = CompleteUserProfilePlugin::make();
-        $this->enableEmailAuthentication($plugin);
-
         $panel = Panel::make()
             ->id('admin')
-            ->plugin($plugin);
+            ->plugin(CompleteUserProfilePlugin::make()->security(
+                fn (Security $security): Security => $security->emailAuthentication(),
+            ));
 
         $providers = $panel->getMultiFactorAuthenticationProviders();
 
@@ -75,49 +75,18 @@ class MfaTest extends TestCase
 
     public function test_app_and_email_authentication_can_be_enabled_together(): void
     {
-        $plugin = CompleteUserProfilePlugin::make()->multiFactorAuthentication();
-        $this->enableEmailAuthentication($plugin);
-
         $panel = Panel::make()
             ->id('admin')
-            ->plugin($plugin);
+            ->plugin(CompleteUserProfilePlugin::make()->security(
+                fn (Security $security): Security => $security
+                    ->appAuthentication()
+                    ->emailAuthentication(),
+            ));
 
         $providers = $panel->getMultiFactorAuthenticationProviders();
 
         self::assertInstanceOf(AppAuthentication::class, $providers['app'] ?? null);
         self::assertInstanceOf(EmailAuthentication::class, $providers['email_code'] ?? null);
-    }
-
-    public function test_security_configuration_path_enables_the_same_native_provider(): void
-    {
-        $panel = Panel::make()
-            ->id('admin')
-            ->plugin(CompleteUserProfilePlugin::make()->security(
-                fn (Security $security): Security => $security->multiFactorAuthentication(),
-            ));
-
-        self::assertInstanceOf(
-            AppAuthentication::class,
-            $panel->getMultiFactorAuthenticationProviders()['app'] ?? null,
-        );
-    }
-
-    public function test_security_configuration_path_can_enable_native_email_provider(): void
-    {
-        $plugin = CompleteUserProfilePlugin::make()->security(function (Security $security): Security {
-            $this->enableEmailAuthentication($security);
-
-            return $security;
-        });
-
-        $panel = Panel::make()
-            ->id('admin')
-            ->plugin($plugin);
-
-        self::assertInstanceOf(
-            EmailAuthentication::class,
-            $panel->getMultiFactorAuthenticationProviders()['email_code'] ?? null,
-        );
     }
 
     public function test_package_exposes_the_filament_mfa_contract(): void
@@ -137,12 +106,12 @@ class MfaTest extends TestCase
 
     public function test_security_reports_missing_user_contract_clearly(): void
     {
-        $security = Security::make()->multiFactorAuthentication();
+        $security = Security::make()->appAuthentication();
         $user = new User;
 
         self::assertSame(
             'The authenticatable model must implement '.HasMultiFactorAuthentication::class.' when multi-factor authentication is enabled.',
-            $security->getMultiFactorAuthenticationRequirementIssue($user),
+            $security->getAppAuthenticationRequirementIssue($user),
         );
     }
 
@@ -200,15 +169,5 @@ class MfaTest extends TestCase
         );
         self::assertArrayNotHasKey('app_authentication_secret', $user->toArray());
         self::assertArrayNotHasKey('app_authentication_recovery_codes', $user->toArray());
-    }
-
-    private function enableEmailAuthentication(object $configurator): void
-    {
-        self::assertTrue(
-            method_exists($configurator, 'emailAuthentication'),
-            $configurator::class.' must expose emailAuthentication().',
-        );
-
-        (new ReflectionMethod($configurator, 'emailAuthentication'))->invoke($configurator);
     }
 }
