@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Panel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,6 +13,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use ReflectionMethod;
 
 class MfaTest extends TestCase
 {
@@ -53,6 +55,37 @@ class MfaTest extends TestCase
         self::assertTrue($providers['app']->isRecoverable());
     }
 
+    public function test_enabling_email_authentication_registers_filaments_native_email_provider(): void
+    {
+        $plugin = CompleteUserProfilePlugin::make();
+        $this->enableEmailAuthentication($plugin);
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        $providers = $panel->getMultiFactorAuthenticationProviders();
+
+        self::assertArrayHasKey('email_code', $providers);
+        self::assertInstanceOf(EmailAuthentication::class, $providers['email_code']);
+        self::assertArrayNotHasKey('app', $providers);
+    }
+
+    public function test_app_and_email_authentication_can_be_enabled_together(): void
+    {
+        $plugin = CompleteUserProfilePlugin::make()->multiFactorAuthentication();
+        $this->enableEmailAuthentication($plugin);
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        $providers = $panel->getMultiFactorAuthenticationProviders();
+
+        self::assertInstanceOf(AppAuthentication::class, $providers['app'] ?? null);
+        self::assertInstanceOf(EmailAuthentication::class, $providers['email_code'] ?? null);
+    }
+
     public function test_security_configuration_path_enables_the_same_native_provider(): void
     {
         $panel = Panel::make()
@@ -64,6 +97,24 @@ class MfaTest extends TestCase
         self::assertInstanceOf(
             AppAuthentication::class,
             $panel->getMultiFactorAuthenticationProviders()['app'] ?? null,
+        );
+    }
+
+    public function test_security_configuration_path_can_enable_native_email_provider(): void
+    {
+        $plugin = CompleteUserProfilePlugin::make()->security(function (Security $security): Security {
+            $this->enableEmailAuthentication($security);
+
+            return $security;
+        });
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        self::assertInstanceOf(
+            EmailAuthentication::class,
+            $panel->getMultiFactorAuthenticationProviders()['email_code'] ?? null,
         );
     }
 
@@ -101,5 +152,15 @@ class MfaTest extends TestCase
         );
         self::assertArrayNotHasKey('app_authentication_secret', $user->toArray());
         self::assertArrayNotHasKey('app_authentication_recovery_codes', $user->toArray());
+    }
+
+    private function enableEmailAuthentication(object $configurator): void
+    {
+        self::assertTrue(
+            method_exists($configurator, 'emailAuthentication'),
+            $configurator::class.' must expose emailAuthentication().',
+        );
+
+        (new ReflectionMethod($configurator, 'emailAuthentication'))->invoke($configurator);
     }
 }
