@@ -15,6 +15,12 @@ use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
 class SessionsTest extends TestCase
 {
+    private const CURRENT_SESSION_ID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    private const OTHER_SESSION_ID = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+    private const FOREIGN_SESSION_ID = 'cccccccccccccccccccccccccccccccccccccccc';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -39,7 +45,7 @@ class SessionsTest extends TestCase
         });
 
         $session = new Store('test', new ArraySessionHandler(120));
-        $session->setId('current-session');
+        $session->setId(self::CURRENT_SESSION_ID);
 
         $request = Request::create('/');
         $request->setLaravelSession($session);
@@ -61,19 +67,19 @@ class SessionsTest extends TestCase
         $user = User::query()->create(['email' => 'pedro@example.test']);
         $otherUser = User::query()->create(['email' => 'other@example.test']);
 
-        $this->insertSession('current-session', $user->getAuthIdentifier(), '10.0.0.1', 'Mozilla/5.0 Firefox/130.0 Linux');
-        $this->insertSession('other-session', $user->getAuthIdentifier(), '10.0.0.2', 'Mozilla/5.0 Chrome/140.0 Windows NT 10.0');
-        $this->insertSession('foreign-session', $otherUser->getAuthIdentifier(), '10.0.0.3', 'Mozilla/5.0 Safari/605.1 Macintosh');
+        $this->insertSession(self::CURRENT_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.1', 'Mozilla/5.0 Firefox/130.0 Linux');
+        $this->insertSession(self::OTHER_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.2', 'Mozilla/5.0 Chrome/140.0 Windows NT 10.0');
+        $this->insertSession(self::FOREIGN_SESSION_ID, $otherUser->getAuthIdentifier(), '10.0.0.3', 'Mozilla/5.0 Safari/605.1 Macintosh');
 
         $sessions = app(SessionStore::class)->sessionsFor($user)->keyBy('id');
 
         self::assertCount(2, $sessions);
-        self::assertTrue($sessions->has('current-session'));
-        self::assertTrue($sessions->has('other-session'));
-        self::assertFalse($sessions->has('foreign-session'));
-        self::assertTrue($sessions['current-session']->current);
-        self::assertFalse($sessions['other-session']->current);
-        self::assertSame('Firefox · Linux · Desktop', $sessions['current-session']->device);
+        self::assertTrue($sessions->has(self::CURRENT_SESSION_ID));
+        self::assertTrue($sessions->has(self::OTHER_SESSION_ID));
+        self::assertFalse($sessions->has(self::FOREIGN_SESSION_ID));
+        self::assertTrue($sessions[self::CURRENT_SESSION_ID]->current);
+        self::assertFalse($sessions[self::OTHER_SESSION_ID]->current);
+        self::assertSame('Firefox · Linux · Desktop', $sessions[self::CURRENT_SESSION_ID]->device);
     }
 
     public function test_current_session_cannot_be_revoked_and_foreign_session_ids_are_ignored(): void
@@ -81,20 +87,20 @@ class SessionsTest extends TestCase
         $user = User::query()->create(['email' => 'pedro@example.test']);
         $otherUser = User::query()->create(['email' => 'other@example.test']);
 
-        $this->insertSession('current-session', $user->getAuthIdentifier(), '10.0.0.1');
-        $this->insertSession('other-session', $user->getAuthIdentifier(), '10.0.0.2');
-        $this->insertSession('foreign-session', $otherUser->getAuthIdentifier(), '10.0.0.3');
+        $this->insertSession(self::CURRENT_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.1');
+        $this->insertSession(self::OTHER_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.2');
+        $this->insertSession(self::FOREIGN_SESSION_ID, $otherUser->getAuthIdentifier(), '10.0.0.3');
 
         $store = app(SessionStore::class);
-        $store->revoke($user, 'current-session');
-        $store->revoke($user, 'foreign-session');
+        $store->revoke($user, self::CURRENT_SESSION_ID);
+        $store->revoke($user, self::FOREIGN_SESSION_ID);
 
-        self::assertTrue(DB::table('sessions')->where('id', 'current-session')->exists());
-        self::assertTrue(DB::table('sessions')->where('id', 'foreign-session')->exists());
+        self::assertTrue(DB::table('sessions')->where('id', self::CURRENT_SESSION_ID)->exists());
+        self::assertTrue(DB::table('sessions')->where('id', self::FOREIGN_SESSION_ID)->exists());
 
-        $store->revoke($user, 'other-session');
+        $store->revoke($user, self::OTHER_SESSION_ID);
 
-        self::assertFalse(DB::table('sessions')->where('id', 'other-session')->exists());
+        self::assertFalse(DB::table('sessions')->where('id', self::OTHER_SESSION_ID)->exists());
     }
 
     public function test_revoke_others_preserves_current_session_and_other_users(): void
@@ -102,15 +108,15 @@ class SessionsTest extends TestCase
         $user = User::query()->create(['email' => 'pedro@example.test']);
         $otherUser = User::query()->create(['email' => 'other@example.test']);
 
-        $this->insertSession('current-session', $user->getAuthIdentifier(), '10.0.0.1');
-        $this->insertSession('other-session', $user->getAuthIdentifier(), '10.0.0.2');
-        $this->insertSession('foreign-session', $otherUser->getAuthIdentifier(), '10.0.0.3');
+        $this->insertSession(self::CURRENT_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.1');
+        $this->insertSession(self::OTHER_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.2');
+        $this->insertSession(self::FOREIGN_SESSION_ID, $otherUser->getAuthIdentifier(), '10.0.0.3');
 
-        app(SessionStore::class)->revokeOthers($user, 'current-session');
+        app(SessionStore::class)->revokeOthers($user, self::CURRENT_SESSION_ID);
 
-        self::assertTrue(DB::table('sessions')->where('id', 'current-session')->exists());
-        self::assertFalse(DB::table('sessions')->where('id', 'other-session')->exists());
-        self::assertTrue(DB::table('sessions')->where('id', 'foreign-session')->exists());
+        self::assertTrue(DB::table('sessions')->where('id', self::CURRENT_SESSION_ID)->exists());
+        self::assertFalse(DB::table('sessions')->where('id', self::OTHER_SESSION_ID)->exists());
+        self::assertTrue(DB::table('sessions')->where('id', self::FOREIGN_SESSION_ID)->exists());
     }
 
     public function test_missing_table_and_non_database_drivers_fail_gracefully(): void
