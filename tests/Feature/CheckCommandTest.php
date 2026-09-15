@@ -73,6 +73,20 @@ class CheckCommandTest extends TestCase
         self::assertStringContainsString('HasMultiFactorAuthentication', $output);
     }
 
+    public function test_email_mfa_requirement_failure_is_actionable(): void
+    {
+        $this->registerPlugin(
+            CompleteUserProfilePlugin::make()->emailAuthentication(),
+        );
+
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('FAIL', $output);
+        self::assertStringContainsString('Email MFA', $output);
+        self::assertStringContainsString('HasEmailAuthentication', $output);
+    }
+
     public function test_sessions_requirement_failure_is_actionable(): void
     {
         config()->set('session.driver', 'file');
@@ -111,7 +125,7 @@ class CheckCommandTest extends TestCase
             $table->string('token', 64)->unique();
             $table->text('abilities')->nullable();
             $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
             $table->timestamps();
         });
 
