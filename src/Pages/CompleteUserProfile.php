@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use Livewire\Attributes\Url;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
@@ -38,6 +39,9 @@ use SensitiveParameter;
 
 class CompleteUserProfile extends EditProfile
 {
+    #[Url]
+    public ?string $section = null;
+
     /** @var array<string, mixed> */
     protected array $savedProfileData = [];
 
@@ -88,7 +92,7 @@ class CompleteUserProfile extends EditProfile
                 return NavigationItem::make($this->getFeatureLabel($feature))
                     ->key("account-{$featureId}")
                     ->sort($feature->getSort())
-                    ->url(request()->fullUrlWithQuery(['section' => $featureId]))
+                    ->url(filament()->getProfileUrl(['section' => $featureId]))
                     ->isActiveWhen(static fn (): bool => $activeFeatureId === $featureId);
             },
             $this->getVisibleFeatures(),
@@ -402,7 +406,7 @@ class CompleteUserProfile extends EditProfile
     protected function getActiveFeature(): ?ProfileFeature
     {
         $features = $this->getVisibleFeatures();
-        $requestedFeatureId = request()->query('section');
+        $requestedFeatureId = $this->section;
 
         if (is_string($requestedFeatureId) && array_key_exists($requestedFeatureId, $features)) {
             return $features[$requestedFeatureId];
