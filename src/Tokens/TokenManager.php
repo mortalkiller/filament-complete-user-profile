@@ -131,6 +131,7 @@ class TokenManager
         $query->delete();
     }
 
+    /** @return MorphMany<Model, Model> */
     protected function relationFor(Authenticatable $user): MorphMany
     {
         $tokens = [$user, 'tokens'];
@@ -149,9 +150,11 @@ class TokenManager
             ]);
         }
 
+        /** @var MorphMany<Model, Model> $relation */
         return $relation;
     }
 
+    /** @param MorphMany<Model, Model> $relation */
     protected function ensureContextColumns(MorphMany $relation): void
     {
         $related = $relation->getRelated();
