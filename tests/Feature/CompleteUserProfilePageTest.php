@@ -6,6 +6,8 @@ use Filament\Facades\Filament;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelRegistry;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
@@ -145,5 +147,65 @@ class CompleteUserProfilePageTest extends TestCase
         self::assertSame(['Overview', 'Profile', 'Security'], $labels);
         self::assertSame([false, false, true], $activeStates);
         self::assertStringContainsString('section=profile', (string) $urls[1]);
+    }
+
+    public function test_sidebar_section_is_component_state_during_livewire_requests(): void
+    {
+        $plugin = CompleteUserProfilePlugin::make()
+            ->navigationLayout(AccountNavigationLayout::Sidebar);
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        $page = app(CompleteUserProfile::class);
+        $reflection = new ReflectionClass($page);
+
+        self::assertTrue($reflection->hasProperty('section'), 'The selected sidebar section must be persisted as Livewire component state.');
+
+        $page->section = 'security';
+        app()->instance('request', Request::create('/livewire-f64cae0d/update', 'POST'));
+
+        $activeStates = array_map(
+            static fn ($item): bool => $item->isActive(),
+            $page->getSubNavigation(),
+        );
+
+        self::assertSame([false, false, true], $activeStates);
+    }
+
+    public function test_sidebar_navigation_urls_always_target_the_profile_route(): void
+    {
+        Route::get('/profile', static fn (): string => 'profile')
+            ->name('filament.admin.auth.profile');
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->navigationLayout(AccountNavigationLayout::Sidebar);
+
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        app()->instance('request', Request::create('/livewire-f64cae0d/update?section=security', 'POST'));
+
+        $page = app(CompleteUserProfile::class);
+        $urls = array_map(
+            static fn ($item): ?string => $item->getUrl(),
+            $page->getSubNavigation(),
+        );
+
+        self::assertStringContainsString('/profile?section=overview', (string) $urls[0]);
+        self::assertStringContainsString('/profile?section=profile', (string) $urls[1]);
+        self::assertStringContainsString('/profile?section=security', (string) $urls[2]);
+
+        foreach ($urls as $url) {
+            self::assertStringNotContainsString('/livewire-', (string) $url);
+        }
     }
 }
