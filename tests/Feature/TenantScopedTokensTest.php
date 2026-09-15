@@ -4,6 +4,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -123,15 +124,17 @@ class TenantScopedTokensTest extends TestCase
         $token = $manager->create($user, $this->feature(), 'CLI', ['customers:read']);
         $user->withAccessToken($token->accessToken);
 
-        app()->bind(TokenContextResolver::class, fn (): TokenContextResolver => new class($tenantB) implements TokenContextResolver
+        $resolver = new class implements TokenContextResolver
         {
-            public function __construct(private Tenant $tenant) {}
+            public ?Model $context = null;
 
-            public function resolve(): ?\Illuminate\Database\Eloquent\Model
+            public function resolve(): ?Model
             {
-                return $this->tenant;
+                return $this->context;
             }
-        });
+        };
+        $resolver->context = $tenantB;
+        app()->instance(TokenContextResolver::class, $resolver);
 
         $request = Request::create('/api/customers');
         $request->setUserResolver(fn (): TokenUser => $user);
@@ -143,13 +146,7 @@ class TenantScopedTokensTest extends TestCase
             self::assertSame(403, $exception->getStatusCode());
         }
 
-        app()->bind(TokenContextResolver::class, fn (): TokenContextResolver => new class implements TokenContextResolver
-        {
-            public function resolve(): ?\Illuminate\Database\Eloquent\Model
-            {
-                return null;
-            }
-        });
+        $resolver->context = null;
 
         $this->expectException(HttpException::class);
         app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
