@@ -55,12 +55,6 @@ class CheckCompleteUserProfile extends Command
             return $this->finish();
         }
 
-        if (! $user instanceof Authenticatable) {
-            $this->failCheck('User model', 'The resolved user model must implement Illuminate\\Contracts\\Auth\\Authenticatable.');
-
-            return $this->finish();
-        }
-
         $this->pass('User model', $userModel);
 
         $storageTable = $this->checkProfileStorage($user);
