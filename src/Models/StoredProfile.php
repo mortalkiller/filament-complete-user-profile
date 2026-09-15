@@ -23,6 +23,7 @@ class StoredProfile extends Model
         return [
             $columns->get('mfa_secret') => 'encrypted',
             $columns->get('mfa_recovery_codes') => 'encrypted:array',
+            $columns->get('mfa_email_enabled') => 'boolean',
         ];
     }
 }
