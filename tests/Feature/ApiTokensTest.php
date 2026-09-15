@@ -3,10 +3,16 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
+use Filament\Facades\Filament;
+use Filament\Panel;
+use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
+use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -161,5 +167,61 @@ class ApiTokensTest extends TestCase
 
         self::assertNotNull($feature->getRequirementIssue(new User));
         self::assertNull($feature->getRequirementIssue(new TokenUser));
+    }
+
+    public function test_api_tokens_component_uses_native_table_and_plaintext_only_once(): void
+    {
+        config()->set('auth.guards.profile', ['driver' => 'session', 'provider' => 'users']);
+        config()->set('auth.providers.users', ['driver' => 'eloquent', 'model' => TokenUser::class]);
+
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        auth('profile')->setUser($user);
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+                ->abilities(['customers:read' => 'Read customers'])
+                ->defaultExpiration(7)
+                ->maxExpiration(30));
+
+        Filament::setCurrentPanel(
+            Panel::make()
+                ->id('admin')
+                ->authGuard('profile')
+                ->plugin($plugin),
+        );
+
+        $component = new ApiTokensTable;
+        $table = $component->table(Table::make($component));
+
+        self::assertSame(
+            ['name', 'abilities', 'last_used_at', 'expires_at'],
+            array_keys($table->getColumns()),
+        );
+
+        $headerActions = array_values($table->getHeaderActions());
+        self::assertInstanceOf(Action::class, $headerActions[0] ?? null);
+        self::assertSame('create', $headerActions[0]->getName());
+
+        $recordAction = $table->getAction('revoke');
+        self::assertNotNull($recordAction);
+        self::assertSame('revoke', $recordAction->getName());
+
+        $showTokenAction = $component->showCreatedTokenAction();
+        self::assertFalse($showTokenAction->isModalClosedByClickingAway());
+        self::assertFalse($showTokenAction->isModalClosedByEscaping());
+
+        $component->createToken([
+            'name' => 'CLI',
+            'abilities' => ['customers:read'],
+            'expiration' => 7,
+        ]);
+
+        $plainTextToken = $component->getCreatedPlainTextToken();
+        self::assertNotNull($plainTextToken);
+        self::assertStringContainsString('|', $plainTextToken);
+        self::assertNotSame($plainTextToken, $user->tokens()->first()?->token);
+
+        $component->dismissCreatedToken();
+        self::assertNull($component->getCreatedPlainTextToken());
     }
 }
