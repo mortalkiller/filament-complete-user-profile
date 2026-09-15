@@ -20,17 +20,17 @@ class CompleteUserProfile extends EditProfile
 
     public static function getLabel(): string
     {
-        return __('filament-complete-user-profile::profile.page.label');
+        return static::translate('filament-complete-user-profile::profile.page.label');
     }
 
     public function getHeading(): string|Htmlable
     {
-        return __('filament-complete-user-profile::profile.page.heading');
+        return static::translate('filament-complete-user-profile::profile.page.heading');
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return __('filament-complete-user-profile::profile.page.subheading');
+        return static::translate('filament-complete-user-profile::profile.page.subheading');
     }
 
     /** @return array<string, ProfileFeature> */
@@ -41,7 +41,7 @@ class CompleteUserProfile extends EditProfile
 
     public function getFeatureLabel(ProfileFeature $feature): string
     {
-        return __("filament-complete-user-profile::profile.features.{$feature->getId()}.label");
+        return static::translate("filament-complete-user-profile::profile.features.{$feature->getId()}.label");
     }
 
     public function content(Schema $schema): Schema
@@ -57,13 +57,13 @@ class CompleteUserProfile extends EditProfile
         $component = match ($feature->getId()) {
             'profile' => Group::make([$this->getFormContentComponent()]),
             'overview' => Section::make($this->getFeatureLabel($feature))
-                ->description(__('filament-complete-user-profile::profile.features.overview.description')),
+                ->description(static::translate('filament-complete-user-profile::profile.features.overview.description')),
             'security' => Section::make($this->getFeatureLabel($feature))
-                ->description(__('filament-complete-user-profile::profile.features.security.description')),
+                ->description(static::translate('filament-complete-user-profile::profile.features.security.description')),
             'sessions' => Section::make($this->getFeatureLabel($feature))
-                ->description(__('filament-complete-user-profile::profile.features.sessions.description')),
+                ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description')),
             'api-tokens' => Section::make($this->getFeatureLabel($feature))
-                ->description(__('filament-complete-user-profile::profile.features.api-tokens.description')),
+                ->description(static::translate('filament-complete-user-profile::profile.features.api-tokens.description')),
             default => Section::make($this->getFeatureLabel($feature)),
         };
 
@@ -71,5 +71,12 @@ class CompleteUserProfile extends EditProfile
             'id' => "account-{$feature->getId()}",
             'data-account-feature' => $feature->getId(),
         ]);
+    }
+
+    protected static function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
