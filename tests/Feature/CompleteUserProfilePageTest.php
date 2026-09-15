@@ -3,9 +3,10 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Facades\Filament;
+use Filament\Navigation\NavigationItem;
+use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelRegistry;
-use Filament\Pages\Enums\SubNavigationPosition;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
@@ -78,15 +79,15 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_navigation_layout_defaults_to_tabs_and_can_be_switched_to_sidebar(): void
     {
-        if (! enum_exists(AccountNavigationLayout::class)) {
+        if (enum_exists(AccountNavigationLayout::class) === false) {
             self::fail('AccountNavigationLayout enum is missing.');
         }
 
-        if (! method_exists(CompleteUserProfilePlugin::class, 'navigationLayout')) {
+        if (method_exists(CompleteUserProfilePlugin::class, 'navigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
         }
 
-        if (! method_exists(CompleteUserProfilePlugin::class, 'getNavigationLayout')) {
+        if (method_exists(CompleteUserProfilePlugin::class, 'getNavigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::getNavigationLayout() is missing.');
         }
 
@@ -99,11 +100,11 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_sidebar_layout_uses_filament_native_sub_navigation(): void
     {
-        if (! enum_exists(AccountNavigationLayout::class)) {
+        if (enum_exists(AccountNavigationLayout::class) === false) {
             self::fail('AccountNavigationLayout enum is missing.');
         }
 
-        if (! method_exists(CompleteUserProfilePlugin::class, 'navigationLayout')) {
+        if (method_exists(CompleteUserProfilePlugin::class, 'navigationLayout') === false) {
             self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
         }
 
@@ -124,11 +125,11 @@ class CompleteUserProfilePageTest extends TestCase
 
         self::assertSame(SubNavigationPosition::Start, CompleteUserProfile::getSubNavigationPosition());
         self::assertSame(['Overview', 'Profile', 'Security'], array_map(
-            static fn ($item): string => $item->getLabel(),
+            static fn (NavigationItem $item): string => $item->getLabel(),
             $navigation,
         ));
         self::assertSame([false, false, true], array_map(
-            static fn ($item): bool => $item->isActive(),
+            static fn (NavigationItem $item): bool => $item->isActive(),
             $navigation,
         ));
         self::assertStringContainsString('section=profile', (string) $navigation[1]->getUrl());
