@@ -2,8 +2,20 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "mortalkiller/filament-complete-user-profile",
     "description": "A complete, modular user account center for Filament 5.",
+    "keywords": [
+        "filament",
+        "laravel",
+        "profile",
+        "multi-factor-authentication",
+        "sanctum"
+    ],
+    "homepage": "https://github.com/mortalkiller/filament-complete-user-profile",
     "type": "library",
     "license": "MIT",
+    "support": {
+        "issues": "https://github.com/mortalkiller/filament-complete-user-profile/issues",
+        "source": "https://github.com/mortalkiller/filament-complete-user-profile"
+    },
     "require": {
         "php": "^8.3",
         "filament/filament": "^5.7",
@@ -48,6 +60,11 @@
     "scripts": {
         "test": "phpunit",
         "lint": "pint --test",
-        "analyse": "phpstan analyse src tests --level=8 --memory-limit=1G"
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
     }
 }
