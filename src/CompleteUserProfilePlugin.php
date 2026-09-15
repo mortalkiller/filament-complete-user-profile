@@ -6,6 +6,7 @@ use Closure;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
@@ -60,8 +61,14 @@ class CompleteUserProfilePlugin implements Plugin
 
     public static function get(): static
     {
+        $panel = filament()->getCurrentOrDefaultPanel();
+
+        if ($panel === null) {
+            throw new LogicException('No Filament panel is available to resolve the complete user profile plugin.');
+        }
+
         /** @var static $plugin */
-        $plugin = filament()->getCurrentOrDefaultPanel()->getPlugin('filament-complete-user-profile');
+        $plugin = $panel->getPlugin('filament-complete-user-profile');
 
         return $plugin;
     }

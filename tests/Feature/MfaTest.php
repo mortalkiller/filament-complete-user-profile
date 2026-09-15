@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\HasMultiFactorAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MfaUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
@@ -17,6 +18,9 @@ class MfaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config()->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+        config()->set('filament-complete-user-profile.user_model', MfaUser::class);
 
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
@@ -78,5 +82,24 @@ class MfaTest extends TestCase
             'The authenticatable model must implement '.HasMultiFactorAuthentication::class.' when multi-factor authentication is enabled.',
             $security->getMultiFactorAuthenticationRequirementIssue($user),
         );
+    }
+
+    public function test_mfa_trait_encrypts_and_hides_user_storage_values(): void
+    {
+        $user = MfaUser::query()->create(['email' => 'pedro@example.test']);
+
+        $user->saveAppAuthenticationSecret('totp-secret');
+        $user->saveAppAuthenticationRecoveryCodes(['code-one', 'code-two']);
+        $user->refresh();
+
+        self::assertSame('totp-secret', $user->getAppAuthenticationSecret());
+        self::assertSame(['code-one', 'code-two'], $user->getAppAuthenticationRecoveryCodes());
+        self::assertNotSame('totp-secret', $user->getRawOriginal('app_authentication_secret'));
+        self::assertStringNotContainsString(
+            'code-one',
+            (string) $user->getRawOriginal('app_authentication_recovery_codes'),
+        );
+        self::assertArrayNotHasKey('app_authentication_secret', $user->toArray());
+        self::assertArrayNotHasKey('app_authentication_recovery_codes', $user->toArray());
     }
 }
