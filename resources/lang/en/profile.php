@@ -38,6 +38,15 @@ return [
                 'label' => 'Send a new code by email',
                 'sent' => 'A new verification code has been sent.',
             ],
+            'email' => [
+                'subject' => 'Your :app verification code',
+                'heading' => 'Confirm your identity',
+                'intro' => 'A verification code was requested for your :app account. Enter the code below to continue.',
+                'expiry' => 'This code expires in :minutes minute.|This code expires in :minutes minutes.',
+                'warning' => 'Never share this code. Our team will never ask you for it.',
+                'ignore' => 'If you did not request this code, you can safely ignore this email.',
+                'footer' => 'Security message from :app.',
+            ],
         ],
     ],
     'sessions' => [
