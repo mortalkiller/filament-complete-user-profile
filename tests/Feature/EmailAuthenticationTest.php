@@ -4,7 +4,9 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Auth\MultiFactor\Email\EmailAuthentication as FilamentEmailAuthentication;
 use Filament\Panel;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
@@ -142,6 +144,61 @@ class EmailAuthenticationTest extends TestCase
         self::assertIsString($setupAction);
         self::assertStringContainsString('makeResendAction($user)', $provider);
         self::assertStringContainsString('makeResendAction($user)', $setupAction);
+    }
+
+    public function test_provider_uses_a_package_owned_queued_verification_email(): void
+    {
+        $notificationClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Security\\EmailAuthentication\\Notifications\\VerifyEmailAuthentication';
+
+        self::assertSame($notificationClass, $this->makeProvider()->getCodeNotification());
+        self::assertTrue(class_exists($notificationClass));
+
+        $notification = app($notificationClass, [
+            'code' => '483921',
+            'codeExpiryMinutes' => 4,
+        ]);
+
+        self::assertInstanceOf(ShouldQueue::class, $notification);
+        self::assertSame(['mail'], $notification->via(new EmailMfaUser));
+    }
+
+    public function test_verification_email_uses_app_branding_and_a_dedicated_otp_view(): void
+    {
+        $notificationClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Security\\EmailAuthentication\\Notifications\\VerifyEmailAuthentication';
+
+        self::assertTrue(class_exists($notificationClass));
+
+        config()->set('app.name', 'Acme Portal');
+        app()->setLocale('en');
+
+        $notification = app($notificationClass, [
+            'code' => '483921',
+            'codeExpiryMinutes' => 4,
+        ]);
+        $mail = $notification->toMail(new EmailMfaUser);
+
+        self::assertInstanceOf(MailMessage::class, $mail);
+        self::assertSame('Your Acme Portal verification code', $mail->subject);
+        self::assertSame('filament-complete-user-profile::emails.verify-email-authentication', $mail->markdown);
+        self::assertSame('Acme Portal', $mail->viewData['appName'] ?? null);
+        self::assertSame('483 921', $mail->viewData['formattedCode'] ?? null);
+        self::assertSame(4, $mail->viewData['codeExpiryMinutes'] ?? null);
+    }
+
+    public function test_verification_email_view_is_security_focused_and_has_no_call_to_action_button(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $path = $root.'/resources/views/emails/verify-email-authentication.blade.php';
+
+        self::assertFileExists($path);
+
+        $view = file_get_contents($path);
+
+        self::assertIsString($view);
+        self::assertStringContainsString('formattedCode', $view);
+        self::assertStringContainsString('email.warning', $view);
+        self::assertStringContainsString('email.ignore', $view);
+        self::assertStringNotContainsString('<x-mail::button', $view);
     }
 
     private function makeProvider(): EmailAuthentication
