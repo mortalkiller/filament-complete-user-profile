@@ -75,7 +75,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
     {
         return Action::make('resend')
             ->label(function () use ($user): string {
-                $label = (string) __('filament-complete-user-profile::profile.security.email_authentication.resend.label');
+                $label = $this->translate('filament-complete-user-profile::profile.security.email_authentication.resend.label');
                 $remaining = $this->getResendAvailableIn($user);
 
                 return $remaining > 0 ? "{$label} ({$remaining}s)" : $label;
@@ -91,7 +91,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
                 }
 
                 Notification::make()
-                    ->title(__('filament-complete-user-profile::profile.security.email_authentication.resend.sent'))
+                    ->title($this->translate('filament-complete-user-profile::profile.security.email_authentication.resend.sent'))
                     ->success()
                     ->send();
             });
@@ -119,7 +119,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
     {
         return [
             OneTimeCodeInput::make('code')
-                ->label(__('filament-panels::auth/multi-factor/email/provider.login_form.code.label'))
+                ->label($this->translate('filament-panels::auth/multi-factor/email/provider.login_form.code.label'))
                 ->validationAttribute('code')
                 ->belowContent($this->makeResendAction($user))
                 ->required()
@@ -129,7 +129,7 @@ class EmailAuthentication extends FilamentEmailAuthentication
                             return;
                         }
 
-                        $fail(__('filament-panels::auth/multi-factor/email/provider.login_form.code.messages.invalid'));
+                        $fail($this->translate('filament-panels::auth/multi-factor/email/provider.login_form.code.messages.invalid'));
                     };
                 }),
         ];
@@ -156,5 +156,12 @@ class EmailAuthentication extends FilamentEmailAuthentication
         }
 
         return $user;
+    }
+
+    protected function translate(string $key): string
+    {
+        $translation = __($key);
+
+        return is_string($translation) ? $translation : $key;
     }
 }
