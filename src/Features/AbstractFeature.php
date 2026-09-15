@@ -18,7 +18,7 @@ abstract class AbstractFeature implements ProfileFeature
 
     public static function make(): static
     {
-        return new static;
+        return app(static::class);
     }
 
     public function enabled(bool|Closure $condition = true): static
