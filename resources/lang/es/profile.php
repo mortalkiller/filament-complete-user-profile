@@ -24,6 +24,13 @@ return [
             'new' => 'Nueva contraseña',
             'confirmation' => 'Confirmar nueva contraseña',
         ],
+        'reauthentication' => [
+            'current_password' => 'Contraseña actual',
+            'unavailable' => 'Esta cuenta no puede volver a autenticarse con una contraseña local.',
+        ],
+        'mfa' => [
+            'requirement' => 'El modelo autenticable debe implementar :contract cuando la autenticación multifactor está activada.',
+        ],
     ],
     'sessions' => [
         'columns' => [
@@ -39,6 +46,17 @@ return [
         'actions' => [
             'revoke' => 'Revocar',
             'revoke_others' => 'Revocar otras sesiones',
+        ],
+        'requirements' => [
+            'database_driver' => 'La gestión de sesiones del navegador requiere SESSION_DRIVER=database.',
+            'table' => 'La tabla de sesiones de Laravel configurada no existe.',
+        ],
+        'device' => [
+            'unknown_browser' => 'Navegador desconocido',
+            'unknown_platform' => 'Plataforma desconocida',
+            'tablet' => 'Tableta',
+            'mobile' => 'Móvil',
+            'desktop' => 'Ordenador',
         ],
         'empty' => 'No se encontraron sesiones del navegador',
     ],
@@ -64,6 +82,13 @@ return [
             'heading' => 'Token de API creado',
             'description' => 'Copia este token ahora. No podrás volver a verlo.',
             'token' => 'Token',
+        ],
+        'requirements' => [
+            'sanctum' => 'Laravel Sanctum debe estar instalado para activar la gestión de tokens de API.',
+            'user_model' => 'El modelo de usuario autenticado debe usar Laravel\\Sanctum\\HasApiTokens cuando la gestión de tokens de API está activada.',
+            'abilities' => 'Configura al menos un permiso permitido para tokens de API antes de activar la gestión de tokens de API.',
+            'context_migration' => 'Publica y ejecuta la migración de contexto de tokens de filament-complete-user-profile antes de activar tokens de API por tenant.',
+            'context_resolver' => 'Registra :contract antes de activar tokens de API por tenant.',
         ],
         'empty' => 'No hay tokens de API',
     ],
