@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\SeparateProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\UserProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
@@ -64,6 +65,16 @@ class ProfileStorageTest extends TestCase
         $migration->down();
         self::assertTrue(Schema::hasColumn('users', 'preferred_locale'));
         self::assertTrue(Schema::hasColumn('users', 'avatar_path'));
+    }
+
+    public function test_email_mfa_column_has_a_backward_compatible_default_when_new_config_key_is_missing(): void
+    {
+        config()->offsetUnset('filament-complete-user-profile.columns.mfa.email_enabled');
+
+        self::assertSame(
+            'has_email_authentication',
+            app(ProfileColumnMap::class)->get('mfa_email_enabled'),
+        );
     }
 
     public function test_email_authentication_state_uses_configured_user_storage_column(): void
@@ -147,6 +158,9 @@ class ProfileStorageTest extends TestCase
 
         $storage->put($user, 'mfa_email_enabled', true);
 
-        self::assertTrue((bool) $storage->get($user, 'mfa_email_enabled'));
+        $enabled = $storage->get($user, 'mfa_email_enabled');
+
+        self::assertIsBool($enabled);
+        self::assertTrue($enabled);
     }
 }
