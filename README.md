@@ -103,7 +103,7 @@ Both layouts use Filament components and require no package-specific navigation 
 
 ## Enable MFA
 
-MFA providers are configured inside the Security feature. The package uses Filament's native providers and does not implement its own TOTP or email-code system.
+MFA providers are configured inside the Security feature. The package builds on Filament's native MFA providers and keeps Filament responsible for code generation, verification, and the authentication challenge flow.
 
 Enable authenticator-app MFA with recovery codes:
 
@@ -157,6 +157,16 @@ class User extends Authenticatable implements HasEmailAuthentication
     use Notifiable;
 }
 ```
+
+Email MFA adds a server-enforced 60-second cooldown between verification-code sends. During the cooldown, the resend action is disabled and displays the remaining seconds. The verification code keeps Filament's native expiry window, which is currently 4 minutes by default.
+
+The verification email is a queued Laravel notification. If your application uses an asynchronous queue connection such as `database` or `redis`, a queue worker must be running for codes to be delivered:
+
+```bash
+php artisan queue:work
+```
+
+With `QUEUE_CONNECTION=sync`, the notification is delivered in the request, which can be useful locally, but production applications should keep their normal queue strategy rather than switching to `sync` only for MFA email delivery.
 
 The package-managed migrations provide the default authenticator-app secret, recovery-code, and email-MFA state columns when `storage` is `user`. Existing configured columns are reused rather than replaced.
 
