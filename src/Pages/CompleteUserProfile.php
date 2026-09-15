@@ -9,6 +9,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Navigation\NavigationItem;
+use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
@@ -27,6 +29,7 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
@@ -69,8 +72,44 @@ class CompleteUserProfile extends EditProfile
         return static::translate("filament-complete-user-profile::profile.features.{$feature->getId()}.label");
     }
 
+    /** @return array<NavigationItem> */
+    public function getSubNavigation(): array
+    {
+        if (CompleteUserProfilePlugin::get()->getNavigationLayout() !== AccountNavigationLayout::Sidebar) {
+            return [];
+        }
+
+        $activeFeatureId = $this->getActiveFeature()?->getId();
+
+        return array_values(array_map(
+            function (ProfileFeature $feature) use ($activeFeatureId): NavigationItem {
+                $featureId = $feature->getId();
+
+                return NavigationItem::make($this->getFeatureLabel($feature))
+                    ->key("account-{$featureId}")
+                    ->sort($feature->getSort())
+                    ->url(request()->fullUrlWithQuery(['section' => $featureId]))
+                    ->isActiveWhen(static fn (): bool => $activeFeatureId === $featureId);
+            },
+            $this->getVisibleFeatures(),
+        ));
+    }
+
+    public static function getSubNavigationPosition(): SubNavigationPosition
+    {
+        return SubNavigationPosition::Start;
+    }
+
     public function content(Schema $schema): Schema
     {
+        if (CompleteUserProfilePlugin::get()->getNavigationLayout() === AccountNavigationLayout::Sidebar) {
+            $feature = $this->getActiveFeature();
+
+            return $schema->components(
+                $feature === null ? [] : [$this->getFeatureContentComponent($feature)],
+            );
+        }
+
         $tabs = array_map(
             fn (ProfileFeature $feature): Tab => Tab::make($this->getFeatureLabel($feature))
                 ->schema([$this->getFeatureContentComponent($feature)]),
@@ -358,6 +397,18 @@ class CompleteUserProfile extends EditProfile
         }
 
         return $feature;
+    }
+
+    protected function getActiveFeature(): ?ProfileFeature
+    {
+        $features = $this->getVisibleFeatures();
+        $requestedFeatureId = request()->query('section');
+
+        if (is_string($requestedFeatureId) && array_key_exists($requestedFeatureId, $features)) {
+            return $features[$requestedFeatureId];
+        }
+
+        return array_values($features)[0] ?? null;
     }
 
     protected static function translate(string $key): string
