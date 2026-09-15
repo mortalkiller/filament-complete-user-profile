@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Storage;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Models\StoredProfile;
@@ -39,8 +40,8 @@ class SeparateProfileStorage implements ProfileStorage
         $profile->save();
     }
 
-    /** @return \Illuminate\Database\Eloquent\Builder<StoredProfile> */
-    protected function queryFor(Authenticatable $user): \Illuminate\Database\Eloquent\Builder
+    /** @return Builder<StoredProfile> */
+    protected function queryFor(Authenticatable $user): Builder
     {
         return StoredProfile::query()
             ->where('user_type', $this->userType($user))
