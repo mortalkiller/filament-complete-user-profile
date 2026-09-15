@@ -17,10 +17,6 @@ class PublicApiTest extends TestCase
         self::assertTrue($reflection->hasMethod('navigation'));
         self::assertFalse($reflection->hasMethod('navigationLayout'));
 
-        if (! $reflection->hasMethod('navigation')) {
-            return;
-        }
-
         $plugin = CompleteUserProfilePlugin::make();
         $navigation = $reflection->getMethod('navigation');
 
