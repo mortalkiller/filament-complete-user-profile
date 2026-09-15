@@ -105,8 +105,8 @@ class TranslationsTest extends TestCase
         self::assertSame(
             'O modelo autenticável tem de implementar Mortalkiller\\FilamentCompleteUserProfile\\Contracts\\HasMultiFactorAuthentication quando a autenticação de dois fatores está ativada.',
             Security::make()
-                ->multiFactorAuthentication()
-                ->getMultiFactorAuthenticationRequirementIssue(new User),
+                ->appAuthentication()
+                ->getAppAuthenticationRequirementIssue(new User),
         );
     }
 
