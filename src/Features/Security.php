@@ -3,7 +3,9 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Features;
 
 use Closure;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication as FilamentHasEmailAuthentication;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\HasMultiFactorAuthentication;
 
 class Security extends AbstractFeature
@@ -71,6 +73,28 @@ class Security extends AbstractFeature
             'filament-complete-user-profile::profile.security.mfa.requirement',
             ['contract' => HasMultiFactorAuthentication::class],
         );
+    }
+
+    public function getEmailAuthenticationRequirementIssue(Authenticatable $user): ?string
+    {
+        if (! $this->hasEmailAuthentication()) {
+            return null;
+        }
+
+        if (! $user instanceof FilamentHasEmailAuthentication) {
+            return static::translate(
+                'filament-complete-user-profile::profile.security.email_authentication.requirement',
+                ['contract' => FilamentHasEmailAuthentication::class],
+            );
+        }
+
+        if (! $user instanceof Model || ! method_exists($user, 'notify')) {
+            return static::translate(
+                'filament-complete-user-profile::profile.security.email_authentication.notifications',
+            );
+        }
+
+        return null;
     }
 
     /** @param array<string, scalar> $replace */
