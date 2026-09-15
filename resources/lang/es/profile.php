@@ -31,6 +31,10 @@ return [
         'mfa' => [
             'requirement' => 'El modelo autenticable debe implementar :contract cuando la autenticación multifactor está activada.',
         ],
+        'email_authentication' => [
+            'requirement' => 'El modelo autenticable debe implementar :contract cuando la autenticación por correo electrónico está activada.',
+            'notifications' => 'El modelo de usuario autenticado debe admitir notificaciones de Laravel para usar la autenticación por correo electrónico.',
+        ],
     ],
     'sessions' => [
         'columns' => [
