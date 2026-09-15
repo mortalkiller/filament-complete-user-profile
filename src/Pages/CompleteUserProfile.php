@@ -12,6 +12,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
@@ -26,6 +27,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
 use SensitiveParameter;
 
 class CompleteUserProfile extends EditProfile
@@ -224,8 +226,7 @@ class CompleteUserProfile extends EditProfile
                 ->schema([Group::make([$this->getFormContentComponent()])]),
             'overview' => $this->getOverviewContentComponent($feature),
             'security' => $this->getSecurityContentComponent($feature),
-            'sessions' => Section::make($this->getFeatureLabel($feature))
-                ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description')),
+            'sessions' => $this->getSessionsContentComponent($feature),
             'api-tokens' => Section::make($this->getFeatureLabel($feature))
                 ->description(static::translate('filament-complete-user-profile::profile.features.api-tokens.description')),
             default => Section::make($this->getFeatureLabel($feature)),
@@ -273,9 +274,26 @@ class CompleteUserProfile extends EditProfile
             $components[] = Actions::make([$this->getUpdatePasswordAction()]);
         }
 
+        if ($security->hasMultiFactorAuthentication()) {
+            $multiFactorAuthentication = $this->getMultiFactorAuthenticationContentComponent();
+
+            if ($multiFactorAuthentication !== null) {
+                $components[] = $multiFactorAuthentication;
+            }
+        }
+
         return Section::make($this->getFeatureLabel($feature))
             ->description(static::translate('filament-complete-user-profile::profile.features.security.description'))
             ->schema($components);
+    }
+
+    protected function getSessionsContentComponent(ProfileFeature $feature): Component
+    {
+        return Section::make($this->getFeatureLabel($feature))
+            ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description'))
+            ->schema([
+                LivewireComponent::make(SessionsTable::class),
+            ]);
     }
 
     protected function getUpdatePasswordAction(): Action
