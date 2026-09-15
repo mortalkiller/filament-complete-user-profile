@@ -33,7 +33,7 @@ class CheckCompleteUserProfile extends Command
         $plugins = $this->registeredPlugins();
 
         if ($plugins === []) {
-            $this->fail(
+            $this->failCheck(
                 'Plugin registration',
                 'Register CompleteUserProfilePlugin on at least one Filament panel.',
             );
@@ -50,13 +50,13 @@ class CheckCompleteUserProfile extends Command
             $userModel = app(UserModelResolver::class)->resolve();
             $user = app($userModel);
         } catch (Throwable $exception) {
-            $this->fail('User model', $exception->getMessage());
+            $this->failCheck('User model', $exception->getMessage());
 
             return $this->finish();
         }
 
         if (! $user instanceof Authenticatable) {
-            $this->fail('User model', 'The resolved user model must implement Illuminate\\Contracts\\Auth\\Authenticatable.');
+            $this->failCheck('User model', 'The resolved user model must implement Illuminate\\Contracts\\Auth\\Authenticatable.');
 
             return $this->finish();
         }
@@ -96,7 +96,7 @@ class CheckCompleteUserProfile extends Command
 
         if ($storage === 'user') {
             if (! $user instanceof Model) {
-                $this->fail('Profile storage', 'User storage requires the authenticatable to be an Eloquent model.');
+                $this->failCheck('Profile storage', 'User storage requires the authenticatable to be an Eloquent model.');
 
                 return null;
             }
@@ -104,7 +104,7 @@ class CheckCompleteUserProfile extends Command
             $table = $user->getTable();
 
             if (! $user->getConnection()->getSchemaBuilder()->hasTable($table)) {
-                $this->fail('Profile storage', "User table [{$table}] does not exist. Run the application migrations first.");
+                $this->failCheck('Profile storage', "User table [{$table}] does not exist. Run the application migrations first.");
 
                 return null;
             }
@@ -118,13 +118,13 @@ class CheckCompleteUserProfile extends Command
             $table = config('filament-complete-user-profile.profile_table', 'filament_user_profiles');
 
             if (! is_string($table) || $table === '') {
-                $this->fail('Profile storage', 'Configure a valid filament-complete-user-profile.profile_table value.');
+                $this->failCheck('Profile storage', 'Configure a valid filament-complete-user-profile.profile_table value.');
 
                 return null;
             }
 
             if (! Schema::hasTable($table)) {
-                $this->fail('Profile storage', "Profile table [{$table}] does not exist. Run the package migrations first.");
+                $this->failCheck('Profile storage', "Profile table [{$table}] does not exist. Run the package migrations first.");
 
                 return null;
             }
@@ -134,7 +134,7 @@ class CheckCompleteUserProfile extends Command
             return $table;
         }
 
-        $this->fail('Profile storage', 'Profile storage must be either [user] or [separate].');
+        $this->failCheck('Profile storage', 'Profile storage must be either [user] or [separate].');
 
         return null;
     }
@@ -220,7 +220,7 @@ class CheckCompleteUserProfile extends Command
         $relation = is_callable($tokens) ? $tokens() : null;
 
         if (! $relation instanceof MorphMany) {
-            $this->fail(
+            $this->failCheck(
                 "Panel [{$panelId}] Token context migration",
                 'The user model must expose the Sanctum tokens relationship before tenant token context can be checked.',
             );
@@ -232,7 +232,7 @@ class CheckCompleteUserProfile extends Command
             if ($schema->hasColumn($table, 'context_type') && $schema->hasColumn($table, 'context_id')) {
                 $this->pass("Panel [{$panelId}] Token context migration", "Context columns exist on [{$table}].");
             } else {
-                $this->fail(
+                $this->failCheck(
                     "Panel [{$panelId}] Token context migration",
                     'Publish and run the token-context migration: php artisan vendor:publish --tag=filament-complete-user-profile-token-migrations.',
                 );
@@ -242,7 +242,7 @@ class CheckCompleteUserProfile extends Command
         if (app()->bound(TokenContextResolver::class)) {
             $this->pass("Panel [{$panelId}] TokenContextResolver", 'A TokenContextResolver binding is registered.');
         } else {
-            $this->fail(
+            $this->failCheck(
                 "Panel [{$panelId}] TokenContextResolver",
                 'Bind Mortalkiller\\FilamentCompleteUserProfile\\Contracts\\TokenContextResolver in your application service provider.',
             );
@@ -257,7 +257,7 @@ class CheckCompleteUserProfile extends Command
             return;
         }
 
-        $this->fail($check, "Column [{$table}.{$column}] is missing. Run the package migrations first.");
+        $this->failCheck($check, "Column [{$table}.{$column}] is missing. Run the package migrations first.");
     }
 
     protected function requirement(string $check, ?string $issue, string $successMessage): void
@@ -268,7 +268,7 @@ class CheckCompleteUserProfile extends Command
             return;
         }
 
-        $this->fail($check, $issue);
+        $this->failCheck($check, $issue);
     }
 
     protected function pass(string $check, string $message): void
@@ -276,7 +276,7 @@ class CheckCompleteUserProfile extends Command
         $this->checks[] = ['PASS', $check, $message];
     }
 
-    protected function fail(string $check, string $message): void
+    protected function failCheck(string $check, string $message): void
     {
         $this->checks[] = ['FAIL', $check, $message];
     }
