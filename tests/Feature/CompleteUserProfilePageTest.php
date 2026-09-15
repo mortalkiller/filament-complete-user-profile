@@ -87,8 +87,8 @@ class CompleteUserProfilePageTest extends TestCase
 
         $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
 
-        if ($reflection->hasMethod('navigationLayout') === false) {
-            self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
+        if ($reflection->hasMethod('navigation') === false) {
+            self::fail('CompleteUserProfilePlugin::navigation() is missing.');
         }
 
         if ($reflection->hasMethod('getNavigationLayout') === false) {
@@ -98,7 +98,7 @@ class CompleteUserProfilePageTest extends TestCase
         $plugin = CompleteUserProfilePlugin::make();
         $tabs = constant(AccountNavigationLayout::class.'::Tabs');
         $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
-        $setter = $reflection->getMethod('navigationLayout');
+        $setter = $reflection->getMethod('navigation');
         $getter = $reflection->getMethod('getNavigationLayout');
 
         self::assertSame($tabs, $getter->invoke($plugin));
@@ -116,13 +116,13 @@ class CompleteUserProfilePageTest extends TestCase
 
         $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
 
-        if ($reflection->hasMethod('navigationLayout') === false) {
-            self::fail('CompleteUserProfilePlugin::navigationLayout() is missing.');
+        if ($reflection->hasMethod('navigation') === false) {
+            self::fail('CompleteUserProfilePlugin::navigation() is missing.');
         }
 
         $plugin = CompleteUserProfilePlugin::make();
         $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
-        $reflection->getMethod('navigationLayout')->invoke($plugin, $sidebar);
+        $reflection->getMethod('navigation')->invoke($plugin, $sidebar);
 
         $panel = Panel::make()
             ->id('admin')
@@ -155,7 +155,7 @@ class CompleteUserProfilePageTest extends TestCase
         $this->registerProfileRoute();
 
         $plugin = CompleteUserProfilePlugin::make()
-            ->navigationLayout(AccountNavigationLayout::Sidebar);
+            ->navigation(AccountNavigationLayout::Sidebar);
 
         $panel = Panel::make()
             ->id('admin')
@@ -187,7 +187,7 @@ class CompleteUserProfilePageTest extends TestCase
         $this->registerProfileRoute();
 
         $plugin = CompleteUserProfilePlugin::make()
-            ->navigationLayout(AccountNavigationLayout::Sidebar);
+            ->navigation(AccountNavigationLayout::Sidebar);
 
         $panel = Panel::make()
             ->id('admin')
