@@ -161,6 +161,7 @@ class CompleteUserProfilePlugin implements Plugin
         $feature = $this->getFeature($id);
 
         if ($condition instanceof Closure) {
+            $feature->enabled();
             $configured = $condition($feature);
 
             if ($configured instanceof ProfileFeature) {
