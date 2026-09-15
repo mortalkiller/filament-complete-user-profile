@@ -2,13 +2,19 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Facades\Filament;
+use Filament\Panel;
+use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\SessionStore;
+use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
 use Mortalkiller\FilamentCompleteUserProfile\Sessions\DatabaseSessionStore;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -28,10 +34,15 @@ class SessionsTest extends TestCase
         config()->set('session.driver', 'database');
         config()->set('session.connection', 'testing');
         config()->set('session.table', 'sessions');
+        config()->set('auth.defaults.guard', 'web');
+        config()->set('auth.guards.web', ['driver' => 'session', 'provider' => 'users']);
+        config()->set('auth.guards.profile', ['driver' => 'session', 'provider' => 'users']);
+        config()->set('auth.providers.users', ['driver' => 'eloquent', 'model' => User::class]);
 
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('email')->nullable();
+            $table->string('password')->nullable();
             $table->timestamps();
         });
 
@@ -50,6 +61,12 @@ class SessionsTest extends TestCase
         $request = Request::create('/');
         $request->setLaravelSession($session);
         app()->instance('request', $request);
+
+        Filament::setCurrentPanel(
+            Panel::make()
+                ->id('admin')
+                ->authGuard('profile'),
+        );
     }
 
     public function test_database_session_store_is_bound_and_supports_database_sessions(): void
@@ -132,6 +149,51 @@ class SessionsTest extends TestCase
 
         self::assertFalse($store->isSupported());
         self::assertSame([], $store->sessionsFor(new User)->all());
+    }
+
+    public function test_sessions_component_uses_the_expected_native_filament_table_structure(): void
+    {
+        $component = new SessionsTable;
+        $table = $component->table(Table::make($component));
+
+        self::assertSame(
+            ['device', 'ip_address', 'last_activity', 'status'],
+            array_keys($table->getColumns()),
+        );
+        self::assertContains(
+            'revokeOtherSessions',
+            array_map(static fn ($action): string => $action->getName(), $table->getHeaderActions()),
+        );
+        self::assertContains(
+            'revoke',
+            array_map(static fn ($action): string => $action->getName(), $table->getRecordActions()),
+        );
+    }
+
+    public function test_revoke_other_sessions_requires_shared_reauthentication(): void
+    {
+        $user = User::query()->create([
+            'email' => 'pedro@example.test',
+            'password' => Hash::make('secret-password'),
+        ]);
+        auth('profile')->setUser($user);
+
+        $this->insertSession(self::CURRENT_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.1');
+        $this->insertSession(self::OTHER_SESSION_ID, $user->getAuthIdentifier(), '10.0.0.2');
+
+        $component = new SessionsTable;
+
+        try {
+            $component->revokeOtherSessions(['current_password' => 'wrong-password']);
+            self::fail('Expected reauthentication to reject an invalid password.');
+        } catch (ValidationException) {
+            self::assertTrue(DB::table('sessions')->where('id', self::OTHER_SESSION_ID)->exists());
+        }
+
+        $component->revokeOtherSessions(['current_password' => 'secret-password']);
+
+        self::assertTrue(DB::table('sessions')->where('id', self::CURRENT_SESSION_ID)->exists());
+        self::assertFalse(DB::table('sessions')->where('id', self::OTHER_SESSION_ID)->exists());
     }
 
     protected function insertSession(
