@@ -370,6 +370,12 @@ The package deliberately keeps authentication and tenancy integration replaceabl
 
 `HasMultiFactorAuthentication` is the package-facing contract that connects the user model to Filament's native authenticator-app MFA storage. `InteractsWithMultiFactorAuthentication` is the provided implementation for the package storage modes.
 
+## Roadmap
+
+See [docs/roadmap.md](docs/roadmap.md) for features being considered for future releases.
+
+Roadmap items are exploratory and are not release commitments.
+
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and maintenance guidance.
