@@ -2,7 +2,10 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
+use Filament\Panel;
+use Filament\PanelRegistry;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -60,6 +63,7 @@ class TranslationsTest extends TestCase
     public function test_reauthentication_ui_uses_package_translations(): void
     {
         app()->setLocale('pt');
+        $this->setCurrentPanel();
 
         $reauthentication = app(PasswordReauthentication::class);
         $schema = $reauthentication->getFormSchema();
@@ -134,5 +138,15 @@ class TranslationsTest extends TestCase
             'Navegador desconhecido · Plataforma desconhecida · Computador',
             $testableStore->describe('Custom Agent'),
         );
+    }
+
+    private function setCurrentPanel(): void
+    {
+        $panel = Panel::make()
+            ->id('admin')
+            ->default();
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
     }
 }
