@@ -10,9 +10,9 @@ abstract class AbstractFeature implements ProfileFeature
 {
     use EvaluatesClosures;
 
-    protected bool | Closure $enabled = true;
+    protected bool|Closure $enabled = true;
 
-    protected bool | Closure $visible = true;
+    protected bool|Closure $visible = true;
 
     protected int $sort = 0;
 
@@ -21,14 +21,14 @@ abstract class AbstractFeature implements ProfileFeature
         return new static;
     }
 
-    public function enabled(bool | Closure $condition = true): static
+    public function enabled(bool|Closure $condition = true): static
     {
         $this->enabled = $condition;
 
         return $this;
     }
 
-    public function visible(bool | Closure $condition = true): static
+    public function visible(bool|Closure $condition = true): static
     {
         $this->visible = $condition;
 

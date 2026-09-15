@@ -72,46 +72,46 @@ class CompleteUserProfilePlugin implements Plugin
         return $this;
     }
 
-    public function overview(bool | Closure $configuration = true): static
+    public function overview(bool|Closure $configuration = true): static
     {
         $this->configureFeature('overview', $configuration);
 
         return $this;
     }
 
-    public function profile(bool | Closure $configuration = true): static
+    public function profile(bool|Closure $configuration = true): static
     {
         $this->configureFeature('profile', $configuration);
 
         return $this;
     }
 
-    public function security(bool | Closure $configuration = true): static
+    public function security(bool|Closure $configuration = true): static
     {
         $this->configureFeature('security', $configuration);
 
         return $this;
     }
 
-    public function sessions(bool | Closure $configuration = true): static
+    public function sessions(bool|Closure $configuration = true): static
     {
         $this->configureFeature('sessions', $configuration);
 
         return $this;
     }
 
-    public function apiTokens(bool | Closure $configuration = true): static
+    public function apiTokens(bool|Closure $configuration = true): static
     {
         $this->configureFeature('api-tokens', $configuration);
 
         return $this;
     }
 
-    public function multiFactorAuthentication(bool | Closure $condition = true): static
+    public function multiFactorAuthentication(bool|Closure $condition = true): static
     {
         $feature = $this->getFeature('security');
 
-        if (! $feature instanceof Security) {
+        if ($feature instanceof Security === false) {
             throw new InvalidArgumentException('The security feature must be an instance of '.Security::class.'.');
         }
 
@@ -120,12 +120,12 @@ class CompleteUserProfilePlugin implements Plugin
         return $this;
     }
 
-    protected function configureFeature(string $id, bool | Closure $configuration): void
+    protected function configureFeature(string $id, bool|Closure $configuration): void
     {
         $feature = $this->getFeature($id);
 
         if (is_bool($configuration)) {
-            if (! method_exists($feature, 'enabled')) {
+            if (method_exists($feature, 'enabled') === false) {
                 throw new InvalidArgumentException("Profile feature [{$id}] cannot be toggled.");
             }
 
@@ -134,7 +134,7 @@ class CompleteUserProfilePlugin implements Plugin
             return;
         }
 
-        if (! method_exists($feature, 'enabled')) {
+        if (method_exists($feature, 'enabled') === false) {
             throw new InvalidArgumentException("Profile feature [{$id}] cannot be configured.");
         }
 
