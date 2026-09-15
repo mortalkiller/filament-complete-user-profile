@@ -4,6 +4,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile;
 
 use Closure;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 use LogicException;
@@ -53,10 +54,22 @@ class CompleteUserProfilePlugin implements Plugin
 
         $security = $this->getFeature('security');
 
-        if ($security instanceof Security && $security->hasMultiFactorAuthentication()) {
-            $panel->multiFactorAuthentication([
-                AppAuthentication::make()->recoverable(),
-            ]);
+        if (! $security instanceof Security) {
+            return;
+        }
+
+        $providers = [];
+
+        if ($security->hasMultiFactorAuthentication()) {
+            $providers[] = AppAuthentication::make()->recoverable();
+        }
+
+        if ($security->hasEmailAuthentication()) {
+            $providers[] = EmailAuthentication::make();
+        }
+
+        if ($providers !== []) {
+            $panel->multiFactorAuthentication($providers);
         }
     }
 
@@ -144,6 +157,17 @@ class CompleteUserProfilePlugin implements Plugin
 
         if ($security instanceof Security) {
             $security->multiFactorAuthentication($condition);
+        }
+
+        return $this;
+    }
+
+    public function emailAuthentication(bool|Closure $condition = true): static
+    {
+        $security = $this->getFeature('security');
+
+        if ($security instanceof Security) {
+            $security->emailAuthentication($condition);
         }
 
         return $this;
