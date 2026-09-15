@@ -20,19 +20,55 @@ class ProfileFeatureTest extends TestCase
         self::assertTrue($profile->hasLocale());
     }
 
-    public function test_locale_options_follow_explicit_supported_and_app_locale_priority(): void
+    public function test_locale_options_prefer_available_locales_and_resolve_language_names(): void
     {
         config()->set('app.locale', 'en');
-        config()->set('app.supported_locales', ['pt', 'en']);
+        config()->set('app.available_locales', ['pt', 'en']);
+        config()->set('app.supported_locales', ['es', 'fr']);
 
-        self::assertSame(['pt' => 'pt', 'en' => 'en'], Profile::make()->getLocaleOptions());
         self::assertSame(
             ['pt' => 'Português', 'en' => 'English'],
-            Profile::make()->locale(['pt' => 'Português', 'en' => 'English'])->getLocaleOptions(),
+            Profile::make()->getLocaleOptions(),
+        );
+    }
+
+    public function test_locale_options_fall_back_to_supported_locales_then_app_locale(): void
+    {
+        config()->set('app.locale', 'en');
+        config()->set('app.available_locales');
+        config()->set('app.supported_locales', ['es', 'fr']);
+
+        self::assertSame(
+            ['es' => 'Español', 'fr' => 'Français'],
+            Profile::make()->getLocaleOptions(),
         );
 
         config()->set('app.supported_locales');
-        self::assertSame(['en' => 'en'], Profile::make()->getLocaleOptions());
+
+        self::assertSame(
+            ['en' => 'English'],
+            Profile::make()->getLocaleOptions(),
+        );
+    }
+
+    public function test_explicit_locale_codes_are_resolved_and_manual_labels_are_preserved(): void
+    {
+        self::assertSame(
+            [
+                'pt_PT' => 'Português (Portugal)',
+                'pt_BR' => 'Português (Brasil)',
+                'en' => 'English',
+            ],
+            Profile::make()->locale(['pt_PT', 'pt_BR', 'en'])->getLocaleOptions(),
+        );
+
+        self::assertSame(
+            ['pt' => 'Português de Portugal', 'en' => 'English'],
+            Profile::make()->locale([
+                'pt' => 'Português de Portugal',
+                'en' => 'English',
+            ])->getLocaleOptions(),
+        );
     }
 
     public function test_fields_append_and_modifier_can_reorder_them(): void
