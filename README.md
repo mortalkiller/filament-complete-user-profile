@@ -78,6 +78,32 @@ To publish the optional config:
 php artisan vendor:publish --tag=filament-complete-user-profile-config
 ```
 
+## Navigation layout
+
+The account areas use Filament's native schema tabs by default. You can make the choice explicit with `AccountNavigationLayout::Tabs`:
+
+```php
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
+
+CompleteUserProfilePlugin::make()
+    ->navigationLayout(AccountNavigationLayout::Tabs);
+```
+
+To use Filament's native left-side page sub-navigation instead, select `AccountNavigationLayout::Sidebar`:
+
+```php
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
+
+CompleteUserProfilePlugin::make()
+    ->navigationLayout(AccountNavigationLayout::Sidebar);
+```
+
+`Tabs` renders the visible account areas inside a native Filament `Tabs` schema. `Sidebar` uses Filament's native page sub-navigation at the start of the content area and renders only the selected account area. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
+
+Both layouts use Filament components and require no package-specific navigation CSS. The layout can be configured independently on each panel because it belongs to the plugin instance registered on that panel.
+
 ## Enable MFA
 
 The package uses Filament's native authenticator-app MFA provider with recovery codes. It does not implement a separate TOTP system.
