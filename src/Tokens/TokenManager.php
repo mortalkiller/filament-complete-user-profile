@@ -9,10 +9,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 
 class TokenManager
 {
-    /**
-     * @param  array<int, string>  $abilities
-     * @return mixed
-     */
+    /** @param array<int, string> $abilities */
     public function create(
         Authenticatable $user,
         ApiTokens $feature,
@@ -82,7 +79,7 @@ class TokenManager
 
         $relation = $tokens();
 
-        if (! $relation instanceof MorphMany) {
+        if ($relation instanceof MorphMany === false) {
             return;
         }
 
