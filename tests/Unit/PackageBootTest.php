@@ -9,9 +9,12 @@ class PackageBootTest extends TestCase
 {
     public function test_service_provider_is_loaded(): void
     {
+        $app = $this->app;
+
+        self::assertNotNull($app);
         self::assertArrayHasKey(
             CompleteUserProfileServiceProvider::class,
-            $this->app->getLoadedProviders(),
+            $app->getLoadedProviders(),
         );
     }
 }
