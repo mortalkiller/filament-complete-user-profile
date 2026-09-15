@@ -12,6 +12,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
+use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 
 class CompleteUserProfilePlugin implements Plugin
 {
@@ -34,6 +35,14 @@ class CompleteUserProfilePlugin implements Plugin
         return app(static::class);
     }
 
+    public static function get(): static
+    {
+        /** @var static $plugin */
+        $plugin = filament(app(static::class)->getId());
+
+        return $plugin;
+    }
+
     public function getId(): string
     {
         return 'filament-complete-user-profile';
@@ -41,18 +50,37 @@ class CompleteUserProfilePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        // Page registration is added with the page feature.
+        $panel->profile(
+            CompleteUserProfile::class,
+            isSimple: false,
+        );
     }
 
     public function boot(Panel $panel): void
     {
-        // No panel boot hooks are required yet.
+        // Feature-specific panel boot hooks are added by their respective features.
     }
 
     /** @return array<string, ProfileFeature> */
     public function getFeatures(): array
     {
         return $this->features;
+    }
+
+    /** @return array<string, ProfileFeature> */
+    public function getVisibleFeatures(): array
+    {
+        $features = array_filter(
+            $this->features,
+            fn (ProfileFeature $feature): bool => $feature->isEnabled() && $feature->isVisible(),
+        );
+
+        uasort(
+            $features,
+            fn (ProfileFeature $first, ProfileFeature $second): int => $first->getSort() <=> $second->getSort(),
+        );
+
+        return $features;
     }
 
     public function getFeature(string $id): ProfileFeature

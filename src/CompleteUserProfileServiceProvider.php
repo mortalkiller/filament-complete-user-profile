@@ -34,6 +34,8 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-complete-user-profile');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'filament-complete-user-profile');
 
         $this->publishes([
             __DIR__.'/../config/filament-complete-user-profile.php' => config_path('filament-complete-user-profile.php'),
