@@ -37,14 +37,13 @@ class LocaleRegistryTest extends TestCase
 
     private function localeNameMethod(): ReflectionMethod
     {
-        /** @var class-string $registryClass */
         $registryClass = 'Mortalkiller\\FilamentCompleteUserProfile\\Support\\LocaleRegistry';
 
         if (! class_exists($registryClass)) {
             self::fail('LocaleRegistry is missing.');
         }
 
-        $reflection = new ReflectionClass($registryClass);
+        $reflection = new ReflectionClass($registryClass); // @phpstan-ignore argument.type
 
         if (! $reflection->hasMethod('name')) {
             self::fail('LocaleRegistry::name() is missing.');
