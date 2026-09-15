@@ -60,7 +60,7 @@ class CompleteUserProfilePlugin implements Plugin
 
         $providers = [];
 
-        if ($security->hasMultiFactorAuthentication()) {
+        if ($security->hasAppAuthentication()) {
             $providers[] = AppAuthentication::make()->recoverable();
         }
 
@@ -89,7 +89,7 @@ class CompleteUserProfilePlugin implements Plugin
         return $plugin;
     }
 
-    public function navigationLayout(AccountNavigationLayout $layout): static
+    public function navigation(AccountNavigationLayout $layout): static
     {
         $this->navigationLayout = $layout;
 
@@ -124,53 +124,6 @@ class CompleteUserProfilePlugin implements Plugin
     public function apiTokens(bool|Closure $condition = true): static
     {
         return $this->configureFeature('api-tokens', $condition);
-    }
-
-    public function overviewWith(?Closure $configure = null): static
-    {
-        return $this->configureTypedFeature('overview', $configure);
-    }
-
-    public function profileWith(?Closure $configure = null): static
-    {
-        return $this->configureTypedFeature('profile', $configure);
-    }
-
-    public function securityWith(?Closure $configure = null): static
-    {
-        return $this->configureTypedFeature('security', $configure);
-    }
-
-    public function sessionsWith(?Closure $configure = null): static
-    {
-        return $this->configureTypedFeature('sessions', $configure);
-    }
-
-    public function apiTokensWith(?Closure $configure = null): static
-    {
-        return $this->configureTypedFeature('api-tokens', $configure);
-    }
-
-    public function multiFactorAuthentication(bool|Closure $condition = true): static
-    {
-        $security = $this->getFeature('security');
-
-        if ($security instanceof Security) {
-            $security->multiFactorAuthentication($condition);
-        }
-
-        return $this;
-    }
-
-    public function emailAuthentication(bool|Closure $condition = true): static
-    {
-        $security = $this->getFeature('security');
-
-        if ($security instanceof Security) {
-            $security->emailAuthentication($condition);
-        }
-
-        return $this;
     }
 
     public function getFeature(string $id): ProfileFeature
@@ -216,22 +169,6 @@ class CompleteUserProfilePlugin implements Plugin
         }
 
         $feature->enabled($condition);
-
-        return $this;
-    }
-
-    protected function configureTypedFeature(string $id, ?Closure $configure): static
-    {
-        $feature = $this->getFeature($id);
-        $feature->enabled();
-
-        if ($configure !== null) {
-            $configured = $configure($feature);
-
-            if ($configured instanceof ProfileFeature) {
-                $this->features[$id] = $configured;
-            }
-        }
 
         return $this;
     }
