@@ -19,8 +19,8 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use LogicException;
 use Livewire\Component;
+use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenManager;
@@ -120,7 +120,7 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
         $abilities = $data['abilities'] ?? null;
         $expiration = $data['expiration'] ?? null;
 
-        if (! is_string($name) || ! is_array($abilities)) {
+        if (is_string($name) === false || is_array($abilities) === false) {
             throw new LogicException('API token creation data is invalid.');
         }
 
@@ -137,7 +137,7 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
 
         $plainTextToken = data_get($token, 'plainTextToken');
 
-        if (! is_string($plainTextToken) || $plainTextToken === '') {
+        if (is_string($plainTextToken) === false || $plainTextToken === '') {
             throw new LogicException('Sanctum did not return a plaintext token after creation.');
         }
 
@@ -172,7 +172,7 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     {
         $tokens = [$this->user(), 'tokens'];
 
-        if (! is_callable($tokens)) {
+        if (is_callable($tokens) === false) {
             return [];
         }
 
