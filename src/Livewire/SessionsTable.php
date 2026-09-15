@@ -51,7 +51,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
                     ->label('Revoke other sessions')
                     ->requiresConfirmation()
                     ->schema($reauthentication->getFormSchema())
-                    ->disabled(fn (): bool => (! $this->isSupported()) || (! $reauthentication->isAvailable($this->user())))
+                    ->disabled(fn (): bool => $this->isSupported() === false || $reauthentication->isAvailable($this->user()) === false)
                     ->action(function (array $data): void {
                         $this->revokeOtherSessions($data);
                         $this->resetTable();
@@ -61,7 +61,7 @@ class SessionsTable extends Component implements HasActions, HasSchemas, HasTabl
                 Action::make('revoke')
                     ->label('Revoke')
                     ->requiresConfirmation()
-                    ->visible(fn (array $record): bool => ! (bool) ($record['current'] ?? false))
+                    ->visible(fn (array $record): bool => (bool) ($record['current'] ?? false) === false)
                     ->action(function (array $record): void {
                         $this->revokeSession((string) ($record['id'] ?? ''));
                         $this->resetTable();
