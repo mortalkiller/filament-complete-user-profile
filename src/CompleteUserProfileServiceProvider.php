@@ -4,6 +4,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile;
 
 use Illuminate\Support\ServiceProvider;
 use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\Commands\CheckCompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\SessionStore;
@@ -42,6 +43,12 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-complete-user-profile');
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'filament-complete-user-profile');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                CheckCompleteUserProfile::class,
+            ]);
+        }
 
         $this->publishes([
             __DIR__.'/../config/filament-complete-user-profile.php' => config_path('filament-complete-user-profile.php'),
