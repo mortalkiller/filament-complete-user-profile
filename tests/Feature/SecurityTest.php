@@ -47,9 +47,6 @@ class SecurityTest extends TestCase
 
     public function test_default_reauthentication_is_bound_and_fails_closed_for_passwordless_users(): void
     {
-        self::assertTrue(interface_exists(Reauthentication::class));
-        self::assertTrue(class_exists(PasswordReauthentication::class));
-
         $reauthentication = app(Reauthentication::class);
         self::assertInstanceOf(PasswordReauthentication::class, $reauthentication);
 
@@ -68,14 +65,12 @@ class SecurityTest extends TestCase
 
     public function test_password_reauthentication_uses_the_active_filament_guard(): void
     {
-        self::assertTrue(class_exists(PasswordReauthentication::class));
-
         $user = User::query()->create([
             'email' => 'pedro@example.test',
             'password' => Hash::make('secret-password'),
         ]);
 
-        auth('profile')->login($user);
+        auth('profile')->setUser($user);
 
         $reauthentication = app(PasswordReauthentication::class);
         $reauthentication->confirm($user, ['current_password' => 'secret-password']);
@@ -86,13 +81,11 @@ class SecurityTest extends TestCase
 
     public function test_password_update_requires_reauthentication_and_securely_hashes_the_new_password(): void
     {
-        self::assertTrue(method_exists(CompleteUserProfile::class, 'updatePassword'));
-
         $user = User::query()->create([
             'email' => 'pedro@example.test',
             'password' => Hash::make('secret-password'),
         ]);
-        auth('profile')->login($user);
+        auth('profile')->setUser($user);
 
         $page = new TestableCompleteUserProfile;
         $page->userForTesting = $user;
@@ -115,8 +108,6 @@ class SecurityTest extends TestCase
 
     public function test_overview_contains_only_relevant_default_account_information(): void
     {
-        self::assertTrue(method_exists(CompleteUserProfile::class, 'getOverviewData'));
-
         $user = User::query()->create([
             'name' => 'Pedro Monteiro',
             'email' => 'pedro@example.test',

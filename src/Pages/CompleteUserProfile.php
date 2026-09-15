@@ -302,7 +302,9 @@ class CompleteUserProfile extends EditProfile
                     ->required(),
             ])
             ->disabled(fn (): bool => ! $reauthentication->isAvailable($this->getUser()))
-            ->action(fn (array $data): mixed => $this->updatePassword($data));
+            ->action(function (array $data): void {
+                $this->updatePassword($data);
+            });
     }
 
     protected function getProfileFeature(): Profile
