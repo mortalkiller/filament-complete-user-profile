@@ -40,6 +40,7 @@ return [
         'mfa' => [
             'secret' => 'app_authentication_secret',
             'recovery_codes' => 'app_authentication_recovery_codes',
+            'email_enabled' => 'has_email_authentication',
         ],
     ],
 
