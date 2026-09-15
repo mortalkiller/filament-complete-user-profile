@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests;
 
+use Filament\FilamentServiceProvider;
 use Illuminate\Foundation\Application;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfileServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -15,6 +16,7 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
+            FilamentServiceProvider::class,
             CompleteUserProfileServiceProvider::class,
         ];
     }
