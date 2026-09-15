@@ -24,6 +24,13 @@ return [
             'new' => 'Nouveau mot de passe',
             'confirmation' => 'Confirmer le nouveau mot de passe',
         ],
+        'reauthentication' => [
+            'current_password' => 'Mot de passe actuel',
+            'unavailable' => 'Ce compte ne peut pas être réauthentifié avec un mot de passe local.',
+        ],
+        'mfa' => [
+            'requirement' => 'Le modèle authentifiable doit implémenter :contract lorsque l’authentification multifacteur est activée.',
+        ],
     ],
     'sessions' => [
         'columns' => [
@@ -39,6 +46,17 @@ return [
         'actions' => [
             'revoke' => 'Révoquer',
             'revoke_others' => 'Révoquer les autres sessions',
+        ],
+        'requirements' => [
+            'database_driver' => 'La gestion des sessions du navigateur nécessite SESSION_DRIVER=database.',
+            'table' => 'La table de sessions Laravel configurée n’existe pas.',
+        ],
+        'device' => [
+            'unknown_browser' => 'Navigateur inconnu',
+            'unknown_platform' => 'Plateforme inconnue',
+            'tablet' => 'Tablette',
+            'mobile' => 'Mobile',
+            'desktop' => 'Ordinateur',
         ],
         'empty' => 'Aucune session de navigateur trouvée',
     ],
@@ -64,6 +82,13 @@ return [
             'heading' => 'Jeton API créé',
             'description' => 'Copiez ce jeton maintenant. Vous ne pourrez plus le consulter ensuite.',
             'token' => 'Jeton',
+        ],
+        'requirements' => [
+            'sanctum' => 'Laravel Sanctum doit être installé pour activer la gestion des jetons API.',
+            'user_model' => 'Le modèle utilisateur authentifié doit utiliser Laravel\\Sanctum\\HasApiTokens lorsque la gestion des jetons API est activée.',
+            'abilities' => 'Configurez au moins une autorisation de jeton API avant d’activer la gestion des jetons API.',
+            'context_migration' => 'Publiez et exécutez la migration de contexte des jetons de filament-complete-user-profile avant d’activer les jetons API par tenant.',
+            'context_resolver' => 'Enregistrez :contract avant d’activer les jetons API par tenant.',
         ],
         'empty' => 'Aucun jeton API',
     ],
