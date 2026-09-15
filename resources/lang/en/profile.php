@@ -31,6 +31,10 @@ return [
         'mfa' => [
             'requirement' => 'The authenticatable model must implement :contract when multi-factor authentication is enabled.',
         ],
+        'email_authentication' => [
+            'requirement' => 'The authenticatable model must implement :contract when email authentication is enabled.',
+            'notifications' => 'The authenticated user model must support Laravel notifications to use email authentication.',
+        ],
     ],
     'sessions' => [
         'columns' => [
