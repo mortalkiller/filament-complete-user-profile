@@ -66,6 +66,32 @@ class ProfileStorageTest extends TestCase
         self::assertTrue(Schema::hasColumn('users', 'avatar_path'));
     }
 
+    public function test_email_authentication_state_uses_configured_user_storage_column(): void
+    {
+        config()->set('filament-complete-user-profile.storage', 'user');
+        config()->set('filament-complete-user-profile.columns.mfa.email_enabled', 'email_mfa_enabled');
+
+        $migrationPath = __DIR__.'/../../database/migrations/0001_01_01_000003_add_email_authentication_storage.php';
+        self::assertFileExists($migrationPath);
+
+        if (! file_exists($migrationPath)) {
+            return;
+        }
+
+        $migration = require $migrationPath;
+        $migration->up();
+        $migration->up();
+
+        self::assertTrue(Schema::hasColumn('users', 'email_mfa_enabled'));
+
+        $user = User::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
+        $storage = app(ProfileStorage::class);
+
+        $storage->put($user, 'mfa_email_enabled', true);
+
+        self::assertTrue((bool) $storage->get($user->refresh(), 'mfa_email_enabled'));
+    }
+
     public function test_separate_storage_uses_a_package_owned_profile_record(): void
     {
         config()->set('filament-complete-user-profile.storage', 'separate');
@@ -93,5 +119,34 @@ class ProfileStorageTest extends TestCase
 
         $migration->down();
         self::assertFalse(Schema::hasTable('filament_user_profiles'));
+    }
+
+    public function test_email_authentication_state_is_supported_by_separate_profile_storage(): void
+    {
+        config()->set('filament-complete-user-profile.storage', 'separate');
+        config()->set('filament-complete-user-profile.columns.mfa.email_enabled', 'email_mfa_enabled');
+
+        $profileMigration = require __DIR__.'/../../database/migrations/0001_01_01_000002_create_filament_user_profiles_table.php';
+        $profileMigration->up();
+
+        $migrationPath = __DIR__.'/../../database/migrations/0001_01_01_000003_add_email_authentication_storage.php';
+        self::assertFileExists($migrationPath);
+
+        if (! file_exists($migrationPath)) {
+            return;
+        }
+
+        $migration = require $migrationPath;
+        $migration->up();
+        $migration->up();
+
+        self::assertTrue(Schema::hasColumn('filament_user_profiles', 'email_mfa_enabled'));
+
+        $user = User::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
+        $storage = app(ProfileStorage::class);
+
+        $storage->put($user, 'mfa_email_enabled', true);
+
+        self::assertTrue((bool) $storage->get($user, 'mfa_email_enabled'));
     }
 }
