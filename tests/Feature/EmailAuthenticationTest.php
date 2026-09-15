@@ -103,6 +103,42 @@ class EmailAuthenticationTest extends TestCase
         Notification::assertCount(2);
     }
 
+    public function test_resend_action_is_disabled_and_counts_down_until_available(): void
+    {
+        app()->setLocale('en');
+
+        $provider = $this->makeProvider();
+        $user = EmailMfaUser::query()->create(['email' => 'pedro@example.test']);
+        Notification::fake();
+
+        self::assertTrue($provider->sendCode($user));
+
+        $action = $provider->makeResendAction($user);
+
+        self::assertTrue($action->isDisabled());
+        self::assertStringStartsWith('Send a new code by email (', (string) $action->getLabel());
+        self::assertStringEndsWith('s)', (string) $action->getLabel());
+        self::assertSame('$refresh', $action->getExtraAttributes()['wire:poll.1s'] ?? null);
+
+        $this->travel(61)->seconds();
+
+        self::assertFalse($action->isDisabled());
+        self::assertSame('Send a new code by email', $action->getLabel());
+        self::assertArrayNotHasKey('wire:poll.1s', $action->getExtraAttributes());
+    }
+
+    public function test_setup_and_challenge_flows_share_the_package_resend_action(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $provider = file_get_contents($root.'/src/Security/EmailAuthentication/EmailAuthentication.php');
+        $setupAction = file_get_contents($root.'/src/Security/EmailAuthentication/Actions/SetUpEmailAuthenticationAction.php');
+
+        self::assertIsString($provider);
+        self::assertIsString($setupAction);
+        self::assertStringContainsString('makeResendAction($user)', $provider);
+        self::assertStringContainsString('makeResendAction($user)', $setupAction);
+    }
+
     private function makeProvider(): EmailAuthentication
     {
         return app(EmailAuthentication::class);
