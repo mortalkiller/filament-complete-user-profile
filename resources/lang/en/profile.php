@@ -9,6 +9,10 @@ return [
     'navigation' => [
         'label' => 'Account sections',
     ],
+    'fields' => [
+        'avatar' => 'Avatar',
+        'locale' => 'Preferred language',
+    ],
     'features' => [
         'overview' => [
             'label' => 'Overview',
@@ -16,6 +20,7 @@ return [
         ],
         'profile' => [
             'label' => 'Profile',
+            'description' => 'Manage your personal information and preferences.',
         ],
         'security' => [
             'label' => 'Security',

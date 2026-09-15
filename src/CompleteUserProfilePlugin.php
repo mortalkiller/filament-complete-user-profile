@@ -12,6 +12,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
+use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\SetUserLocale;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 
 class CompleteUserProfilePlugin implements Plugin
@@ -50,10 +51,9 @@ class CompleteUserProfilePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panel->profile(
-            CompleteUserProfile::class,
-            isSimple: false,
-        );
+        $panel
+            ->profile(CompleteUserProfile::class, isSimple: false)
+            ->authMiddleware([SetUserLocale::class]);
     }
 
     public function boot(Panel $panel): void
@@ -88,9 +88,7 @@ class CompleteUserProfilePlugin implements Plugin
         return $this->features[$id] ?? throw new InvalidArgumentException("Unknown profile feature [{$id}].");
     }
 
-    /**
-     * @param  array<int, ProfileFeature>  $features
-     */
+    /** @param array<int, ProfileFeature> $features */
     public function features(array $features): static
     {
         foreach ($features as $feature) {
