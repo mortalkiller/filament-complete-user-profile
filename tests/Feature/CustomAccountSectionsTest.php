@@ -2,9 +2,20 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Facades\Filament;
+use Filament\Panel;
+use Filament\PanelRegistry;
+use Filament\Schemas\Components\Section as SchemaSection;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Route;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
+use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
 class CustomAccountSectionsTest extends TestCase
@@ -73,5 +84,119 @@ class CustomAccountSectionsTest extends TestCase
         $this->expectExceptionMessage('Account section [preferences] is already registered.');
 
         $plugin->section(AccountSection::make('preferences'));
+    }
+
+    public function test_sidebar_merges_custom_sections_with_builtin_features_by_sort_order(): void
+    {
+        $this->registerProfileRoute();
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->navigation(AccountNavigationLayout::Sidebar)
+            ->section(
+                AccountSection::make('preferences')
+                    ->label('Preferences')
+                    ->icon(Heroicon::AdjustmentsHorizontal)
+                    ->sort(25),
+            )
+            ->section(
+                AccountSection::make('hidden-preferences')
+                    ->sort(26)
+                    ->visible(false),
+            );
+
+        $page = $this->makePage($plugin);
+        $page->section = 'preferences';
+        $navigation = $page->getSubNavigation();
+
+        self::assertSame(
+            ['Overview', 'Profile', 'Preferences', 'Security'],
+            array_map(static fn ($item): string => $item->getLabel(), $navigation),
+        );
+        self::assertSame(
+            [false, false, true, false],
+            array_map(static fn ($item): bool => $item->isActive(), $navigation),
+        );
+        self::assertSame(Heroicon::AdjustmentsHorizontal, $navigation[2]->getIcon());
+        self::assertStringContainsString('section=preferences', (string) $navigation[2]->getUrl());
+    }
+
+    public function test_invisible_or_invalid_selected_section_falls_back_to_first_visible_item(): void
+    {
+        $this->registerProfileRoute();
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->navigation(AccountNavigationLayout::Sidebar)
+            ->section(AccountSection::make('preferences')->visible(false));
+
+        $page = $this->makePage($plugin);
+        $page->section = 'preferences';
+
+        self::assertSame(
+            [true, false, false],
+            array_map(static fn ($item): bool => $item->isActive(), $page->getSubNavigation()),
+        );
+
+        $page->section = 'missing-section';
+
+        self::assertSame(
+            [true, false, false],
+            array_map(static fn ($item): bool => $item->isActive(), $page->getSubNavigation()),
+        );
+    }
+
+    public function test_tabs_render_custom_section_schema_description_and_icon(): void
+    {
+        $customContent = SchemaSection::make('Custom content');
+        $plugin = CompleteUserProfilePlugin::make()
+            ->overview(false)
+            ->profile(false)
+            ->security(false)
+            ->section(
+                AccountSection::make('preferences')
+                    ->label('Preferences')
+                    ->icon(Heroicon::AdjustmentsHorizontal)
+                    ->description('Manage your personal preferences.')
+                    ->schema([$customContent]),
+            );
+
+        $page = $this->makePage($plugin);
+        $schema = $page->content(Schema::make($page));
+        $components = $schema->getComponents();
+
+        self::assertCount(1, $components);
+        self::assertInstanceOf(Tabs::class, $components[0]);
+
+        $tabs = $components[0]->getChildSchema()->getComponents();
+
+        self::assertCount(1, $tabs);
+        self::assertInstanceOf(Tab::class, $tabs[0]);
+        self::assertSame('Preferences', $tabs[0]->getLabel());
+        self::assertSame(Heroicon::AdjustmentsHorizontal, $tabs[0]->getIcon());
+
+        $tabComponents = $tabs[0]->getChildSchema()->getComponents();
+
+        self::assertCount(1, $tabComponents);
+        self::assertInstanceOf(SchemaSection::class, $tabComponents[0]);
+        self::assertSame('Preferences', $tabComponents[0]->getHeading());
+        self::assertSame('Manage your personal preferences.', $tabComponents[0]->getDescription());
+        self::assertSame([$customContent], $tabComponents[0]->getChildSchema()->getComponents());
+    }
+
+    private function makePage(CompleteUserProfilePlugin $plugin): CompleteUserProfile
+    {
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin($plugin);
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        return app(CompleteUserProfile::class);
+    }
+
+    private function registerProfileRoute(): void
+    {
+        Route::get('/profile', static fn (): string => 'profile')
+            ->name('filament.admin.auth.profile');
     }
 }
