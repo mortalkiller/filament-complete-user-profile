@@ -166,20 +166,39 @@ class CustomAccountSectionsTest extends TestCase
         self::assertCount(1, $components);
         self::assertInstanceOf(Tabs::class, $components[0]);
 
-        $tabs = $components[0]->getChildSchema()->getComponents();
+        $tabsSchema = $components[0]->getChildSchema();
+
+        if ($tabsSchema === null) {
+            self::fail('Tabs must expose a child schema.');
+        }
+
+        $tabs = $tabsSchema->getComponents();
 
         self::assertCount(1, $tabs);
         self::assertInstanceOf(Tab::class, $tabs[0]);
         self::assertSame('Preferences', $tabs[0]->getLabel());
         self::assertSame(Heroicon::AdjustmentsHorizontal, $tabs[0]->getIcon());
 
-        $tabComponents = $tabs[0]->getChildSchema()->getComponents();
+        $tabSchema = $tabs[0]->getChildSchema();
+
+        if ($tabSchema === null) {
+            self::fail('Account tab must expose a child schema.');
+        }
+
+        $tabComponents = $tabSchema->getComponents();
 
         self::assertCount(1, $tabComponents);
         self::assertInstanceOf(SchemaSection::class, $tabComponents[0]);
         self::assertSame('Preferences', $tabComponents[0]->getHeading());
         self::assertSame('Manage your personal preferences.', $tabComponents[0]->getDescription());
-        self::assertSame([$customContent], $tabComponents[0]->getChildSchema()->getComponents());
+
+        $sectionSchema = $tabComponents[0]->getChildSchema();
+
+        if ($sectionSchema === null) {
+            self::fail('Account section must expose a child schema.');
+        }
+
+        self::assertSame([$customContent], $sectionSchema->getComponents());
     }
 
     private function makePage(CompleteUserProfilePlugin $plugin): CompleteUserProfile
