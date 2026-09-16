@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Pages;
 
+use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile;
 use Filament\Forms\Components\FileUpload;
@@ -26,6 +27,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Attributes\Url;
 use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
@@ -83,19 +85,26 @@ class CompleteUserProfile extends EditProfile
             return [];
         }
 
-        $activeFeatureId = $this->getActiveFeature()?->getId();
+        $activeItemId = $this->getActiveAccountItem()?->getId();
 
         return array_values(array_map(
-            function (ProfileFeature $feature) use ($activeFeatureId): NavigationItem {
-                $featureId = $feature->getId();
+            function (ProfileFeature|AccountSection $item) use ($activeItemId): NavigationItem {
+                $itemId = $item->getId();
+                $navigationItem = NavigationItem::make($this->getAccountItemLabel($item))
+                    ->key("account-{$itemId}")
+                    ->sort($item->getSort())
+                    ->url(filament()->getProfileUrl(['section' => $itemId]))
+                    ->isActiveWhen(static fn (): bool => $activeItemId === $itemId);
 
-                return NavigationItem::make($this->getFeatureLabel($feature))
-                    ->key("account-{$featureId}")
-                    ->sort($feature->getSort())
-                    ->url(filament()->getProfileUrl(['section' => $featureId]))
-                    ->isActiveWhen(static fn (): bool => $activeFeatureId === $featureId);
+                $icon = $this->getAccountItemIcon($item);
+
+                if ($icon !== null) {
+                    $navigationItem->icon($icon);
+                }
+
+                return $navigationItem;
             },
-            $this->getVisibleFeatures(),
+            $this->getVisibleAccountItems(),
         ));
     }
 
@@ -107,17 +116,27 @@ class CompleteUserProfile extends EditProfile
     public function content(Schema $schema): Schema
     {
         if (CompleteUserProfilePlugin::get()->getNavigationLayout() === AccountNavigationLayout::Sidebar) {
-            $feature = $this->getActiveFeature();
+            $item = $this->getActiveAccountItem();
 
             return $schema->components(
-                $feature === null ? [] : [$this->getFeatureContentComponent($feature)],
+                $item === null ? [] : [$this->getAccountItemContentComponent($item)],
             );
         }
 
         $tabs = array_map(
-            fn (ProfileFeature $feature): Tab => Tab::make($this->getFeatureLabel($feature))
-                ->schema([$this->getFeatureContentComponent($feature)]),
-            $this->getVisibleFeatures(),
+            function (ProfileFeature|AccountSection $item): Tab {
+                $tab = Tab::make($this->getAccountItemLabel($item))
+                    ->schema([$this->getAccountItemContentComponent($item)]);
+
+                $icon = $this->getAccountItemIcon($item);
+
+                if ($icon !== null) {
+                    $tab->icon($icon);
+                }
+
+                return $tab;
+            },
+            $this->getVisibleAccountItems(),
         );
 
         return $schema->components([
@@ -271,6 +290,46 @@ class CompleteUserProfile extends EditProfile
         return array_filter($data, static fn (mixed $value): bool => filled($value));
     }
 
+    /** @return array<int, ProfileFeature|AccountSection> */
+    protected function getVisibleAccountItems(): array
+    {
+        $plugin = CompleteUserProfilePlugin::get();
+        $items = [
+            ...array_values($plugin->getVisibleFeatures()),
+            ...array_values($plugin->getVisibleSections()),
+        ];
+
+        usort(
+            $items,
+            static fn (ProfileFeature|AccountSection $first, ProfileFeature|AccountSection $second): int => $first->getSort() <=> $second->getSort(),
+        );
+
+        return $items;
+    }
+
+    protected function getAccountItemLabel(ProfileFeature|AccountSection $item): string
+    {
+        return $item instanceof AccountSection
+            ? $item->getLabel()
+            : $this->getFeatureLabel($item);
+    }
+
+    protected function getAccountItemIcon(ProfileFeature|AccountSection $item): string|BackedEnum|null
+    {
+        return $item instanceof AccountSection ? $item->getIcon() : null;
+    }
+
+    protected function getAccountItemContentComponent(ProfileFeature|AccountSection $item): Component
+    {
+        if ($item instanceof AccountSection) {
+            return Section::make($item->getLabel())
+                ->description($item->getDescription())
+                ->schema($item->getSchema());
+        }
+
+        return $this->getFeatureContentComponent($item);
+    }
+
     protected function getFeatureContentComponent(ProfileFeature $feature): Component
     {
         return match ($feature->getId()) {
@@ -403,16 +462,20 @@ class CompleteUserProfile extends EditProfile
         return $feature;
     }
 
-    protected function getActiveFeature(): ?ProfileFeature
+    protected function getActiveAccountItem(): ProfileFeature|AccountSection|null
     {
-        $features = $this->getVisibleFeatures();
-        $requestedFeatureId = $this->section;
+        $items = $this->getVisibleAccountItems();
+        $requestedItemId = $this->section;
 
-        if (is_string($requestedFeatureId) && array_key_exists($requestedFeatureId, $features)) {
-            return $features[$requestedFeatureId];
+        if (is_string($requestedItemId)) {
+            foreach ($items as $item) {
+                if ($item->getId() === $requestedItemId) {
+                    return $item;
+                }
+            }
         }
 
-        return array_values($features)[0] ?? null;
+        return $items[0] ?? null;
     }
 
     protected static function translate(string $key): string
