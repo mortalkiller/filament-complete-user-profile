@@ -23,6 +23,9 @@ class CompleteUserProfilePlugin implements Plugin
     /** @var array<string, ProfileFeature> */
     protected array $features = [];
 
+    /** @var array<string, AccountSection> */
+    protected array $sections = [];
+
     protected AccountNavigationLayout $navigationLayout = AccountNavigationLayout::Tabs;
 
     public function __construct()
@@ -126,6 +129,23 @@ class CompleteUserProfilePlugin implements Plugin
         return $this->configureFeature('api-tokens', $condition);
     }
 
+    public function section(AccountSection $section): static
+    {
+        $id = $section->getId();
+
+        if (array_key_exists($id, $this->features)) {
+            throw new LogicException("Account section [{$id}] uses a reserved built-in feature ID.");
+        }
+
+        if (array_key_exists($id, $this->sections)) {
+            throw new LogicException("Account section [{$id}] is already registered.");
+        }
+
+        $this->sections[$id] = $section;
+
+        return $this;
+    }
+
     public function getFeature(string $id): ProfileFeature
     {
         return $this->features[$id];
@@ -135,6 +155,12 @@ class CompleteUserProfilePlugin implements Plugin
     public function getFeatures(): array
     {
         return $this->features;
+    }
+
+    /** @return array<string, AccountSection> */
+    public function getSections(): array
+    {
+        return $this->sections;
     }
 
     /** @return array<string, ProfileFeature> */
@@ -151,6 +177,22 @@ class CompleteUserProfilePlugin implements Plugin
         );
 
         return $features;
+    }
+
+    /** @return array<string, AccountSection> */
+    public function getVisibleSections(): array
+    {
+        $sections = array_filter(
+            $this->sections,
+            static fn (AccountSection $section): bool => $section->isVisible(),
+        );
+
+        uasort(
+            $sections,
+            static fn (AccountSection $first, AccountSection $second): int => $first->getSort() <=> $second->getSort(),
+        );
+
+        return $sections;
     }
 
     protected function configureFeature(string $id, bool|Closure $condition): static
