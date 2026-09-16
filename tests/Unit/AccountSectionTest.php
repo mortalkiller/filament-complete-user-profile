@@ -84,7 +84,7 @@ class AccountSectionTest extends TestCase
     public function test_schema_must_contain_only_filament_schema_components(): void
     {
         $section = AccountSection::make('preferences')->schema([
-            new \stdClass(),
+            new \stdClass,
         ]);
 
         $this->expectException(LogicException::class);
