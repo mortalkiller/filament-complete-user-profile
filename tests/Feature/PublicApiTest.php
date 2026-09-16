@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
@@ -22,6 +23,27 @@ class PublicApiTest extends TestCase
 
         self::assertSame($plugin, $navigation->invoke($plugin, AccountNavigationLayout::Sidebar));
         self::assertSame(AccountNavigationLayout::Sidebar, $plugin->getNavigationLayout());
+    }
+
+    public function test_plugin_exposes_only_the_canonical_custom_section_registration_method(): void
+    {
+        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
+
+        self::assertTrue($reflection->hasMethod('section'));
+        self::assertFalse($reflection->hasMethod('sections'));
+    }
+
+    public function test_account_section_exposes_the_canonical_fluent_configuration_api(): void
+    {
+        $reflection = new ReflectionClass(AccountSection::class);
+
+        foreach (['make', 'label', 'icon', 'description', 'sort', 'visible', 'schema'] as $method) {
+            self::assertTrue($reflection->hasMethod($method), "[{$method}] should be part of the AccountSection API.");
+        }
+
+        foreach (['badge', 'group', 'view', 'saveUsing', 'afterSave'] as $method) {
+            self::assertFalse($reflection->hasMethod($method), "[{$method}] should not be part of the AccountSection API.");
+        }
     }
 
     public function test_redundant_feature_configurators_are_removed(): void
@@ -72,6 +94,7 @@ class PublicApiTest extends TestCase
             self::assertStringNotContainsString('->securityWith(', $contents, $file);
             self::assertStringNotContainsString('->sessionsWith(', $contents, $file);
             self::assertStringNotContainsString('->apiTokensWith(', $contents, $file);
+            self::assertStringNotContainsString('->sections(', $contents, $file);
         }
 
         $readme = file_get_contents($root.'/README.md');
@@ -80,5 +103,7 @@ class PublicApiTest extends TestCase
         self::assertStringContainsString('->navigation(', $readme);
         self::assertStringContainsString('->appAuthentication()', $readme);
         self::assertStringContainsString('->emailAuthentication()', $readme);
+        self::assertStringContainsString('AccountSection::make(', $readme);
+        self::assertStringContainsString('does not automatically persist', $readme);
     }
 }
