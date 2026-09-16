@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LogicException;
 
-class AccountSection
+final class AccountSection
 {
     use EvaluatesClosures;
 
@@ -24,7 +24,7 @@ class AccountSection
 
     protected bool|Closure $visible = true;
 
-    /** @var array<int, Component>|Closure */
+    /** @var array<array-key, mixed>|Closure */
     protected array|Closure $schema = [];
 
     protected function __construct(
@@ -80,7 +80,7 @@ class AccountSection
         return $this;
     }
 
-    /** @param array<int, Component>|Closure $components */
+    /** @param array<array-key, mixed>|Closure $components */
     public function schema(array|Closure $components): static
     {
         $this->schema = $components;
