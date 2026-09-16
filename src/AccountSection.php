@@ -37,7 +37,7 @@ final class AccountSection
 
     public static function make(string $id): static
     {
-        return new static($id);
+        return new self($id);
     }
 
     public function getId(): string
