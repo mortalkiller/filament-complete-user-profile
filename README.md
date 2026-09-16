@@ -428,6 +428,42 @@ Registering a reserved ID or registering the same custom section ID twice throws
 
 Custom account sections work with both navigation layouts. With `AccountNavigationLayout::Tabs`, they render as native Filament tabs. With `AccountNavigationLayout::Sidebar`, they become native page sub-navigation items and use the same `?section=preferences` query-string selection as built-in areas. Hidden sections are excluded from navigation, and invalid or hidden section values fall back to the first visible account area.
 
+## AccountSection API reference
+
+`AccountSection` is intentionally small. The fluent configuration methods return the same section instance so configuration reads naturally from left to right.
+
+### Fluent configuration
+
+- `make(string $id)` creates a section. IDs must use lowercase kebab-case, for example `connected-accounts`.
+- `label(string|Closure $label)` sets the navigation label. Without a label, the ID is converted to a headline.
+- `icon(string|BackedEnum|null $icon)` sets the native Filament navigation/tab icon.
+- `description(string|Closure|null $description)` sets the description rendered by the section container.
+- `sort(int $sort)` controls ordering relative to built-in and custom account areas. The default is `100`.
+- `visible(bool|Closure $condition = true)` controls whether the section can appear or be selected. The default is `true`.
+- `schema(array|Closure $components)` defines the section content. The array or callback result must contain only Filament schema components.
+
+### Read-only accessors
+
+These methods expose the resolved section configuration for integrations and package-level customization:
+
+- `getId()` returns the section ID.
+- `getLabel()` returns the resolved label, including the generated headline fallback.
+- `getIcon()` returns the configured icon or `null`.
+- `getDescription()` returns the resolved description or `null`.
+- `getSort()` returns the configured sort value.
+- `isVisible()` evaluates the visibility condition.
+- `getSchema()` evaluates and validates the schema, returning the normalized list of Filament schema components.
+
+### Plugin registration API
+
+`CompleteUserProfilePlugin` exposes the following custom-section methods:
+
+- `section(AccountSection $section)` registers one custom account section and returns the plugin for fluent chaining. Reserved or duplicate IDs throw a `LogicException`.
+- `getSections()` returns all registered custom sections keyed by ID.
+- `getVisibleSections()` returns only visible custom sections, ordered by their sort value.
+
+There is intentionally no `sections()` method. Register sections one at a time with `section()` so the package has one canonical, autocomplete-friendly API.
+
 ## Structural config
 
 Publishing the config is optional:
