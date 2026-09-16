@@ -105,5 +105,16 @@ class PublicApiTest extends TestCase
         self::assertStringContainsString('->emailAuthentication()', $readme);
         self::assertStringContainsString('AccountSection::make(', $readme);
         self::assertStringContainsString('does not automatically persist', $readme);
+        self::assertStringContainsString('## AccountSection API reference', $readme);
+
+        foreach (['make(string $id)', 'label(string|Closure $label)', 'icon(string|BackedEnum|null $icon)', 'description(string|Closure|null $description)', 'sort(int $sort)', 'visible(bool|Closure $condition = true)', 'schema(array|Closure $components)', 'getId()', 'getLabel()', 'getIcon()', 'getDescription()', 'getSort()', 'isVisible()', 'getSchema()'] as $signature) {
+            self::assertStringContainsString($signature, $readme, "README should document AccountSection::{$signature}.");
+        }
+
+        foreach (['section(AccountSection $section)', 'getSections()', 'getVisibleSections()'] as $signature) {
+            self::assertStringContainsString($signature, $readme, "README should document CompleteUserProfilePlugin::{$signature}.");
+        }
+
+        self::assertStringContainsString('There is intentionally no `sections()` method', $readme);
     }
 }
