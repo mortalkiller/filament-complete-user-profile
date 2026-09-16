@@ -354,6 +354,80 @@ For advanced cases, `Profile` also exposes `modifyFieldsUsing()`, `mutateDataBef
 
 Additional custom fields are part of the host application's user/domain model; the package does not automatically create arbitrary columns for them.
 
+## Custom account sections
+
+Use a custom account section when you want a new first-class area in the account navigation rather than another field inside the existing Profile form. Register sections one at a time with the plugin's fluent `section()` method:
+
+```php
+use Filament\Schemas\Components\Text;
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
+
+CompleteUserProfilePlugin::make()
+    ->section(
+        AccountSection::make('preferences')
+            ->schema([
+                Text::make('Manage your personal preferences here.'),
+            ]),
+    );
+```
+
+The section ID uses lowercase kebab-case. When no label is configured, the package derives one from the ID, so `connected-accounts` becomes `Connected Accounts`.
+
+Configure navigation metadata with the same fluent style:
+
+```php
+use Filament\Schemas\Components\Text;
+use Filament\Support\Icons\Heroicon;
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
+
+CompleteUserProfilePlugin::make()
+    ->section(
+        AccountSection::make('preferences')
+            ->label('Preferences')
+            ->icon(Heroicon::AdjustmentsHorizontal)
+            ->description('Manage your personal preferences.')
+            ->sort(25)
+            ->visible(fn (): bool => auth()->user() !== null)
+            ->schema([
+                Text::make('Preferences content'),
+            ]),
+    );
+```
+
+Custom sections participate in the same ordering as the built-in account areas. Built-ins use their existing sort values, while a custom section defaults to sort `100`. A section with `sort(25)` therefore appears between Profile and Security with the default feature ordering.
+
+For application-owned forms or other stateful interfaces, compose the section from a native Filament Livewire schema component:
+
+```php
+use Filament\Schemas\Components\Livewire;
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
+
+CompleteUserProfilePlugin::make()
+    ->section(
+        AccountSection::make('preferences')
+            ->label('Preferences')
+            ->schema([
+                Livewire::make(\App\Livewire\Account\Preferences::class),
+            ]),
+    );
+```
+
+`AccountSection` is a navigation and content extension point. It **does not automatically persist** fields to the user model, `ProfileStorage`, or any package-owned table. The application owns migrations, validation and persistence for domain-specific data rendered inside a custom section.
+
+Use `Profile::fields()` when a field naturally belongs to the existing Profile form and should participate in that form's normal save flow. Use `AccountSection` when the feature deserves its own navigable area and can own its behaviour through native Filament schema components, Livewire components or actions.
+
+The following IDs are reserved by the built-in package features and cannot be registered as custom sections:
+
+- `overview`
+- `profile`
+- `security`
+- `sessions`
+- `api-tokens`
+
+Registering a reserved ID or registering the same custom section ID twice throws a clear exception instead of silently overriding an existing area.
+
+Custom account sections work with both navigation layouts. With `AccountNavigationLayout::Tabs`, they render as native Filament tabs. With `AccountNavigationLayout::Sidebar`, they become native page sub-navigation items and use the same `?section=preferences` query-string selection as built-in areas. Hidden sections are excluded from navigation, and invalid or hidden section values fall back to the first visible account area.
+
 ## Structural config
 
 Publishing the config is optional:
