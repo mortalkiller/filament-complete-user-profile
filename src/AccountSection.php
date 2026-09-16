@@ -30,7 +30,7 @@ final class AccountSection
     protected function __construct(
         protected string $id,
     ) {
-        if (! preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $id)) {
+        if (preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $id) !== 1) {
             throw new InvalidArgumentException('Account section IDs must use lowercase kebab-case.');
         }
     }
@@ -134,12 +134,12 @@ final class AccountSection
             ? $this->evaluate($this->schema)
             : $this->schema;
 
-        if (! is_array($schema)) {
+        if (is_array($schema) === false) {
             throw new LogicException('Account section schema callback must return an array of Filament schema components.');
         }
 
         foreach ($schema as $component) {
-            if (! $component instanceof Component) {
+            if (($component instanceof Component) === false) {
                 throw new LogicException('Account section schema must contain only Filament schema components.');
             }
         }
