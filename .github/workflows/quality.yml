@@ -45,3 +45,45 @@ jobs:
 
       - name: Check tracked PHP syntax
         run: git ls-files -z '*.php' | xargs -0 -n 1 php -l
+
+      - name: Verify distribution archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          archive_contents="$(git archive HEAD | tar -tf -)"
+
+          required_paths=(
+            'composer.json'
+            'src/'
+            'config/'
+            'database/'
+            'resources/'
+          )
+
+          for path in "${required_paths[@]}"; do
+            if ! grep -Fq "$path" <<< "$archive_contents"; then
+              echo "Required distribution path is missing: $path" >&2
+              exit 1
+            fi
+          done
+
+          forbidden_paths=(
+            '.github/'
+            '.gitignore'
+            'tests/'
+            'docs/superpowers/'
+            'docs/verification.md'
+            'phpunit.xml.dist'
+            'phpstan.neon.dist'
+            'pint.json'
+            'CONTRIBUTING.md'
+            'composer.lock'
+          )
+
+          for path in "${forbidden_paths[@]}"; do
+            if grep -Fq "$path" <<< "$archive_contents"; then
+              echo "Development-only path leaked into distribution archive: $path" >&2
+              exit 1
+            fi
+          done
