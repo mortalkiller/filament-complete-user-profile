@@ -2,7 +2,6 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Unit;
 
-use BackedEnum;
 use Filament\Schemas\Components\Section;
 use InvalidArgumentException;
 use LogicException;
@@ -95,7 +94,7 @@ class AccountSectionTest extends TestCase
     }
 }
 
-enum AccountSectionTestIcon: string implements BackedEnum
+enum AccountSectionTestIcon: string
 {
     case Preferences = 'preferences';
 }
