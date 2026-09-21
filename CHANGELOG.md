@@ -4,6 +4,44 @@ All notable changes to Filament Complete User Profile are documented here.
 
 The project follows Semantic Versioning.
 
+## [2.0.0] - Unreleased
+
+### Added
+
+- Account navigation rendered inside a page header card, with breadcrumbs, avatar and
+  native sub-navigation.
+- An Account Security summary panel beside the Overview and Profile areas, listing
+  authenticator app, email MFA, active session and API token state for the enabled
+  features.
+- `CompleteUserProfilePlugin::pageHeader()` to configure the header without registering
+  a second plugin.
+- A page header row in the `filament-complete-user-profile:check` diagnostics.
+
+### Changed
+
+- The page heading, subheading and breadcrumbs follow the active account area.
+- Content cards no longer repeat the area description, which now lives in the header.
+
+### Removed
+
+- `AccountNavigationLayout`, `CompleteUserProfilePlugin::navigation()` and
+  `getNavigationLayout()`. There is one navigation layout.
+- `AccountSection::icon()` and `getIcon()`. The account navigation has no icons.
+- `CompleteUserProfile::getSubNavigationPosition()` and `getAccountItemIcon()`.
+
+### Requirements
+
+- Filament 5.8.1 or newer, below Filament 6.
+- `mortalkiller/filament-page-header` 2.3.1 or newer.
+
+### Upgrading from 1.x
+
+1. Remove `->navigation(AccountNavigationLayout::Tabs)` or `::Sidebar` from your plugin
+   configuration, and remove the `AccountNavigationLayout` import.
+2. Remove `->icon(...)` from every custom `AccountSection`.
+3. Raise Filament to 5.8.1 or newer.
+4. If you already require `mortalkiller/filament-page-header`, raise it to `^2.3.1`.
+
 ## [1.0.0] - Unreleased
 
 Initial stable release.

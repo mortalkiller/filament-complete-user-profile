@@ -22,7 +22,6 @@ IDs must match lowercase kebab-case. Invalid IDs throw `InvalidArgumentException
 | Method | Argument | Default | Notes |
 | --- | --- | --- | --- |
 | `label()` | `string|Closure` | headline generated from ID | Empty resolved labels fall back to the generated headline. |
-| `icon()` | `string|BackedEnum|null` | `null` | Native Filament-compatible icon value. |
 | `description()` | `string|Closure|null` | `null` | Empty resolved descriptions normalize to `null`. |
 | `sort()` | `int` | `100` | Controls relative account navigation ordering. |
 | `visible()` | `bool|Closure = true` | `true` | Evaluated through Filament's closure evaluation support. |
@@ -35,7 +34,6 @@ All fluent setters return the same section instance.
 ```php
 getId(): string
 getLabel(): string
-getIcon(): string|BackedEnum|null
 getDescription(): ?string
 getSort(): int
 isVisible(): bool

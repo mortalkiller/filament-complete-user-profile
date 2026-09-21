@@ -122,6 +122,18 @@ php artisan vendor:publish --tag=filament-complete-user-profile-config
 
 The account areas render as a single, iconless sub-navigation inside the account page's header, built with `mortalkiller/filament-page-header`. Every visible account area — built-in features and custom sections alike — appears as a tab in that header, and only the selected area's content renders below it. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
 
+You register one plugin. `CompleteUserProfilePlugin` registers `PageHeaderPlugin` on the panel when it is not already there. To change the header mode without registering a second plugin:
+
+```php
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+
+CompleteUserProfilePlugin::make()
+    ->pageHeader(fn (PageHeaderPlugin $header): PageHeaderPlugin => $header->sticky());
+```
+
+If your application already registers `PageHeaderPlugin` on the same panel, that registration is authoritative in either order and `pageHeader()` is ignored.
+
 This uses native Filament and `filament-page-header` components and requires no package-specific navigation CSS.
 
 ## Enable MFA

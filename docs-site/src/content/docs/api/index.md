@@ -17,7 +17,6 @@ Use the guides for task-oriented setup. This section documents the package's pub
 | [API Tokens](./api-tokens/) | Sanctum abilities, expiration and tenant-scoped token settings. |
 | [Contracts](./contracts/) | Replaceable profile storage, reauthentication, session and token-context abstractions. |
 | [Concerns](./concerns/) | MFA storage adapter traits for authenticatable models. |
-| [Enums](./enums/) | Account navigation layout choices. |
 | [Configuration](./configuration/) | Structural package config keys and defaults. |
 | [Extension points](./extension-points/) | Container bindings and application-owned integration points. |
 

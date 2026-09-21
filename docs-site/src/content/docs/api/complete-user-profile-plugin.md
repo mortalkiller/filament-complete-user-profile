@@ -37,14 +37,17 @@ CompleteUserProfilePlugin::make()
         ]));
 ```
 
-## Navigation
+## Page header
 
 ```php
-navigation(AccountNavigationLayout $layout): static
-getNavigationLayout(): AccountNavigationLayout
+pageHeader(PageHeaderPlugin|Closure $plugin): static
 ```
 
-The default layout is `AccountNavigationLayout::Tabs`.
+`CompleteUserProfilePlugin` registers `PageHeaderPlugin` on the panel when the panel does
+not already have one. `pageHeader()` accepts a configured `PageHeaderPlugin` instance or a
+Closure that receives the plugin and may return a replacement. When the panel already
+carries a `PageHeaderPlugin` — registered by the application in either order — that
+registration is authoritative and `pageHeader()` is ignored.
 
 ## Custom sections
 
@@ -78,4 +81,4 @@ CompleteUserProfilePlugin::get()
 
 ## Per-panel behavior
 
-A plugin instance is registered on a specific Filament panel. Navigation layout, enabled features and custom sections can therefore differ between panels.
+A plugin instance is registered on a specific Filament panel. Page header configuration, enabled features and custom sections can therefore differ between panels.

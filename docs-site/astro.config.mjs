@@ -72,7 +72,6 @@ export default defineConfig({
             'api/api-tokens',
             'api/contracts',
             'api/concerns',
-            'api/enums',
             'api/configuration',
             'api/extension-points',
           ],
