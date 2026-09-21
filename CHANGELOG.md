@@ -18,10 +18,10 @@ The project follows Semantic Versioning.
 - A page header row in the `filament-complete-user-profile:check` diagnostics.
 - `CompleteUserProfile::headerSchema()`, `getBreadcrumbs()` and
   `getAccountSecurityAsideComponent()`.
-- The created-API-token modal now masks the token by default (showing a truncated
-  preview), with a suffix action to reveal or hide it and a warning callout stating the
-  token cannot be viewed again once the dialog closes. Copying always copies the full
-  token, regardless of whether it is currently revealed.
+- The created-API-token modal now shows the token in a read-only, masked Filament text
+  input with the native copy, show and hide affix actions, above a warning callout
+  stating the token cannot be viewed again once the dialog closes. Revealing and copying
+  happen in the browser, so neither needs a server round trip.
 
 ### Changed
 

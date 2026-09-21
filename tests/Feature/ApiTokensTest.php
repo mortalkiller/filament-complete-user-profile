@@ -6,7 +6,7 @@ use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
-use Filament\Infolists\Components\TextEntry;
+use Filament\Forms\Components\TextInput;
 use Filament\Panel;
 use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Component;
@@ -230,7 +230,7 @@ class ApiTokensTest extends TestCase
         self::assertNull($component->getCreatedPlainTextToken());
     }
 
-    public function test_created_token_is_masked_by_default_with_a_warning_copy_and_reveal_toggle(): void
+    public function test_created_token_uses_a_read_only_masked_input_with_native_copy_and_reveal(): void
     {
         $component = $this->makeAuthenticatedComponent();
 
@@ -242,45 +242,56 @@ class ApiTokensTest extends TestCase
 
         $plainTextToken = $component->getCreatedPlainTextToken();
         self::assertNotNull($plainTextToken);
-        self::assertFalse($component->isCreatedTokenRevealed());
 
         $callout = $this->getCreatedTokenWarningCallout($component);
         self::assertSame('warning', $callout->getStatus());
         self::assertNotNull($callout->getHeading());
         self::assertNotNull($callout->getDescription());
 
-        $entry = $this->getCreatedTokenEntry($component);
-        self::assertTrue($entry->hasCopyable());
+        $input = $this->getCreatedTokenInput($component);
+        self::assertTrue($input->isReadOnly());
+        self::assertTrue($input->isPassword());
+        self::assertTrue($input->isCopyable());
+        self::assertTrue($input->isPasswordRevealable());
 
-        $maskedState = $entry->getState();
-        self::assertIsString($maskedState);
-        self::assertNotSame($plainTextToken, $maskedState);
-        self::assertStringContainsString('.....', $maskedState);
-        self::assertSame($plainTextToken, $entry->getCopyableState($maskedState));
+        self::assertSame(
+            ['copy', 'showPassword', 'hidePassword'],
+            array_keys($input->getSuffixActions()),
+        );
 
-        $suffixActions = array_values($entry->getSuffixActions());
-        self::assertCount(1, $suffixActions);
-        self::assertSame('toggleCreatedTokenVisibility', $suffixActions[0]->getName());
+        // The modal must carry the token in the mounted action's own state, not in a
+        // protected component property: Livewire discards those between requests, which
+        // is what made the token vanish on the first interaction with the modal.
+        $action = $component->showCreatedTokenAction();
+        $schema = $action->getSchema(Schema::make($component));
+        self::assertNotNull($schema);
 
-        $component->toggleCreatedTokenVisibility();
-        self::assertTrue($component->isCreatedTokenRevealed());
+        $action->mount(['form' => $schema, 'schema' => $schema]);
 
-        $revealedEntry = $this->getCreatedTokenEntry($component);
-        $revealedState = $revealedEntry->getState();
-        self::assertSame($plainTextToken, $revealedState);
-        self::assertSame($plainTextToken, $revealedEntry->getCopyableState($revealedState));
+        self::assertSame($plainTextToken, $schema->getState()['plain_text_token'] ?? null);
+    }
+
+    public function test_the_created_token_reveal_never_needs_a_server_round_trip(): void
+    {
+        $component = $this->makeAuthenticatedComponent();
 
         $component->createToken([
-            'name' => 'CLI 2',
+            'name' => 'CLI',
             'abilities' => ['customers:read'],
             'expiration' => 7,
         ]);
-        self::assertFalse($component->isCreatedTokenRevealed());
 
-        $component->toggleCreatedTokenVisibility();
-        self::assertTrue($component->isCreatedTokenRevealed());
-        $component->dismissCreatedToken();
-        self::assertFalse($component->isCreatedTokenRevealed());
+        $suffixActions = $this->getCreatedTokenInput($component)->getSuffixActions();
+
+        foreach (['copy', 'showPassword', 'hidePassword'] as $name) {
+            $action = $suffixActions[$name] ?? null;
+
+            self::assertInstanceOf(Action::class, $action);
+            self::assertNotNull(
+                $action->getAlpineClickHandler(),
+                "[{$name}] must toggle or copy in the browser, not through Livewire.",
+            );
+        }
     }
 
     private function makeAuthenticatedComponent(): ApiTokensTable
@@ -316,11 +327,11 @@ class ApiTokensTest extends TestCase
         return $components[0];
     }
 
-    private function getCreatedTokenEntry(ApiTokensTable $component): TextEntry
+    private function getCreatedTokenInput(ApiTokensTable $component): TextInput
     {
         $components = $this->getCreatedTokenSchemaComponents($component);
 
-        self::assertInstanceOf(TextEntry::class, $components[1]);
+        self::assertInstanceOf(TextInput::class, $components[1]);
 
         return $components[1];
     }
