@@ -7,7 +7,6 @@ use Filament\Panel;
 use Filament\PanelRegistry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -124,7 +123,7 @@ class CompleteUserProfilePageTest extends TestCase
         $main = array_values($schema->getComponents());
 
         self::assertCount(1, $main);
-        self::assertNotInstanceOf(Tabs::class, $main[0]);
+        self::assertInstanceOf(Section::class, $main[0]);
     }
 
     public function test_navigation_urls_always_target_the_profile_route(): void
