@@ -11,6 +11,14 @@
 
 A complete, modular account center for Filament 5 and Laravel 13.
 
+## Documentation
+
+Full documentation: **https://docs.pedromonteiro.dev/filament-complete-user-profile/**
+
+- [Getting Started](https://docs.pedromonteiro.dev/filament-complete-user-profile/getting-started/installation/)
+- [Configuration](https://docs.pedromonteiro.dev/filament-complete-user-profile/getting-started/configuration/)
+- [API Reference](https://docs.pedromonteiro.dev/filament-complete-user-profile/api/)
+
 It replaces Filament's simple profile screen with a normal panel page and lets you opt into account-security features such as multi-factor authentication, browser session management, Sanctum API tokens, and tenant-scoped tokens while keeping the default setup small.
 
 ## Installation
