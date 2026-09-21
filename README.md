@@ -1,3 +1,5 @@
+![Filament Complete User Profile showcase](docs/filament-complete-user-profile.png)
+
 # Filament Complete User Profile
 
 [![Latest version](https://img.shields.io/packagist/v/mortalkiller/filament-complete-user-profile.svg)](https://packagist.org/packages/mortalkiller/filament-complete-user-profile)

@@ -20,6 +20,8 @@ hero:
 
 Filament Complete User Profile replaces the basic profile screen with a normal Filament panel page and lets each panel opt into the account capabilities it needs.
 
+![Filament Complete User Profile account center](/filament-complete-user-profile/filament-complete-user-profile.png)
+
 ## Highlights
 
 - Native Filament panel page, tabs or sidebar navigation.
