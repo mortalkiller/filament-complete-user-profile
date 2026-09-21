@@ -2,8 +2,11 @@ name: Code quality
 
 on:
   push:
-    branches: ['main', '1.x', 'feature/**', 'codex/**', 'release/**']
-    tags: ['v*']
+    branches:
+      - main
+      - '1.x'
+    tags:
+      - 'v*'
   pull_request:
 
 permissions:
@@ -15,40 +18,19 @@ concurrency:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-quality.yml@1.x
+    with:
+      php-version: '8.4'
+      static-analysis: true
 
+  distribution:
+    name: Distribution archive
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
-        with:
-          php-version: '8.4'
-          extensions: intl, mbstring, pdo_sqlite, dom, fileinfo, curl, zip
-          coverage: none
-          tools: composer:v2
-
-      - name: Validate Composer package
-        run: composer validate --strict
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Audit dependencies
-        run: composer audit --locked --no-interaction
-
-      - name: Check code style
-        run: composer lint
-
-      - name: Run static analysis
-        run: composer analyse
-
-      - name: Check tracked PHP syntax
-        run: git ls-files -z '*.php' | xargs -0 -n 1 php -l
 
       - name: Verify distribution archive
         shell: bash
