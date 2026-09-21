@@ -1,0 +1,98 @@
+name: Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'SECURITY.md'
+      - '.github/workflows/docs.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'SECURITY.md'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+
+      - name: Install documentation dependencies
+        working-directory: docs-site
+        run: npm install --no-audit --no-fund
+
+      - name: Build documentation
+        working-directory: docs-site
+        run: npm run build
+
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: filament-complete-user-profile-docs
+          path: docs-site/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: Deploy documentation
+    needs: build
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.DOCS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: docs-production
+
+    steps:
+      - name: Download documentation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: filament-complete-user-profile-docs
+          path: docs-site/dist
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DOCS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DOCS_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy documentation
+        env:
+          DOCS_HOST: ${{ secrets.DOCS_HOST }}
+          DOCS_USER: ${{ secrets.DOCS_USER }}
+          DOCS_PORT: ${{ vars.DOCS_PORT }}
+          DOCS_REMOTE_PATH: ${{ vars.DOCS_REMOTE_PATH }}
+        run: |
+          test -n "$DOCS_HOST"
+          test -n "$DOCS_USER"
+          test -n "$DOCS_PORT"
+          test -n "$DOCS_REMOTE_PATH"
+          rsync -az --delete \
+            -e "ssh -p $DOCS_PORT -i ~/.ssh/id_ed25519" \
+            docs-site/dist/ \
+            "$DOCS_USER@$DOCS_HOST:$DOCS_REMOTE_PATH/"
