@@ -5,6 +5,14 @@ description: Store package-managed profile and MFA data on the user model or in 
 
 The package supports two storage modes.
 
+## Choose the mode before the first migration
+
+Storage mode is structural and should be selected before the package migrations are first executed.
+
+Laravel records each package migration as executed even when that migration returns early because it belongs to the other storage mode. Therefore, changing `user` to `separate` or `separate` to `user` after installation is not performed automatically by rerunning `php artisan migrate`.
+
+If an existing application changes storage mode later, the application must provide its own migration/data migration to create the new storage shape and move any existing profile or MFA data safely.
+
 ## User storage
 
 This is the default:
