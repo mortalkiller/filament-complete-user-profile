@@ -31,7 +31,9 @@ class CompleteUserProfilePlugin implements Plugin
 
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
 
-    protected bool $hasRegisteredPageHeader = false;
+    protected ?PageHeaderPlugin $registeredPageHeader = null;
+
+    protected ?Panel $pageHeaderPanel = null;
 
     public function __construct()
     {
@@ -61,8 +63,12 @@ class CompleteUserProfilePlugin implements Plugin
             ->authMiddleware([SetUserLocale::class]);
 
         if (! $panel->hasPlugin(PageHeaderPlugin::ID)) {
-            $panel->plugin($this->makePageHeaderPlugin());
-            $this->hasRegisteredPageHeader = true;
+            $pageHeader = $this->makePageHeaderPlugin();
+
+            $panel->plugin($pageHeader);
+
+            $this->registeredPageHeader = $pageHeader;
+            $this->pageHeaderPanel = $panel;
         }
 
         $security = $this->getFeature('security');
@@ -123,7 +129,12 @@ class CompleteUserProfilePlugin implements Plugin
 
     public function hasRegisteredPageHeader(): bool
     {
-        return $this->hasRegisteredPageHeader;
+        if ($this->registeredPageHeader === null || $this->pageHeaderPanel === null) {
+            return false;
+        }
+
+        return $this->pageHeaderPanel->hasPlugin(PageHeaderPlugin::ID)
+            && $this->pageHeaderPanel->getPlugin(PageHeaderPlugin::ID) === $this->registeredPageHeader;
     }
 
     public function overview(bool|Closure $condition = true): static
