@@ -8,7 +8,6 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
@@ -26,8 +25,6 @@ class CompleteUserProfilePlugin implements Plugin
 
     /** @var array<string, AccountSection> */
     protected array $sections = [];
-
-    protected AccountNavigationLayout $navigationLayout = AccountNavigationLayout::Tabs;
 
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
 
@@ -106,18 +103,6 @@ class CompleteUserProfilePlugin implements Plugin
         $plugin = $panel->getPlugin('filament-complete-user-profile');
 
         return $plugin;
-    }
-
-    public function navigation(AccountNavigationLayout $layout): static
-    {
-        $this->navigationLayout = $layout;
-
-        return $this;
-    }
-
-    public function getNavigationLayout(): AccountNavigationLayout
-    {
-        return $this->navigationLayout;
     }
 
     public function pageHeader(PageHeaderPlugin|Closure $plugin): static

@@ -6,15 +6,11 @@ use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\PanelRegistry;
 use Filament\Schemas\Components\Section as SchemaSection;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Route;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
@@ -86,16 +82,14 @@ class CustomAccountSectionsTest extends TestCase
         $plugin->section(AccountSection::make('preferences'));
     }
 
-    public function test_sidebar_merges_custom_sections_with_builtin_features_by_sort_order(): void
+    public function test_navigation_merges_custom_sections_with_builtin_features_by_sort_order(): void
     {
         $this->registerProfileRoute();
 
         $plugin = CompleteUserProfilePlugin::make()
-            ->navigation(AccountNavigationLayout::Sidebar)
             ->section(
                 AccountSection::make('preferences')
                     ->label('Preferences')
-                    ->icon(Heroicon::AdjustmentsHorizontal)
                     ->sort(25),
             )
             ->section(
@@ -116,7 +110,7 @@ class CustomAccountSectionsTest extends TestCase
             [false, false, true, false],
             array_map(static fn ($item): bool => $item->isActive(), $navigation),
         );
-        self::assertSame(Heroicon::AdjustmentsHorizontal, $navigation[2]->getIcon());
+        self::assertNull($navigation[2]->getIcon());
         self::assertStringContainsString('section=preferences', (string) $navigation[2]->getUrl());
     }
 
@@ -125,7 +119,6 @@ class CustomAccountSectionsTest extends TestCase
         $this->registerProfileRoute();
 
         $plugin = CompleteUserProfilePlugin::make()
-            ->navigation(AccountNavigationLayout::Sidebar)
             ->section(AccountSection::make('preferences')->visible(false));
 
         $page = $this->makePage($plugin);
@@ -144,8 +137,10 @@ class CustomAccountSectionsTest extends TestCase
         );
     }
 
-    public function test_tabs_render_custom_section_schema_description_and_icon(): void
+    public function test_content_renders_the_custom_section_schema(): void
     {
+        $this->registerProfileRoute();
+
         $customContent = SchemaSection::make('Custom content');
         $plugin = CompleteUserProfilePlugin::make()
             ->overview(false)
@@ -154,45 +149,19 @@ class CustomAccountSectionsTest extends TestCase
             ->section(
                 AccountSection::make('preferences')
                     ->label('Preferences')
-                    ->icon(Heroicon::AdjustmentsHorizontal)
                     ->description('Manage your personal preferences.')
                     ->schema([$customContent]),
             );
 
         $page = $this->makePage($plugin);
-        $schema = $page->content(Schema::make($page));
-        $components = $schema->getComponents();
+        $page->section = 'preferences';
+        $components = $page->content(Schema::make($page))->getComponents();
 
         self::assertCount(1, $components);
-        self::assertInstanceOf(Tabs::class, $components[0]);
+        self::assertInstanceOf(SchemaSection::class, $components[0]);
+        self::assertSame('Preferences', $components[0]->getHeading());
 
-        $tabsSchema = $components[0]->getChildSchema();
-
-        if ($tabsSchema === null) {
-            self::fail('Tabs must expose a child schema.');
-        }
-
-        $tabs = $tabsSchema->getComponents();
-
-        self::assertCount(1, $tabs);
-        self::assertInstanceOf(Tab::class, $tabs[0]);
-        self::assertSame('Preferences', $tabs[0]->getLabel());
-        self::assertSame(Heroicon::AdjustmentsHorizontal, $tabs[0]->getIcon());
-
-        $tabSchema = $tabs[0]->getChildSchema();
-
-        if ($tabSchema === null) {
-            self::fail('Account tab must expose a child schema.');
-        }
-
-        $tabComponents = $tabSchema->getComponents();
-
-        self::assertCount(1, $tabComponents);
-        self::assertInstanceOf(SchemaSection::class, $tabComponents[0]);
-        self::assertSame('Preferences', $tabComponents[0]->getHeading());
-        self::assertSame('Manage your personal preferences.', $tabComponents[0]->getDescription());
-
-        $sectionSchema = $tabComponents[0]->getChildSchema();
+        $sectionSchema = $components[0]->getChildSchema();
 
         if ($sectionSchema === null) {
             self::fail('Account section must expose a child schema.');

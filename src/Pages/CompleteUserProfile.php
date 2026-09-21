@@ -2,7 +2,6 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Pages;
 
-use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile;
 use Filament\Forms\Components\FileUpload;
@@ -11,18 +10,17 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Attributes\Url;
@@ -32,15 +30,19 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
+use MortalKiller\FilamentPageHeader\Components\Header;
+use MortalKiller\FilamentPageHeader\Concerns\HasPageHeader;
+use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
 use SensitiveParameter;
 
 class CompleteUserProfile extends EditProfile
 {
+    use HasPageHeader;
+
     #[Url]
     public ?string $section = null;
 
@@ -59,12 +61,22 @@ class CompleteUserProfile extends EditProfile
 
     public function getHeading(): string|Htmlable
     {
-        return static::translate('filament-complete-user-profile::profile.page.heading');
+        $item = $this->getActiveAccountItem();
+
+        return $item === null
+            ? static::translate('filament-complete-user-profile::profile.page.heading')
+            : $this->getAccountItemLabel($item);
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return static::translate('filament-complete-user-profile::profile.page.subheading');
+        $item = $this->getActiveAccountItem();
+
+        if ($item === null) {
+            return static::translate('filament-complete-user-profile::profile.page.subheading');
+        }
+
+        return $this->getAccountItemDescription($item);
     }
 
     /** @return array<string, ProfileFeature> */
@@ -81,69 +93,74 @@ class CompleteUserProfile extends EditProfile
     /** @return array<NavigationItem> */
     public function getSubNavigation(): array
     {
-        if (CompleteUserProfilePlugin::get()->getNavigationLayout() !== AccountNavigationLayout::Sidebar) {
-            return [];
-        }
-
         $activeItemId = $this->getActiveAccountItem()?->getId();
 
         return array_values(array_map(
             function (ProfileFeature|AccountSection $item) use ($activeItemId): NavigationItem {
                 $itemId = $item->getId();
-                $navigationItem = NavigationItem::make($this->getAccountItemLabel($item))
+
+                return NavigationItem::make($this->getAccountItemLabel($item))
                     ->key("account-{$itemId}")
                     ->sort($item->getSort())
                     ->url(filament()->getProfileUrl(['section' => $itemId]))
                     ->isActiveWhen(static fn (): bool => $activeItemId === $itemId);
-
-                $icon = $this->getAccountItemIcon($item);
-
-                if ($icon !== null) {
-                    $navigationItem->icon($icon);
-                }
-
-                return $navigationItem;
             },
             $this->getVisibleAccountItems(),
         ));
     }
 
-    public static function getSubNavigationPosition(): SubNavigationPosition
-    {
-        return SubNavigationPosition::Start;
-    }
-
     public function content(Schema $schema): Schema
     {
-        if (CompleteUserProfilePlugin::get()->getNavigationLayout() === AccountNavigationLayout::Sidebar) {
-            $item = $this->getActiveAccountItem();
+        $item = $this->getActiveAccountItem();
 
-            return $schema->components(
-                $item === null ? [] : [$this->getAccountItemContentComponent($item)],
-            );
+        return $schema->components(
+            $item === null ? [] : [$this->getAccountItemContentComponent($item)],
+        );
+    }
+
+    public function headerSchema(Schema $schema): Schema
+    {
+        return $schema->components([
+            Header::make()
+                ->heading(fn (): string|Htmlable => $this->getHeading())
+                ->description(fn (): string|Htmlable|null => $this->getSubheading())
+                ->avatar(fn (): ?string => $this->getAccountAvatarUrl())
+                ->initials(fn (): string => (string) $this->getUser()->getAttribute('name'))
+                ->breadcrumbs(BreadcrumbPosition::Inside)
+                ->subNavigation(),
+        ]);
+    }
+
+    /** @return array<array-key, string|Htmlable> */
+    public function getBreadcrumbs(): array
+    {
+        $breadcrumbs = [
+            (string) filament()->getProfileUrl() => static::translate('filament-complete-user-profile::profile.page.label'),
+        ];
+
+        $item = $this->getActiveAccountItem();
+
+        if ($item !== null) {
+            $breadcrumbs[] = $this->getAccountItemLabel($item);
         }
 
-        $tabs = array_map(
-            function (ProfileFeature|AccountSection $item): Tab {
-                $tab = Tab::make($this->getAccountItemLabel($item))
-                    ->schema([$this->getAccountItemContentComponent($item)]);
+        return $breadcrumbs;
+    }
 
-                $icon = $this->getAccountItemIcon($item);
+    protected function getAccountAvatarUrl(): ?string
+    {
+        $avatar = app(ProfileStorage::class)->get($this->getUser(), 'avatar');
 
-                if ($icon !== null) {
-                    $tab->icon($icon);
-                }
+        if (is_string($avatar) && $avatar !== '') {
+            $disk = config('filament.default_filesystem_disk');
+            $filesystem = Storage::disk(is_string($disk) ? $disk : 'public');
 
-                return $tab;
-            },
-            $this->getVisibleAccountItems(),
-        );
+            if ($filesystem instanceof Cloud) {
+                return $filesystem->url($avatar);
+            }
+        }
 
-        return $schema->components([
-            Tabs::make(static::translate('filament-complete-user-profile::profile.navigation.label'))
-                ->tabs(array_values($tabs))
-                ->contained(false),
-        ]);
+        return filament()->getUserAvatarUrl($this->getUser());
     }
 
     public function form(Schema $schema): Schema
@@ -314,16 +331,19 @@ class CompleteUserProfile extends EditProfile
             : $this->getFeatureLabel($item);
     }
 
-    protected function getAccountItemIcon(ProfileFeature|AccountSection $item): string|BackedEnum|null
+    protected function getAccountItemDescription(ProfileFeature|AccountSection $item): ?string
     {
-        return $item instanceof AccountSection ? $item->getIcon() : null;
+        if ($item instanceof AccountSection) {
+            return $item->getDescription();
+        }
+
+        return static::translate("filament-complete-user-profile::profile.features.{$item->getId()}.description");
     }
 
     protected function getAccountItemContentComponent(ProfileFeature|AccountSection $item): Component
     {
         if ($item instanceof AccountSection) {
             return Section::make($item->getLabel())
-                ->description($item->getDescription())
                 ->schema($item->getSchema());
         }
 
@@ -334,7 +354,6 @@ class CompleteUserProfile extends EditProfile
     {
         return match ($feature->getId()) {
             'profile' => Section::make($this->getFeatureLabel($feature))
-                ->description(static::translate('filament-complete-user-profile::profile.features.profile.description'))
                 ->schema([Group::make([$this->getFormContentComponent()])]),
             'overview' => $this->getOverviewContentComponent($feature),
             'security' => $this->getSecurityContentComponent($feature),
@@ -367,7 +386,6 @@ class CompleteUserProfile extends EditProfile
         }
 
         return Section::make($this->getFeatureLabel($feature))
-            ->description(static::translate('filament-complete-user-profile::profile.features.overview.description'))
             ->schema($entries);
     }
 
@@ -389,14 +407,12 @@ class CompleteUserProfile extends EditProfile
         }
 
         return Section::make($this->getFeatureLabel($feature))
-            ->description(static::translate('filament-complete-user-profile::profile.features.security.description'))
             ->schema($components);
     }
 
     protected function getSessionsContentComponent(ProfileFeature $feature): Component
     {
         return Section::make($this->getFeatureLabel($feature))
-            ->description(static::translate('filament-complete-user-profile::profile.features.sessions.description'))
             ->schema([
                 LivewireComponent::make(SessionsTable::class),
             ]);
@@ -405,7 +421,6 @@ class CompleteUserProfile extends EditProfile
     protected function getApiTokensContentComponent(ProfileFeature $feature): Component
     {
         return Section::make($this->getFeatureLabel($feature))
-            ->description(static::translate('filament-complete-user-profile::profile.features.api-tokens.description'))
             ->schema([
                 LivewireComponent::make(ApiTokensTable::class),
             ]);

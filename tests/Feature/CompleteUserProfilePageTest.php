@@ -3,17 +3,20 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Facades\Filament;
-use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelRegistry;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
-use ReflectionClass;
+use MortalKiller\FilamentPageHeader\Components\Header;
+use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
 
 class CompleteUserProfilePageTest extends TestCase
 {
@@ -64,130 +67,54 @@ class CompleteUserProfilePageTest extends TestCase
         self::assertTrue(view()->exists('filament-complete-user-profile::pages.complete-user-profile'));
     }
 
-    public function test_account_navigation_uses_native_filament_tabs_without_custom_layout_markup(): void
+    public function test_the_navigation_layout_api_is_gone(): void
     {
-        $root = dirname(__DIR__, 2);
-        $view = file_get_contents($root.'/resources/views/pages/complete-user-profile.blade.php');
-        $page = file_get_contents($root.'/src/Pages/CompleteUserProfile.php');
+        $reflection = new \ReflectionClass(CompleteUserProfilePlugin::class);
 
-        self::assertIsString($view);
-        self::assertIsString($page);
-        self::assertStringNotContainsString('fcup-account-layout', $view);
-        self::assertStringNotContainsString('fcup-account-navigation', $view);
-        self::assertStringNotContainsString('<aside', $view);
-        self::assertStringContainsString('use Filament\\Schemas\\Components\\Tabs;', $page);
-        self::assertStringContainsString('Tabs::make(', $page);
+        self::assertFalse($reflection->hasMethod('navigation'));
+        self::assertFalse($reflection->hasMethod('getNavigationLayout'));
+        self::assertFalse(enum_exists('Mortalkiller\\FilamentCompleteUserProfile\\Enums\\AccountNavigationLayout'));
     }
 
-    public function test_navigation_layout_defaults_to_tabs_and_can_be_switched_to_sidebar(): void
-    {
-        if (enum_exists(AccountNavigationLayout::class) === false) {
-            self::fail('AccountNavigationLayout enum is missing.');
-        }
-
-        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
-
-        if ($reflection->hasMethod('navigation') === false) {
-            self::fail('CompleteUserProfilePlugin::navigation() is missing.');
-        }
-
-        if ($reflection->hasMethod('getNavigationLayout') === false) {
-            self::fail('CompleteUserProfilePlugin::getNavigationLayout() is missing.');
-        }
-
-        $plugin = CompleteUserProfilePlugin::make();
-        $tabs = constant(AccountNavigationLayout::class.'::Tabs');
-        $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
-        $setter = $reflection->getMethod('navigation');
-        $getter = $reflection->getMethod('getNavigationLayout');
-
-        self::assertSame($tabs, $getter->invoke($plugin));
-        self::assertSame($plugin, $setter->invoke($plugin, $sidebar));
-        self::assertSame($sidebar, $getter->invoke($plugin));
-    }
-
-    public function test_sidebar_layout_uses_filament_native_sub_navigation(): void
+    public function test_sub_navigation_lists_every_visible_account_item_without_icons(): void
     {
         $this->registerProfileRoute();
 
-        if (enum_exists(AccountNavigationLayout::class) === false) {
-            self::fail('AccountNavigationLayout enum is missing.');
-        }
-
-        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
-
-        if ($reflection->hasMethod('navigation') === false) {
-            self::fail('CompleteUserProfilePlugin::navigation() is missing.');
-        }
-
-        $plugin = CompleteUserProfilePlugin::make();
-        $sidebar = constant(AccountNavigationLayout::class.'::Sidebar');
-        $reflection->getMethod('navigation')->invoke($plugin, $sidebar);
-
-        $panel = Panel::make()
-            ->id('admin')
-            ->plugin($plugin);
-
-        app(PanelRegistry::class)->register($panel);
-        Filament::setCurrentPanel($panel);
-
-        $page = app(CompleteUserProfile::class);
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
         $page->section = 'security';
         $navigation = $page->getSubNavigation();
-        $labels = [];
-        $activeStates = [];
-        $urls = [];
 
-        foreach ($navigation as $item) {
-            $labels[] = $item->getLabel();
-            $activeStates[] = $item->isActive();
-            $urls[] = $item->getUrl();
-        }
-
-        self::assertSame(SubNavigationPosition::Start, CompleteUserProfile::getSubNavigationPosition());
-        self::assertSame(['Overview', 'Profile', 'Security'], $labels);
-        self::assertSame([false, false, true], $activeStates);
-        self::assertStringContainsString('section=profile', (string) $urls[1]);
-    }
-
-    public function test_sidebar_section_is_component_state_during_livewire_requests(): void
-    {
-        $this->registerProfileRoute();
-
-        $plugin = CompleteUserProfilePlugin::make()
-            ->navigation(AccountNavigationLayout::Sidebar);
-
-        $panel = Panel::make()
-            ->id('admin')
-            ->plugin($plugin);
-
-        app(PanelRegistry::class)->register($panel);
-        Filament::setCurrentPanel($panel);
-
-        $page = app(CompleteUserProfile::class);
-        $reflection = new ReflectionClass($page);
-
-        if (! $reflection->hasProperty('section')) {
-            self::fail('The selected sidebar section must be persisted as Livewire component state.');
-        }
-
-        $reflection->getProperty('section')->setValue($page, 'security');
-        app()->instance('request', Request::create('/livewire-f64cae0d/update', 'POST'));
-
-        $activeStates = array_map(
-            static fn ($item): bool => $item->isActive(),
-            $page->getSubNavigation(),
+        self::assertSame(
+            ['Overview', 'Profile', 'Security'],
+            array_map(static fn ($item): string => $item->getLabel(), $navigation),
+        );
+        self::assertSame(
+            [false, false, true],
+            array_map(static fn ($item): bool => $item->isActive(), $navigation),
         );
 
-        self::assertSame([false, false, true], $activeStates);
+        foreach ($navigation as $item) {
+            self::assertNull($item->getIcon());
+        }
     }
 
-    public function test_sidebar_navigation_urls_always_target_the_profile_route(): void
+    public function test_content_renders_only_the_active_account_item(): void
     {
         $this->registerProfileRoute();
 
-        $plugin = CompleteUserProfilePlugin::make()
-            ->navigation(AccountNavigationLayout::Sidebar);
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+        $page->section = 'security';
+        $components = $page->content(Schema::make($page))->getComponents();
+
+        self::assertCount(1, $components);
+        self::assertNotInstanceOf(Tabs::class, $components[0]);
+    }
+
+    public function test_navigation_urls_always_target_the_profile_route(): void
+    {
+        $this->registerProfileRoute();
+
+        $plugin = CompleteUserProfilePlugin::make();
 
         $panel = Panel::make()
             ->id('admin')
@@ -211,6 +138,94 @@ class CompleteUserProfilePageTest extends TestCase
         foreach ($urls as $url) {
             self::assertStringNotContainsString('/livewire-', (string) $url);
         }
+    }
+
+    public function test_the_page_uses_the_page_header_trait_with_sub_navigation(): void
+    {
+        $this->registerProfileRoute();
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+
+        self::assertTrue($page->pageHeaderIsEnabled());
+
+        $header = $page->getPageHeaderComponent();
+
+        self::assertInstanceOf(Header::class, $header);
+        self::assertTrue($header->hasSubNavigation());
+        self::assertSame(
+            BreadcrumbPosition::Inside,
+            $header->getBreadcrumbPosition(),
+        );
+    }
+
+    public function test_the_heading_and_subheading_follow_the_active_account_item(): void
+    {
+        $this->registerProfileRoute();
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+
+        $page->section = 'security';
+
+        self::assertSame('Security', $page->getHeading());
+        self::assertSame('Manage your password and account security.', $page->getSubheading());
+
+        $page->section = 'overview';
+
+        self::assertSame('Overview', $page->getHeading());
+        self::assertSame(
+            'A summary of your account and enabled security features.',
+            $page->getSubheading(),
+        );
+    }
+
+    public function test_a_custom_section_without_a_description_yields_a_null_subheading(): void
+    {
+        $this->registerProfileRoute();
+
+        $page = $this->makePage(
+            CompleteUserProfilePlugin::make()->section(
+                AccountSection::make('preferences')->label('Preferences'),
+            ),
+        );
+        $page->section = 'preferences';
+
+        self::assertSame('Preferences', $page->getHeading());
+        self::assertNull($page->getSubheading());
+    }
+
+    public function test_breadcrumbs_trail_from_the_account_to_the_active_item(): void
+    {
+        $this->registerProfileRoute();
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+        $page->section = 'profile';
+
+        $breadcrumbs = $page->getBreadcrumbs();
+
+        self::assertSame(['My account', 'Profile'], array_values($breadcrumbs));
+        self::assertStringContainsString('/profile', (string) array_key_first($breadcrumbs));
+    }
+
+    public function test_content_cards_no_longer_repeat_the_header_description(): void
+    {
+        $this->registerProfileRoute();
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+        $page->section = 'security';
+        $components = $page->content(Schema::make($page))->getComponents();
+
+        self::assertInstanceOf(Section::class, $components[0]);
+        self::assertNull($components[0]->getDescription());
+    }
+
+    private function makePage(CompleteUserProfilePlugin $plugin): CompleteUserProfile
+    {
+        $panel = Panel::make()->id('admin')->plugin($plugin);
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        return app(CompleteUserProfile::class);
     }
 
     private function registerProfileRoute(): void
