@@ -18,6 +18,10 @@ The project follows Semantic Versioning.
 - A page header row in the `filament-complete-user-profile:check` diagnostics.
 - `CompleteUserProfile::headerSchema()`, `getBreadcrumbs()` and
   `getAccountSecurityAsideComponent()`.
+- The created-API-token modal now masks the token by default (showing a truncated
+  preview), with a suffix action to reveal or hide it and a warning callout stating the
+  token cannot be viewed again once the dialog closes. Copying always copies the full
+  token, regardless of whether it is currently revealed.
 
 ### Changed
 

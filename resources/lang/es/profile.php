@@ -94,8 +94,15 @@ return [
         ],
         'created' => [
             'heading' => 'Token de API creado',
-            'description' => 'Copia este token ahora. No podrás volver a verlo.',
+            'warning' => [
+                'heading' => 'Copia este token ahora',
+            ],
+            'description' => 'Esta es la única vez que se mostrará completo. Asegúrate de haberlo copiado — no podrás volver a verlo.',
             'token' => 'Token',
+            'actions' => [
+                'reveal' => 'Mostrar token',
+                'hide' => 'Ocultar token',
+            ],
         ],
         'requirements' => [
             'sanctum' => 'Laravel Sanctum debe estar instalado para activar la gestión de tokens de API.',

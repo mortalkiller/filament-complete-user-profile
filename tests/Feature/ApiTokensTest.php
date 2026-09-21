@@ -4,11 +4,16 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Panel;
+use Filament\Schemas\Components\Callout;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -24,13 +29,13 @@ class ApiTokensTest extends TestCase
     {
         parent::setUp();
 
-        Schema::create('users', function (Blueprint $table): void {
+        DatabaseSchema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('email')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('personal_access_tokens', function (Blueprint $table): void {
+        DatabaseSchema::create('personal_access_tokens', function (Blueprint $table): void {
             $table->id();
             $table->morphs('tokenable');
             $table->text('name');
@@ -223,5 +228,111 @@ class ApiTokensTest extends TestCase
 
         $component->dismissCreatedToken();
         self::assertNull($component->getCreatedPlainTextToken());
+    }
+
+    public function test_created_token_is_masked_by_default_with_a_warning_copy_and_reveal_toggle(): void
+    {
+        $component = $this->makeAuthenticatedComponent();
+
+        $component->createToken([
+            'name' => 'CLI',
+            'abilities' => ['customers:read'],
+            'expiration' => 7,
+        ]);
+
+        $plainTextToken = $component->getCreatedPlainTextToken();
+        self::assertNotNull($plainTextToken);
+        self::assertFalse($component->isCreatedTokenRevealed());
+
+        $callout = $this->getCreatedTokenWarningCallout($component);
+        self::assertSame('warning', $callout->getStatus());
+        self::assertNotNull($callout->getHeading());
+        self::assertNotNull($callout->getDescription());
+
+        $entry = $this->getCreatedTokenEntry($component);
+        self::assertTrue($entry->hasCopyable());
+
+        $maskedState = $entry->getState();
+        self::assertIsString($maskedState);
+        self::assertNotSame($plainTextToken, $maskedState);
+        self::assertStringContainsString('.....', $maskedState);
+        self::assertSame($plainTextToken, $entry->getCopyableState($maskedState));
+
+        $suffixActions = array_values($entry->getSuffixActions());
+        self::assertCount(1, $suffixActions);
+        self::assertSame('toggleCreatedTokenVisibility', $suffixActions[0]->getName());
+
+        $component->toggleCreatedTokenVisibility();
+        self::assertTrue($component->isCreatedTokenRevealed());
+
+        $revealedEntry = $this->getCreatedTokenEntry($component);
+        $revealedState = $revealedEntry->getState();
+        self::assertSame($plainTextToken, $revealedState);
+        self::assertSame($plainTextToken, $revealedEntry->getCopyableState($revealedState));
+
+        $component->createToken([
+            'name' => 'CLI 2',
+            'abilities' => ['customers:read'],
+            'expiration' => 7,
+        ]);
+        self::assertFalse($component->isCreatedTokenRevealed());
+
+        $component->toggleCreatedTokenVisibility();
+        self::assertTrue($component->isCreatedTokenRevealed());
+        $component->dismissCreatedToken();
+        self::assertFalse($component->isCreatedTokenRevealed());
+    }
+
+    private function makeAuthenticatedComponent(): ApiTokensTable
+    {
+        config()->set('auth.guards.profile', ['driver' => 'session', 'provider' => 'users']);
+        config()->set('auth.providers.users', ['driver' => 'eloquent', 'model' => TokenUser::class]);
+
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        auth('profile')->setUser($user);
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+                ->abilities(['customers:read' => 'Read customers'])
+                ->defaultExpiration(7)
+                ->maxExpiration(30));
+
+        Filament::setCurrentPanel(
+            Panel::make()
+                ->id('admin')
+                ->authGuard('profile')
+                ->plugin($plugin),
+        );
+
+        return new ApiTokensTable;
+    }
+
+    private function getCreatedTokenWarningCallout(ApiTokensTable $component): Callout
+    {
+        $components = $this->getCreatedTokenSchemaComponents($component);
+
+        self::assertInstanceOf(Callout::class, $components[0]);
+
+        return $components[0];
+    }
+
+    private function getCreatedTokenEntry(ApiTokensTable $component): TextEntry
+    {
+        $components = $this->getCreatedTokenSchemaComponents($component);
+
+        self::assertInstanceOf(TextEntry::class, $components[1]);
+
+        return $components[1];
+    }
+
+    /** @return array<int, Component|Action|ActionGroup> */
+    private function getCreatedTokenSchemaComponents(ApiTokensTable $component): array
+    {
+        $action = $component->showCreatedTokenAction();
+        $components = array_values($action->getSchema(Schema::make($component))?->getComponents() ?? []);
+
+        self::assertCount(2, $components);
+
+        return $components;
     }
 }

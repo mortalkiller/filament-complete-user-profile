@@ -94,8 +94,15 @@ return [
         ],
         'created' => [
             'heading' => 'Jeton API créé',
-            'description' => 'Copiez ce jeton maintenant. Vous ne pourrez plus le consulter ensuite.',
+            'warning' => [
+                'heading' => 'Copiez ce jeton maintenant',
+            ],
+            'description' => 'C\'est la seule fois où il sera affiché en entier. Assurez-vous de l\'avoir copié — vous ne pourrez plus le consulter.',
             'token' => 'Jeton',
+            'actions' => [
+                'reveal' => 'Afficher le jeton',
+                'hide' => 'Masquer le jeton',
+            ],
         ],
         'requirements' => [
             'sanctum' => 'Laravel Sanctum doit être installé pour activer la gestion des jetons API.',

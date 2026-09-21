@@ -9,8 +9,10 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -31,7 +33,15 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     use InteractsWithSchemas;
     use InteractsWithTable;
 
+    private const int TOKEN_MASK_VISIBLE_PREFIX = 8;
+
+    private const int TOKEN_MASK_VISIBLE_SUFFIX = 6;
+
+    private const string TOKEN_MASK_ELLIPSIS = '.....';
+
     protected ?string $createdPlainTextToken = null;
+
+    protected bool $isCreatedTokenRevealed = false;
 
     public function table(Table $table): Table
     {
@@ -102,12 +112,28 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     {
         return Action::make('showCreatedToken')
             ->modalHeading(static::translate('filament-complete-user-profile::profile.api_tokens.created.heading'))
-            ->modalDescription(static::translate('filament-complete-user-profile::profile.api_tokens.created.description'))
             ->schema([
+                Callout::make(static::translate('filament-complete-user-profile::profile.api_tokens.created.warning.heading'))
+                    ->description(static::translate('filament-complete-user-profile::profile.api_tokens.created.description'))
+                    ->warning(),
                 TextEntry::make('plain_text_token')
                     ->label(static::translate('filament-complete-user-profile::profile.api_tokens.created.token'))
-                    ->state(fn (): ?string => $this->createdPlainTextToken)
-                    ->copyable(),
+                    ->state(fn (): string => $this->isCreatedTokenRevealed
+                        ? (string) $this->createdPlainTextToken
+                        : $this->maskToken((string) $this->createdPlainTextToken))
+                    ->copyable()
+                    ->copyableState(fn (): ?string => $this->createdPlainTextToken)
+                    ->suffixAction(
+                        Action::make('toggleCreatedTokenVisibility')
+                            ->icon(fn (): Heroicon => $this->isCreatedTokenRevealed
+                                ? Heroicon::OutlinedEyeSlash
+                                : Heroicon::OutlinedEye)
+                            ->tooltip(fn (): string => static::translate(
+                                'filament-complete-user-profile::profile.api_tokens.created.actions.'
+                                    .($this->isCreatedTokenRevealed ? 'hide' : 'reveal'),
+                            ))
+                            ->action(fn (): null => $this->toggleCreatedTokenVisibility()),
+                    ),
             ])
             ->closeModalByClickingAway(false)
             ->closeModalByEscaping(false)
@@ -115,6 +141,18 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
             ->modalCancelAction(false)
             ->modalSubmitActionLabel(static::translate('filament-complete-user-profile::profile.api_tokens.actions.done'))
             ->action(fn (): null => $this->dismissCreatedToken());
+    }
+
+    public function toggleCreatedTokenVisibility(): null
+    {
+        $this->isCreatedTokenRevealed = ! $this->isCreatedTokenRevealed;
+
+        return null;
+    }
+
+    public function isCreatedTokenRevealed(): bool
+    {
+        return $this->isCreatedTokenRevealed;
     }
 
     /** @param array<string, mixed> $data */
@@ -146,12 +184,14 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
         }
 
         $this->createdPlainTextToken = $plainTextToken;
+        $this->isCreatedTokenRevealed = false;
         $this->resetTable();
     }
 
     public function dismissCreatedToken(): null
     {
         $this->createdPlainTextToken = null;
+        $this->isCreatedTokenRevealed = false;
 
         return null;
     }
@@ -189,6 +229,19 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
             })
             ->values()
             ->all();
+    }
+
+    protected function maskToken(string $token): string
+    {
+        $visibleLength = self::TOKEN_MASK_VISIBLE_PREFIX + self::TOKEN_MASK_VISIBLE_SUFFIX;
+
+        if (strlen($token) <= $visibleLength) {
+            return str_repeat('•', strlen($token));
+        }
+
+        return substr($token, 0, self::TOKEN_MASK_VISIBLE_PREFIX)
+            .self::TOKEN_MASK_ELLIPSIS
+            .substr($token, -self::TOKEN_MASK_VISIBLE_SUFFIX);
     }
 
     protected function feature(): ApiTokens
