@@ -2,22 +2,8 @@ name: Documentation
 
 on:
   pull_request:
-    paths:
-      - 'docs-site/**'
-      - 'docs/**'
-      - 'README.md'
-      - 'SECURITY.md'
-      - '.github/workflows/docs.yml'
   push:
-    branches:
-      - main
-      - '1.x'
-    paths:
-      - 'docs-site/**'
-      - 'docs/**'
-      - 'README.md'
-      - 'SECURITY.md'
-      - '.github/workflows/docs.yml'
+    branches: ['*.x']
   workflow_dispatch:
 
 permissions:
@@ -29,10 +15,7 @@ concurrency:
 
 jobs:
   docs:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs.yml@1.x
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs.yml@fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
     with:
       artifact-name: filament-complete-user-profile-docs
-      deploy: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.DOCS_DEPLOY_ENABLED == 'true' }}
-      docs-port: ${{ vars.DOCS_PORT || '22' }}
-      docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
-    secrets: inherit
+      deploy: false

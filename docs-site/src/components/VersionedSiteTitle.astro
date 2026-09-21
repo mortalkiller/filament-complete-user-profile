@@ -1,0 +1,40 @@
+---
+import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
+const root = '/filament-complete-user-profile';
+const version = process.env.DOCS_RELEASE_VERSION || 'Development';
+---
+<div class="versioned-site-title">
+  <SiteTitle {...Astro.props} />
+  <select aria-label="Documentation version" data-docs-root={root} disabled>
+    <option>{version}</option>
+  </select>
+</div>
+<script>
+  for (const select of document.querySelectorAll<HTMLSelectElement>('select[data-docs-root]')) {
+    const root = select.dataset.docsRoot;
+    if (!root) continue;
+    fetch(`${root}/versions.json`, { cache: 'no-cache' })
+      .then((response) => { if (!response.ok) throw new Error('Version manifest unavailable.'); return response.json(); })
+      .then((manifest) => {
+        if (manifest.schema !== 1 || !manifest.channels || typeof manifest.channels !== 'object') return;
+        const entries = Object.entries(manifest.channels)
+          .filter(([major, tag]) => /^(0|[1-9]\d*)\.x$/.test(major) && typeof tag === 'string' && /^v\d+\.\d+\.\d+$/.test(tag))
+          .sort(([left], [right]) => Number.parseInt(right) - Number.parseInt(left));
+        const options: HTMLOptionElement[] = [];
+        if (manifest.latest) options.push(new Option(`Latest (${manifest.latest})`, `${root}/`));
+        for (const [major, tag] of entries) options.push(new Option(`${major} (${tag})`, `${root}/${major}/`));
+        if (!options.length) return;
+        select.replaceChildren(...options);
+        const major = entries.find(([channel]) => location.pathname.startsWith(`${root}/${channel}/`));
+        select.value = major ? `${root}/${major[0]}/` : `${root}/`;
+        select.disabled = false;
+        select.addEventListener('change', () => { location.assign(select.value); });
+      })
+      .catch(() => { /* Development and unpublished versions do not have a public manifest. */ });
+  }
+</script>
+<style>
+  .versioned-site-title { display: flex; align-items: center; gap: .75rem; min-width: 0; flex-wrap: wrap; }
+  select { font: inherit; font-size: .75rem; max-width: 12rem; border: 1px solid var(--sl-color-gray-5); border-radius: .25rem; padding: .2rem; background: var(--sl-color-bg); color: var(--sl-color-text); }
+  @media (max-width: 30rem) { select { max-width: 7rem; font-size: .65rem; } }
+</style>
