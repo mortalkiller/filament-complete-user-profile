@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
@@ -17,6 +18,7 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\FullSecurityUser;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 
 class AccountSecurityAsideTest extends TestCase
@@ -129,6 +131,45 @@ class AccountSecurityAsideTest extends TestCase
         self::assertSame(3, $columns[0]->getColumnSpan('lg'));
     }
 
+    public function test_rows_stay_safe_for_a_user_that_implements_none_of_the_optional_contracts(): void
+    {
+        // The base User fixture implements neither Filament's app/email MFA
+        // contracts nor Sanctum's HasApiTokens: every row must fall back to
+        // its "disabled" state (or be skipped, for API tokens) instead of
+        // throwing.
+        $user = User::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
+        $page = $this->makePage($this->pluginWithSecurityFeatures(), $user);
+        $page->section = 'overview';
+
+        $aside = $this->gridColumns($page)[1];
+        $schema = $aside->getChildSchema();
+
+        if ($schema === null) {
+            self::fail('The aside must expose a child schema.');
+        }
+
+        $entries = array_values($schema->getComponents());
+
+        self::assertCount(3, $entries, 'The API tokens row must be skipped without a tokens() method.');
+
+        $states = array_map(
+            static function ($entry): string {
+                self::assertInstanceOf(TextEntry::class, $entry);
+
+                $state = $entry->getState();
+                self::assertIsString($state);
+
+                return $state;
+            },
+            $entries,
+        );
+
+        self::assertSame(
+            ['Not configured', 'Not configured', '0 active sessions'],
+            $states,
+        );
+    }
+
     private function pluginWithSecurityFeatures(): CompleteUserProfilePlugin
     {
         return CompleteUserProfilePlugin::make()
@@ -161,7 +202,7 @@ class AccountSecurityAsideTest extends TestCase
         ));
     }
 
-    private function makePage(CompleteUserProfilePlugin $plugin): CompleteUserProfile
+    private function makePage(CompleteUserProfilePlugin $plugin, ?Authenticatable $user = null): CompleteUserProfile
     {
         Route::get('/profile', static fn (): string => 'profile')
             ->name('filament.admin.auth.profile');
@@ -171,8 +212,7 @@ class AccountSecurityAsideTest extends TestCase
         app(PanelRegistry::class)->register($panel);
         Filament::setCurrentPanel($panel);
 
-        $user = FullSecurityUser::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
-        $this->actingAs($user);
+        $this->actingAs($user ?? FullSecurityUser::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']));
 
         return app(CompleteUserProfile::class);
     }
