@@ -94,6 +94,6 @@ A correctly configured default installation exits with code `0`. See [Diagnostic
 ## Next steps
 
 - Review [basic configuration](../configuration/).
-- Choose a [navigation layout](../../guides/navigation/).
+- Review the [account navigation](../../guides/navigation/).
 - Configure [profile fields](../../guides/profile/).
 - Enable optional security capabilities only after satisfying their requirements.

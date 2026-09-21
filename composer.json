@@ -18,10 +18,11 @@
     },
     "require": {
         "php": "^8.3",
-        "filament/filament": ">=5.7.6 <6.0.0",
+        "filament/filament": ">=5.8.1 <6.0.0",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
-        "illuminate/support": "^13.0"
+        "illuminate/support": "^13.0",
+        "mortalkiller/filament-page-header": "^2.3.1"
     },
     "require-dev": {
         "laravel/pint": "^1.27",

@@ -17,6 +17,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
 use Mortalkiller\FilamentCompleteUserProfile\Support\UserModelResolver;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Throwable;
 
 class CheckCompleteUserProfile extends Command
@@ -60,6 +61,7 @@ class CheckCompleteUserProfile extends Command
         $storageTable = $this->checkProfileStorage($user);
         $this->checkProfileColumns($plugins, $storageTable);
         $this->checkOptionalFeatures($plugins, $user);
+        $this->checkPageHeader();
 
         return $this->finish();
     }
@@ -227,6 +229,43 @@ class CheckCompleteUserProfile extends Command
             if ($tokens->isTenantScoped()) {
                 $this->checkTenantTokenInfrastructure($panelId, $user);
             }
+        }
+    }
+
+    protected function checkPageHeader(): void
+    {
+        foreach (Filament::getPanels() as $panelId => $panel) {
+            if (! $panel->hasPlugin('filament-complete-user-profile')) {
+                continue;
+            }
+
+            if (! $panel->hasPlugin(PageHeaderPlugin::ID)) {
+                $this->failCheck(
+                    "Panel [{$panelId}] Page header",
+                    'The page header plugin is missing. It is normally registered automatically by CompleteUserProfilePlugin.',
+                );
+
+                continue;
+            }
+
+            $plugin = $panel->getPlugin(PageHeaderPlugin::ID);
+
+            if (! $plugin instanceof PageHeaderPlugin) {
+                $this->failCheck(
+                    "Panel [{$panelId}] Page header",
+                    'Another plugin has claimed the page header plugin identifier.',
+                );
+
+                continue;
+            }
+
+            $profilePlugin = $panel->getPlugin('filament-complete-user-profile');
+            $mode = $plugin->getOptions()->toArray()['mode'];
+            $source = $profilePlugin instanceof CompleteUserProfilePlugin && $profilePlugin->hasRegisteredPageHeader()
+                ? 'Registered by this package'
+                : 'Registered by the application';
+
+            $this->pass("Panel [{$panelId}] Page header", "{$source}, mode [{$mode}].");
         }
     }
 

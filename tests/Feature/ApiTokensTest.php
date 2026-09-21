@@ -4,11 +4,16 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\TextInput;
 use Filament\Panel;
+use Filament\Schemas\Components\Callout;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -24,13 +29,13 @@ class ApiTokensTest extends TestCase
     {
         parent::setUp();
 
-        Schema::create('users', function (Blueprint $table): void {
+        DatabaseSchema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('email')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('personal_access_tokens', function (Blueprint $table): void {
+        DatabaseSchema::create('personal_access_tokens', function (Blueprint $table): void {
             $table->id();
             $table->morphs('tokenable');
             $table->text('name');
@@ -223,5 +228,122 @@ class ApiTokensTest extends TestCase
 
         $component->dismissCreatedToken();
         self::assertNull($component->getCreatedPlainTextToken());
+    }
+
+    public function test_created_token_uses_a_read_only_masked_input_with_native_copy_and_reveal(): void
+    {
+        $component = $this->makeAuthenticatedComponent();
+
+        $component->createToken([
+            'name' => 'CLI',
+            'abilities' => ['customers:read'],
+            'expiration' => 7,
+        ]);
+
+        $plainTextToken = $component->getCreatedPlainTextToken();
+        self::assertNotNull($plainTextToken);
+
+        $callout = $this->getCreatedTokenWarningCallout($component);
+        self::assertSame('warning', $callout->getStatus());
+        self::assertNotNull($callout->getHeading());
+        self::assertNotNull($callout->getDescription());
+
+        $input = $this->getCreatedTokenInput($component);
+        self::assertTrue($input->isReadOnly());
+        self::assertTrue($input->isPassword());
+        self::assertTrue($input->isCopyable());
+        self::assertTrue($input->isPasswordRevealable());
+
+        self::assertSame(
+            ['copy', 'showPassword', 'hidePassword'],
+            array_keys($input->getSuffixActions()),
+        );
+
+        // The modal must carry the token in the mounted action's own state, not in a
+        // protected component property: Livewire discards those between requests, which
+        // is what made the token vanish on the first interaction with the modal.
+        $action = $component->showCreatedTokenAction();
+        $schema = $action->getSchema(Schema::make($component));
+        self::assertNotNull($schema);
+
+        $action->mount(['form' => $schema, 'schema' => $schema]);
+
+        self::assertSame($plainTextToken, $schema->getState()['plain_text_token'] ?? null);
+    }
+
+    public function test_the_created_token_reveal_never_needs_a_server_round_trip(): void
+    {
+        $component = $this->makeAuthenticatedComponent();
+
+        $component->createToken([
+            'name' => 'CLI',
+            'abilities' => ['customers:read'],
+            'expiration' => 7,
+        ]);
+
+        $suffixActions = $this->getCreatedTokenInput($component)->getSuffixActions();
+
+        foreach (['copy', 'showPassword', 'hidePassword'] as $name) {
+            $action = $suffixActions[$name] ?? null;
+
+            self::assertInstanceOf(Action::class, $action);
+            self::assertNotNull(
+                $action->getAlpineClickHandler(),
+                "[{$name}] must toggle or copy in the browser, not through Livewire.",
+            );
+        }
+    }
+
+    private function makeAuthenticatedComponent(): ApiTokensTable
+    {
+        config()->set('auth.guards.profile', ['driver' => 'session', 'provider' => 'users']);
+        config()->set('auth.providers.users', ['driver' => 'eloquent', 'model' => TokenUser::class]);
+
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        auth('profile')->setUser($user);
+
+        $plugin = CompleteUserProfilePlugin::make()
+            ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+                ->abilities(['customers:read' => 'Read customers'])
+                ->defaultExpiration(7)
+                ->maxExpiration(30));
+
+        Filament::setCurrentPanel(
+            Panel::make()
+                ->id('admin')
+                ->authGuard('profile')
+                ->plugin($plugin),
+        );
+
+        return new ApiTokensTable;
+    }
+
+    private function getCreatedTokenWarningCallout(ApiTokensTable $component): Callout
+    {
+        $components = $this->getCreatedTokenSchemaComponents($component);
+
+        self::assertInstanceOf(Callout::class, $components[0]);
+
+        return $components[0];
+    }
+
+    private function getCreatedTokenInput(ApiTokensTable $component): TextInput
+    {
+        $components = $this->getCreatedTokenSchemaComponents($component);
+
+        self::assertInstanceOf(TextInput::class, $components[1]);
+
+        return $components[1];
+    }
+
+    /** @return array<int, Component|Action|ActionGroup> */
+    private function getCreatedTokenSchemaComponents(ApiTokensTable $component): array
+    {
+        $action = $component->showCreatedTokenAction();
+        $components = array_values($action->getSchema(Schema::make($component))?->getComponents() ?? []);
+
+        self::assertCount(2, $components);
+
+        return $components;
     }
 }

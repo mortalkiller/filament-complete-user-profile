@@ -6,9 +6,6 @@ return [
         'heading' => 'Mon compte',
         'subheading' => 'Gérez votre profil, votre sécurité et vos accès.',
     ],
-    'navigation' => [
-        'label' => 'Sections du compte',
-    ],
     'fields' => [
         'avatar' => 'Avatar',
         'locale' => 'Langue préférée',
@@ -97,7 +94,10 @@ return [
         ],
         'created' => [
             'heading' => 'Jeton API créé',
-            'description' => 'Copiez ce jeton maintenant. Vous ne pourrez plus le consulter ensuite.',
+            'warning' => [
+                'heading' => 'Copiez ce jeton maintenant',
+            ],
+            'description' => 'C\'est la seule fois où il sera affiché en entier. Assurez-vous de l\'avoir copié — vous ne pourrez plus le consulter.',
             'token' => 'Jeton',
         ],
         'requirements' => [
@@ -129,6 +129,29 @@ return [
         'api-tokens' => [
             'label' => 'Jetons API',
             'description' => "Créez et révoquez des jetons personnels d'accès à l'API.",
+        ],
+    ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Sécurité du compte',
+            'app_authentication' => [
+                'label' => 'Application d\'authentification',
+                'enabled' => 'Activée',
+                'disabled' => 'Non configurée',
+            ],
+            'email_authentication' => [
+                'label' => 'MFA par e-mail',
+                'enabled' => 'Activée',
+                'disabled' => 'Non configurée',
+            ],
+            'sessions' => [
+                'label' => 'Sessions actives',
+                'count' => ':count session active|:count sessions actives',
+            ],
+            'api_tokens' => [
+                'label' => 'Jetons d\'accès personnels',
+                'count' => ':count jeton|:count jetons',
+            ],
         ],
     ],
 ];

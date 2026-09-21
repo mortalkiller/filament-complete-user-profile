@@ -4,27 +4,12 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 use ReflectionClass;
 
 class PublicApiTest extends TestCase
 {
-    public function test_plugin_exposes_only_the_canonical_navigation_setter(): void
-    {
-        $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
-
-        self::assertTrue($reflection->hasMethod('navigation'));
-        self::assertFalse($reflection->hasMethod('navigationLayout'));
-
-        $plugin = CompleteUserProfilePlugin::make();
-        $navigation = $reflection->getMethod('navigation');
-
-        self::assertSame($plugin, $navigation->invoke($plugin, AccountNavigationLayout::Sidebar));
-        self::assertSame(AccountNavigationLayout::Sidebar, $plugin->getNavigationLayout());
-    }
-
     public function test_plugin_exposes_only_the_canonical_custom_section_registration_method(): void
     {
         $reflection = new ReflectionClass(CompleteUserProfilePlugin::class);
@@ -37,11 +22,11 @@ class PublicApiTest extends TestCase
     {
         $reflection = new ReflectionClass(AccountSection::class);
 
-        foreach (['make', 'label', 'icon', 'description', 'sort', 'visible', 'schema'] as $method) {
+        foreach (['make', 'label', 'description', 'sort', 'visible', 'schema'] as $method) {
             self::assertTrue($reflection->hasMethod($method), "[{$method}] should be part of the AccountSection API.");
         }
 
-        foreach (['badge', 'group', 'view', 'saveUsing', 'afterSave'] as $method) {
+        foreach (['badge', 'group', 'view', 'saveUsing', 'afterSave', 'icon', 'getIcon'] as $method) {
             self::assertFalse($reflection->hasMethod($method), "[{$method}] should not be part of the AccountSection API.");
         }
     }
@@ -100,14 +85,13 @@ class PublicApiTest extends TestCase
         $readme = file_get_contents($root.'/README.md');
 
         self::assertIsString($readme);
-        self::assertStringContainsString('->navigation(', $readme);
         self::assertStringContainsString('->appAuthentication()', $readme);
         self::assertStringContainsString('->emailAuthentication()', $readme);
         self::assertStringContainsString('AccountSection::make(', $readme);
         self::assertStringContainsString('does not automatically persist', $readme);
         self::assertStringContainsString('## AccountSection API reference', $readme);
 
-        foreach (['make(string $id)', 'label(string|Closure $label)', 'icon(string|BackedEnum|null $icon)', 'description(string|Closure|null $description)', 'sort(int $sort)', 'visible(bool|Closure $condition = true)', 'schema(array|Closure $components)', 'getId()', 'getLabel()', 'getIcon()', 'getDescription()', 'getSort()', 'isVisible()', 'getSchema()'] as $signature) {
+        foreach (['make(string $id)', 'label(string|Closure $label)', 'description(string|Closure|null $description)', 'sort(int $sort)', 'visible(bool|Closure $condition = true)', 'schema(array|Closure $components)', 'getId()', 'getLabel()', 'getDescription()', 'getSort()', 'isVisible()', 'getSchema()'] as $signature) {
             self::assertStringContainsString($signature, $readme, "README should document AccountSection::{$signature}.");
         }
 

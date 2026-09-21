@@ -6,9 +6,6 @@ return [
         'heading' => 'Mi cuenta',
         'subheading' => 'Gestiona tu perfil, seguridad y acceso.',
     ],
-    'navigation' => [
-        'label' => 'Secciones de la cuenta',
-    ],
     'fields' => [
         'avatar' => 'Avatar',
         'locale' => 'Idioma preferido',
@@ -97,7 +94,10 @@ return [
         ],
         'created' => [
             'heading' => 'Token de API creado',
-            'description' => 'Copia este token ahora. No podrás volver a verlo.',
+            'warning' => [
+                'heading' => 'Copia este token ahora',
+            ],
+            'description' => 'Esta es la única vez que se mostrará completo. Asegúrate de haberlo copiado — no podrás volver a verlo.',
             'token' => 'Token',
         ],
         'requirements' => [
@@ -129,6 +129,29 @@ return [
         'api-tokens' => [
             'label' => 'Tokens de API',
             'description' => 'Crea y revoca tokens personales de acceso a la API.',
+        ],
+    ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Seguridad de la cuenta',
+            'app_authentication' => [
+                'label' => 'Aplicación de autenticación',
+                'enabled' => 'Activada',
+                'disabled' => 'Sin configurar',
+            ],
+            'email_authentication' => [
+                'label' => 'MFA por correo',
+                'enabled' => 'Activada',
+                'disabled' => 'Sin configurar',
+            ],
+            'sessions' => [
+                'label' => 'Sesiones activas',
+                'count' => ':count sesión activa|:count sesiones activas',
+            ],
+            'api_tokens' => [
+                'label' => 'Tokens de acceso personal',
+                'count' => ':count token|:count tokens',
+            ],
         ],
     ],
 ];
