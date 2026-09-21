@@ -2,7 +2,8 @@ name: Tests
 
 on:
   push:
-    branches: ['main', 'feature/**', 'codex/**']
+    branches: ['main', '1.x', 'feature/**', 'codex/**', 'release/**']
+    tags: ['v*']
   pull_request:
 
 permissions:
@@ -15,12 +16,15 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
       matrix:
         php: ['8.3', '8.4', '8.5']
+        dependencies: ['lowest', 'latest']
+
+    name: PHP ${{ matrix.php }} / Filament 5 ${{ matrix.dependencies }}
 
     steps:
       - name: Checkout
@@ -39,8 +43,30 @@ jobs:
       - name: Validate Composer package
         run: composer validate --strict
 
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install lowest supported dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-lowest --prefer-dist --no-interaction --no-progress
+
+      - name: Install latest supported dependencies
+        if: matrix.dependencies == 'latest'
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Verify Filament major
+        shell: bash
+        run: |
+          set -euo pipefail
+          composer show filament/filament
+          version="$(composer show filament/filament --format=json | php -r '$data = json_decode(stream_get_contents(STDIN), true); $version = $data["versions"][0] ?? ""; echo preg_replace("/^[* ]*v?/", "", $version);')"
+          case "$version" in
+            5.*) ;;
+            *)
+              echo "Expected Filament 5.x, resolved [$version]." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Audit dependencies
+        run: composer audit --locked --no-interaction
 
       - name: Check code style
         run: vendor/bin/pint --test
@@ -49,7 +75,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          vendor/bin/phpstan analyse --memory-limit=1G 2>&1 | tee phpstan-${{ matrix.php }}.log
+          vendor/bin/phpstan analyse --memory-limit=1G 2>&1 | tee phpstan-${{ matrix.php }}-${{ matrix.dependencies }}.log
 
       - name: Run tests
         run: vendor/bin/phpunit
@@ -58,6 +84,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: phpstan-${{ matrix.php }}
-          path: phpstan-${{ matrix.php }}.log
+          name: phpstan-${{ matrix.php }}-${{ matrix.dependencies }}
+          path: phpstan-${{ matrix.php }}-${{ matrix.dependencies }}.log
           retention-days: 7
