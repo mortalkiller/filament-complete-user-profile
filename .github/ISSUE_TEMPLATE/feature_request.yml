@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a focused improvement to the package.
+title: ""
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the user problem before proposing implementation details.
+
+        Do not include credentials, customer data, private application names, internal URLs, or infrastructure details.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or developer problem should the package solve?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why does this belong in the package rather than the consuming application or Filament itself?
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API / usage
+      description: Show the smallest Laravel/Filament-style API you would expect to use.
+      render: php
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: What should explicitly remain outside this feature?
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      description: Note any PHP, Laravel, Filament, browser, migration, or public API impact.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide objective, testable criteria using a Markdown checklist.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
