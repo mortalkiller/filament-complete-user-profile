@@ -24,6 +24,10 @@ CompleteUserProfilePlugin::make()
 If your application already registers `PageHeaderPlugin` on the same panel, that
 registration is authoritative in either order and `pageHeader()` is ignored.
 
+There is no way to opt out of the header — there is no `pageHeader(false)`. An application
+that wants Filament's stock profile heading instead of the account navigation header must
+subclass `CompleteUserProfile` and override `headerSchema()`.
+
 ## Per-panel configuration
 
 Page header configuration belongs to the plugin instance, so different Filament panels

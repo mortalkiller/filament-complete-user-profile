@@ -53,6 +53,7 @@ export default defineConfig({
             'guides/mfa',
             'guides/sessions',
             'guides/api-tokens',
+            'guides/account-security',
             'guides/tenant-scoped-tokens',
             'guides/custom-profile-fields',
             'guides/custom-account-sections',

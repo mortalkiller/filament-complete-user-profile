@@ -49,6 +49,16 @@ Closure that receives the plugin and may return a replacement. When the panel al
 carries a `PageHeaderPlugin` — registered by the application in either order — that
 registration is authoritative and `pageHeader()` is ignored.
 
+```php
+hasRegisteredPageHeader(): bool
+```
+
+Reports whether the panel's currently registered `PageHeaderPlugin` is the exact instance
+this plugin registered during `register()`. It checks the panel's live plugin state rather
+than a cached flag, so it returns `false` if the application later registers its own
+`PageHeaderPlugin` on the same panel and overwrites this plugin's registration. This backs
+the `Page header` row in the `filament-complete-user-profile:check` diagnostics.
+
 ## Custom sections
 
 ```php

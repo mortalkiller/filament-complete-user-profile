@@ -31,9 +31,14 @@ Version 1 supports:
 
 - PHP `^8.3`
 - Laravel 13
-- Filament `>=5.7.6 <6.0.0`
+- Filament `>=5.8.1 <6.0.0`
+- `mortalkiller/filament-page-header` `^2.3.1` (required automatically via Composer; the plugin
+  registers it on your panel for you)
 
-Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version intentionally starts at 5.7.6 so installations do not resolve to earlier Filament 5 releases affected by known MFA security advisories.
+Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version
+intentionally starts at 5.8.1: `mortalkiller/filament-page-header` itself requires
+`filament/filament: ^4.12.6 || ^5.8.1`, so this package's floor moved up to match it. The MFA
+security advisories that originally motivated a 5.7.6 floor stay covered, since 5.8.1 is above it.
 
 ## Installation
 
@@ -135,6 +140,25 @@ CompleteUserProfilePlugin::make()
 If your application already registers `PageHeaderPlugin` on the same panel, that registration is authoritative in either order and `pageHeader()` is ignored.
 
 This uses native Filament and `filament-page-header` components and requires no package-specific navigation CSS.
+
+There is no way to opt out of the header (no `pageHeader(false)`). An application that wants Filament's stock profile heading instead must subclass `CompleteUserProfile` and override `headerSchema()`.
+
+## Account Security summary
+
+Beside the Overview and Profile areas, the page can render an "Account Security" summary card next to the main content. It lists up to four rows, each gated independently:
+
+| Row | Appears when | State shown |
+| --- | --- | --- |
+| Authenticator app | Security is enabled and app authentication is configured | "Enabled" when the user has a stored app-authentication secret, otherwise "Not configured" |
+| Email MFA | Security is enabled and email authentication is configured | "Enabled" when `hasEmailAuthentication()` returns `true` for the user, otherwise "Not configured" |
+| Active sessions | Sessions is enabled **and** the session store is supported (database session driver with a migrated sessions table) | The user's active session count, correctly pluralized |
+| Personal access tokens | API Tokens is enabled and the user model exposes a `tokens()` relation | The user's token count, correctly pluralized |
+
+Each row links back to the account area it summarizes.
+
+The sessions row is hidden entirely — not shown as "0 active sessions" — when the session store is unsupported (a non-database session driver, or a missing `sessions` table), since a confident zero would contradict the "unsupported" message the Sessions area itself shows in that situation. Every row is independently gated the same way: if none of the four apply, the card does not render at all, and the main content takes the full width.
+
+The card is built by `CompleteUserProfile::getAccountSecurityAsideComponent(): ?Component`, a `protected` method you can override in a subclass to add, remove or reorder rows.
 
 ## Enable MFA
 

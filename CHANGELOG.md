@@ -16,11 +16,17 @@ The project follows Semantic Versioning.
 - `CompleteUserProfilePlugin::pageHeader()` to configure the header without registering
   a second plugin.
 - A page header row in the `filament-complete-user-profile:check` diagnostics.
+- `CompleteUserProfile::headerSchema()`, `getBreadcrumbs()` and
+  `getAccountSecurityAsideComponent()`.
 
 ### Changed
 
 - The page heading, subheading and breadcrumbs follow the active account area.
 - Content cards no longer repeat the area description, which now lives in the header.
+- **Breaking:** `CompleteUserProfile::content()` now always returns a schema whose single
+  top-level component is a `Grid`, not a `Section`. Code that read
+  `$page->content($schema)->getComponents()[0]` and expected a `Section` must instead read
+  the main content component out of the grid's own child schema.
 
 ### Removed
 
