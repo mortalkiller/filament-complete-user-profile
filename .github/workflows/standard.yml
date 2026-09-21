@@ -3,9 +3,7 @@ name: Package standard
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - '1.x'
+    branches: ['*.x']
   workflow_dispatch:
 
 permissions:
@@ -17,4 +15,6 @@ concurrency:
 
 jobs:
   standard:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-standard-check.yml@1.x
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-standard-check.yml@fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
+    with:
+      standard-ref: fd1b3f6ef3fd383de952c8a4f210c51b49f63e36

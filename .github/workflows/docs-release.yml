@@ -1,0 +1,32 @@
+name: Release documentation
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: 'Existing stable release tag (vX.Y.Z)'
+        required: true
+        type: string
+      dry-run:
+        description: 'Verify and build without deploying'
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.release.draft == false && github.event.release.prerelease == false && vars.DOCS_DEPLOY_ENABLED == 'true')
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
+    with:
+      standard-ref: fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
+      artifact-name: filament-complete-user-profile-release-docs
+      release-tag: ${{ inputs.release-tag || github.event.release.tag_name }}
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+      docs-port: ${{ vars.DOCS_PORT || '22' }}
+      docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
+    secrets: inherit
