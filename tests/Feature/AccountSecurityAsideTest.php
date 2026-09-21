@@ -79,12 +79,16 @@ class AccountSecurityAsideTest extends TestCase
 
     public function test_other_areas_render_full_width_without_an_aside(): void
     {
-        // A plain plugin (no app/email MFA) keeps this focused on the grid
-        // structure: enabling those providers makes Filament's own security
-        // section eagerly render management UI, which is unrelated to what
-        // this test checks and needlessly drags in Blade component wiring.
-        $page = $this->makePage(CompleteUserProfilePlugin::make());
-        $page->section = 'security';
+        // Deliberately reuses pluginWithSecurityFeatures(): every row that
+        // could populate the aside is enabled, so this proves the
+        // overview/profile-only gate in content() itself, not merely that
+        // the aside had nothing to show. 'sessions' is used instead of
+        // 'security' because the 'security' section eagerly renders
+        // Filament's own app-authentication management UI (a Blade
+        // component this minimal test panel doesn't register), which is
+        // unrelated to what this test checks.
+        $page = $this->makePage($this->pluginWithSecurityFeatures());
+        $page->section = 'sessions';
 
         $columns = $this->gridColumns($page);
 

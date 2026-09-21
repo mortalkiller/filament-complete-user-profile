@@ -14,6 +14,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 
 class CheckCommandTest extends TestCase
 {
@@ -159,6 +160,26 @@ class CheckCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         self::assertStringContainsString('Registered by this package', $output);
+    }
+
+    public function test_the_check_reports_an_application_registered_page_header(): void
+    {
+        // Registering the page-header plugin before CompleteUserProfilePlugin
+        // means it's already present by the time CompleteUserProfilePlugin::
+        // register() runs, so the package skips its own auto-registration
+        // and hasRegisteredPageHeader() must report false.
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin(PageHeaderPlugin::make())
+            ->plugin(CompleteUserProfilePlugin::make());
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Registered by the application', $output);
     }
 
     protected function registerPlugin(CompleteUserProfilePlugin $plugin): void

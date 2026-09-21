@@ -113,8 +113,18 @@ class CompleteUserProfilePageTest extends TestCase
         $page->section = 'security';
         $components = $page->content(Schema::make($page))->getComponents();
 
-        self::assertCount(1, $components);
-        self::assertNotInstanceOf(Tabs::class, $components[0]);
+        self::assertInstanceOf(Grid::class, $components[0]);
+
+        $schema = $components[0]->getChildSchema();
+
+        if ($schema === null) {
+            self::fail('The content grid must expose a child schema.');
+        }
+
+        $main = array_values($schema->getComponents());
+
+        self::assertCount(1, $main);
+        self::assertNotInstanceOf(Tabs::class, $main[0]);
     }
 
     public function test_navigation_urls_always_target_the_profile_route(): void
