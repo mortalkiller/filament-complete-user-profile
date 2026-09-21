@@ -26,7 +26,7 @@ class PublicApiTest extends TestCase
             self::assertTrue($reflection->hasMethod($method), "[{$method}] should be part of the AccountSection API.");
         }
 
-        foreach (['badge', 'group', 'view', 'saveUsing', 'afterSave'] as $method) {
+        foreach (['badge', 'group', 'view', 'saveUsing', 'afterSave', 'icon', 'getIcon'] as $method) {
             self::assertFalse($reflection->hasMethod($method), "[{$method}] should not be part of the AccountSection API.");
         }
     }

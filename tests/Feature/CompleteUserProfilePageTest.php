@@ -8,15 +8,21 @@ use Filament\PanelRegistry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
+use Illuminate\Support\Facades\Storage;
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 use MortalKiller\FilamentPageHeader\Components\Header;
 use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
+use ReflectionMethod;
 
 class CompleteUserProfilePageTest extends TestCase
 {
@@ -216,6 +222,68 @@ class CompleteUserProfilePageTest extends TestCase
 
         self::assertInstanceOf(Section::class, $components[0]);
         self::assertNull($components[0]->getDescription());
+    }
+
+    public function test_the_avatar_resolves_a_stored_avatar_through_the_configured_disk(): void
+    {
+        $this->registerProfileRoute();
+
+        $user = $this->makeAuthenticatedUser();
+
+        $disk = Storage::fake('public');
+        $disk->put('avatars/pedro.png', 'fake-avatar-contents');
+        app(ProfileStorage::class)->put($user, 'avatar', 'avatars/pedro.png');
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+
+        self::assertSame(
+            $disk->url('avatars/pedro.png'),
+            $this->callGetAccountAvatarUrl($page),
+        );
+    }
+
+    public function test_the_avatar_falls_back_to_filaments_generated_avatar_without_a_stored_avatar(): void
+    {
+        $this->registerProfileRoute();
+
+        $user = $this->makeAuthenticatedUser();
+
+        $page = $this->makePage(CompleteUserProfilePlugin::make());
+
+        self::assertSame(
+            filament()->getUserAvatarUrl($user),
+            $this->callGetAccountAvatarUrl($page),
+        );
+    }
+
+    private function makeAuthenticatedUser(): User
+    {
+        config()->set('auth.defaults.guard', 'web');
+        config()->set('auth.guards.web.provider', 'users');
+        config()->set('auth.providers.users.model', User::class);
+        config()->set('filament-complete-user-profile.user_model', User::class);
+        config()->set('filament-complete-user-profile.storage', 'separate');
+
+        SchemaFacade::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->string('email')->nullable();
+            $table->timestamps();
+        });
+
+        $migration = require __DIR__.'/../../database/migrations/0001_01_01_000002_create_filament_user_profiles_table.php';
+        $migration->up();
+
+        $user = User::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
+
+        $this->actingAs($user);
+
+        return $user;
+    }
+
+    private function callGetAccountAvatarUrl(CompleteUserProfile $page): ?string
+    {
+        return (new ReflectionMethod($page, 'getAccountAvatarUrl'))->invoke($page);
     }
 
     private function makePage(CompleteUserProfilePlugin $plugin): CompleteUserProfile

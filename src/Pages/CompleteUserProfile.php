@@ -155,9 +155,11 @@ class CompleteUserProfile extends EditProfile
             $disk = config('filament.default_filesystem_disk');
             $filesystem = Storage::disk(is_string($disk) ? $disk : 'public');
 
-            if ($filesystem instanceof Cloud) {
-                return $filesystem->url($avatar);
+            if (! $filesystem instanceof Cloud) {
+                throw new LogicException('The configured filesystem disk must be able to generate a URL for the stored avatar.');
             }
+
+            return $filesystem->url($avatar);
         }
 
         return filament()->getUserAvatarUrl($this->getUser());

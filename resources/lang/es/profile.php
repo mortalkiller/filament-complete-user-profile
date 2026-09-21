@@ -6,9 +6,6 @@ return [
         'heading' => 'Mi cuenta',
         'subheading' => 'Gestiona tu perfil, seguridad y acceso.',
     ],
-    'navigation' => [
-        'label' => 'Secciones de la cuenta',
-    ],
     'fields' => [
         'avatar' => 'Avatar',
         'locale' => 'Idioma preferido',
