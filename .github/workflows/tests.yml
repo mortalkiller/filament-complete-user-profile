@@ -51,12 +51,15 @@ jobs:
         if: matrix.dependencies == 'latest'
         run: composer update --prefer-dist --no-interaction --no-progress
 
-      - name: Verify Filament major
+      - name: Verify Filament version
         shell: bash
+        env:
+          DEPENDENCY_SET: ${{ matrix.dependencies }}
         run: |
           set -euo pipefail
           composer show filament/filament
           version="$(composer show filament/filament --format=json | php -r '$data = json_decode(stream_get_contents(STDIN), true); $version = $data["versions"][0] ?? ""; echo preg_replace("/^[* ]*v?/", "", $version);')"
+
           case "$version" in
             5.*) ;;
             *)
@@ -64,6 +67,11 @@ jobs:
               exit 1
               ;;
           esac
+
+          if [ "$DEPENDENCY_SET" = "lowest" ] && [ "$version" != "5.7.6" ]; then
+            echo "Expected the lowest supported Filament version [5.7.6], resolved [$version]." >&2
+            exit 1
+          fi
 
       - name: Audit dependencies
         run: composer audit --locked --no-interaction
