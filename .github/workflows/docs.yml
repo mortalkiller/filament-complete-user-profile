@@ -11,7 +11,7 @@ on:
   push:
     branches:
       - main
-      - 1.x
+      - '1.x'
     paths:
       - 'docs-site/**'
       - 'docs/**'
@@ -28,72 +28,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build documentation
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '22.20.0'
-
-      - name: Install documentation dependencies
-        working-directory: docs-site
-        run: npm install --no-audit --no-fund
-
-      - name: Build documentation
-        working-directory: docs-site
-        run: npm run build
-
-      - name: Upload documentation artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: filament-complete-user-profile-docs
-          path: docs-site/dist/
-          if-no-files-found: error
-          retention-days: 7
-
-  deploy:
-    name: Deploy documentation
-    needs: build
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.DOCS_DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    environment: docs-production
-
-    steps:
-      - name: Download documentation artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          name: filament-complete-user-profile-docs
-          path: docs-site/dist
-
-      - name: Configure SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.DOCS_SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.DOCS_SSH_KNOWN_HOSTS }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Deploy documentation
-        env:
-          DOCS_HOST: ${{ secrets.DOCS_HOST }}
-          DOCS_USER: ${{ secrets.DOCS_USER }}
-          DOCS_PORT: ${{ vars.DOCS_PORT }}
-          DOCS_REMOTE_PATH: ${{ vars.DOCS_REMOTE_PATH }}
-        run: |
-          test -n "$DOCS_HOST"
-          test -n "$DOCS_USER"
-          test -n "$DOCS_PORT"
-          test -n "$DOCS_REMOTE_PATH"
-          rsync -az --delete \
-            -e "ssh -p $DOCS_PORT -i ~/.ssh/id_ed25519" \
-            docs-site/dist/ \
-            "$DOCS_USER@$DOCS_HOST:$DOCS_REMOTE_PATH/"
+  docs:
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs.yml@1.x
+    with:
+      artifact-name: filament-complete-user-profile-docs
+      deploy: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && vars.DOCS_DEPLOY_ENABLED == 'true' }}
+      docs-port: ${{ vars.DOCS_PORT || '22' }}
+      docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
+    secrets: inherit

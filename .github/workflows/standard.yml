@@ -1,0 +1,20 @@
+name: Package standard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - '1.x'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  standard:
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-standard-check.yml@1.x
