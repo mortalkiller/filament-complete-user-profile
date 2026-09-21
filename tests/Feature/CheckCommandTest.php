@@ -2,6 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
+use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\PanelRegistry;
 use Illuminate\Database\Schema\Blueprint;
@@ -143,6 +144,21 @@ class CheckCommandTest extends TestCase
         self::assertStringContainsString('FAIL', $output);
         self::assertStringContainsString('token-context migration', $output);
         self::assertStringContainsString('TokenContextResolver', $output);
+    }
+
+    public function test_the_check_reports_the_page_header_registration(): void
+    {
+        $panel = Panel::make()
+            ->id('admin')
+            ->plugin(CompleteUserProfilePlugin::make());
+
+        app(PanelRegistry::class)->register($panel);
+        Filament::setCurrentPanel($panel);
+
+        [$exitCode, $output] = $this->runCheck();
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Registered by this package', $output);
     }
 
     protected function registerPlugin(CompleteUserProfilePlugin $plugin): void
