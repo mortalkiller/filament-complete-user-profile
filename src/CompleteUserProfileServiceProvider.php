@@ -1,0 +1,63 @@
+<?php
+
+namespace Mortalkiller\FilamentCompleteUserProfile;
+
+use Illuminate\Support\ServiceProvider;
+use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\Commands\CheckCompleteUserProfile;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\SessionStore;
+use Mortalkiller\FilamentCompleteUserProfile\Security\PasswordReauthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Sessions\DatabaseSessionStore;
+use Mortalkiller\FilamentCompleteUserProfile\Storage\SeparateProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Storage\UserProfileStorage;
+use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
+use Mortalkiller\FilamentCompleteUserProfile\Support\UserModelResolver;
+
+class CompleteUserProfileServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/filament-complete-user-profile.php',
+            'filament-complete-user-profile',
+        );
+
+        $this->app->singleton(UserModelResolver::class);
+        $this->app->singleton(ProfileColumnMap::class);
+        $this->app->bind(Reauthentication::class, PasswordReauthentication::class);
+        $this->app->bind(SessionStore::class, DatabaseSessionStore::class);
+
+        $this->app->bind(ProfileStorage::class, function (): ProfileStorage {
+            return match (config('filament-complete-user-profile.storage', 'user')) {
+                'user' => app(UserProfileStorage::class),
+                'separate' => app(SeparateProfileStorage::class),
+                default => throw new LogicException('Profile storage must be either [user] or [separate].'),
+            };
+        });
+    }
+
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-complete-user-profile');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'filament-complete-user-profile');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                CheckCompleteUserProfile::class,
+            ]);
+        }
+
+        $this->publishes([
+            __DIR__.'/../config/filament-complete-user-profile.php' => config_path('filament-complete-user-profile.php'),
+        ], 'filament-complete-user-profile-config');
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/add_context_columns_to_personal_access_tokens.php.stub' => database_path(
+                'migrations/'.date('Y_m_d_His').'_add_context_columns_to_personal_access_tokens.php',
+            ),
+        ], 'filament-complete-user-profile-token-migrations');
+    }
+}

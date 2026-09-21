@@ -1,0 +1,70 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "mortalkiller/filament-complete-user-profile",
+    "description": "A complete, modular user account center for Filament 5.",
+    "keywords": [
+        "filament",
+        "laravel",
+        "profile",
+        "multi-factor-authentication",
+        "sanctum"
+    ],
+    "homepage": "https://github.com/mortalkiller/filament-complete-user-profile",
+    "type": "library",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/mortalkiller/filament-complete-user-profile/issues",
+        "source": "https://github.com/mortalkiller/filament-complete-user-profile"
+    },
+    "require": {
+        "php": "^8.3",
+        "filament/filament": "^5.7",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.27",
+        "laravel/sanctum": "^4.3",
+        "orchestra/testbench": "^11.2",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^12.5"
+    },
+    "suggest": {
+        "laravel/sanctum": "Required only when the API Tokens feature is enabled."
+    },
+    "autoload": {
+        "psr-4": {
+            "Mortalkiller\\FilamentCompleteUserProfile\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mortalkiller\\FilamentCompleteUserProfile\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mortalkiller\\FilamentCompleteUserProfile\\CompleteUserProfileServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "pint --test",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    }
+}

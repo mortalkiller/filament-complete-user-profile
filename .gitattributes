@@ -1,0 +1,10 @@
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/tests export-ignore
+/docs/superpowers export-ignore
+/docs/verification.md export-ignore
+/phpunit.xml.dist export-ignore
+/phpstan.neon.dist export-ignore
+/pint.json export-ignore
+/CONTRIBUTING.md export-ignore
