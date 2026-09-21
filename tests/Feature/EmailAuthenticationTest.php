@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Actions\SetUpEmailAuthenticationAction;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Notifications\VerifyEmailAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\EmailMfaUser;
@@ -47,6 +48,15 @@ class EmailAuthenticationTest extends TestCase
 
         self::assertInstanceOf(EmailAuthentication::class, $provider);
         self::assertInstanceOf(FilamentEmailAuthentication::class, $provider);
+    }
+
+    public function test_setup_action_builds_across_supported_filament_5_versions(): void
+    {
+        $action = SetUpEmailAuthenticationAction::make($this->makeProvider());
+
+        self::assertSame('setUpEmailAuthentication', $action->getName());
+        self::assertNotNull($action->getIcon());
+        self::assertNotNull($action->getModalIcon());
     }
 
     public function test_first_send_starts_a_sixty_second_server_side_cooldown(): void

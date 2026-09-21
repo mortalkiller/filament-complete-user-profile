@@ -10,10 +10,10 @@ The package currently requires:
 | Dependency | Constraint |
 | --- | --- |
 | PHP | `^8.3` |
-| Filament | `^5.7` |
+| Filament | `>=5.7.6 <6.0.0` |
 | Laravel components | `^13.0` |
 
-The package description targets Filament 5 and Laravel 13.
+Version 1 supports Filament 5 only. Filament 4 and Filament 6 are intentionally outside the supported range. The minimum is Filament 5.7.6 because earlier 5.x versions are affected by known MFA security advisories that are relevant to this package's authenticator-app MFA integration.
 
 ## Optional infrastructure
 
@@ -37,4 +37,4 @@ The migrations check configured columns before adding them, allowing application
 
 ## Supported development matrix
 
-The repository test workflow validates PHP 8.3, 8.4 and 8.5 against the package constraints. Use the repository CI as the authoritative compatibility check for an unreleased branch.
+The repository test workflow validates PHP 8.3, 8.4 and 8.5 against both the lowest supported dependency set and the latest dependency versions allowed by Composer. This verifies the Filament 5 range from the secure 5.7.6 baseline through the newest compatible 5.x release while explicitly rejecting any resolved non-5.x major. CI also runs `composer audit` against the resolved lock file.

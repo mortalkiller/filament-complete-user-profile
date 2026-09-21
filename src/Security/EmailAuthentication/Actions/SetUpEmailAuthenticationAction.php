@@ -12,7 +12,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Icons\Heroicon;
-use Filament\View\PanelsIconAlias;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -26,7 +25,7 @@ class SetUpEmailAuthenticationAction
         return Action::make('setUpEmailAuthentication')
             ->label(self::translate('filament-panels::auth/multi-factor/email/actions/set-up.label'))
             ->color('primary')
-            ->icon(FilamentIcon::resolve(PanelsIconAlias::AUTH_MULTI_FACTOR_EMAIL_ACTIONS_SET_UP) ?? Heroicon::LockClosed)
+            ->icon(FilamentIcon::resolve('panels::auth.multi-factor.email.actions.set-up') ?? Heroicon::LockClosed)
             ->link()
             ->mountUsing(function (Schema $schema) use ($emailAuthentication): void {
                 $schema->fill();
@@ -37,7 +36,7 @@ class SetUpEmailAuthenticationAction
                 $emailAuthentication->sendCode($user);
             })
             ->modalWidth(Width::Large)
-            ->modalIcon(FilamentIcon::resolve(PanelsIconAlias::AUTH_MULTI_FACTOR_EMAIL_ACTIONS_SET_UP_MODAL) ?? Heroicon::OutlinedLockClosed)
+            ->modalIcon(FilamentIcon::resolve('panels::auth.multi-factor.email.actions.set-up.modal') ?? Heroicon::OutlinedLockClosed)
             ->modalIconColor('primary')
             ->modalHeading(self::translate('filament-panels::auth/multi-factor/email/actions/set-up.modal.heading'))
             ->modalDescription(self::translate('filament-panels::auth/multi-factor/email/actions/set-up.modal.description'))
@@ -85,7 +84,7 @@ class SetUpEmailAuthenticationAction
                 Notification::make()
                     ->title(self::translate('filament-panels::auth/multi-factor/email/actions/set-up.notifications.enabled.title'))
                     ->success()
-                    ->icon(FilamentIcon::resolve(PanelsIconAlias::AUTH_MULTI_FACTOR_EMAIL_ACTIONS_SET_UP_NOTIFICATION) ?? Heroicon::OutlinedLockClosed)
+                    ->icon(FilamentIcon::resolve('panels::auth.multi-factor.email.actions.set-up.notification') ?? Heroicon::OutlinedLockClosed)
                     ->send();
             })
             ->rateLimit(5);

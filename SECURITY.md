@@ -2,9 +2,13 @@
 
 ## Supported versions
 
-Until the first stable release is published, security fixes are maintained on the repository's default development line. After a stable major is released, this section will list the supported package lines explicitly.
+| Package line | Supported |
+| --- | --- |
+| 1.x | Yes |
 
-Use the latest available patch release for supported versions.
+Security fixes for the 1.x series are maintained on the `1.x` branch. Use the latest available 1.x patch release.
+
+Version 1 requires Filament 5.7.6 or newer within the Filament 5 major line. Filament 4 and Filament 6 are not supported by this package line.
 
 ## Reporting a vulnerability
 
