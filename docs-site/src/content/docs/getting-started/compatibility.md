@@ -10,11 +10,11 @@ The package currently requires:
 | Dependency | Constraint |
 | --- | --- |
 | PHP | `^8.3` |
-| Filament | `>=5.8.1 <6.0.0` |
+| Filament | `>=5.8.3 <6.0.0` |
 | Laravel components | `^13.0` |
 | `mortalkiller/filament-page-header` | `^2.3.1` |
 
-Version 1 supports Filament 5 only. Filament 4 and Filament 6 are intentionally outside the supported range. The package now has a hard runtime dependency on `mortalkiller/filament-page-header`, which renders the account navigation inside the page header; the plugin registers it on your panel automatically, so no extra setup is required. That package requires `filament/filament: ^4.12.6 || ^5.8.1`, which is why the Filament floor here moved from 5.7.6 to 5.8.1. The security rationale for a raised floor still holds: 5.8.1 is above every earlier 5.x release affected by the known MFA security advisories relevant to this package's authenticator-app MFA integration, so that protection is preserved.
+Version 1 supports Filament 5 only. Filament 4 and Filament 6 are intentionally outside the supported range. The package has a hard runtime dependency on `mortalkiller/filament-page-header`, which renders the account navigation inside the page header; the plugin registers it on your panel automatically, so no extra setup is required. The Filament floor is 5.8.3 because Filament 5.8.1 and 5.8.2 contain an upstream `DataStore` binding bug that can lose Livewire per-component state when service providers are registered in the affected order. Filament 5.8.3 contains the singleton binding fix. The security rationale for the raised floor is also preserved because 5.8.3 is above the earlier 5.x releases affected by the known MFA security advisories relevant to this package's authenticator-app MFA integration.
 
 ## Optional infrastructure
 
@@ -38,4 +38,4 @@ The migrations check configured columns before adding them, allowing application
 
 ## Supported development matrix
 
-The repository test workflow validates PHP 8.3, 8.4 and 8.5 against both the lowest supported dependency set and the latest dependency versions allowed by Composer. This verifies the Filament 5 range from the 5.8.1 baseline through the newest compatible 5.x release while explicitly rejecting any resolved non-5.x major. CI also runs `composer audit` against the resolved lock file.
+The repository test workflow validates PHP 8.3, 8.4 and 8.5 against both the lowest supported dependency set and the latest dependency versions allowed by Composer. This verifies the Filament 5 range from the 5.8.3 baseline through the newest compatible 5.x release while explicitly rejecting any resolved non-5.x major. CI also runs `composer audit` against the resolved lock file.

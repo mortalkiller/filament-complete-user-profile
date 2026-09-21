@@ -8,7 +8,7 @@
 
 Security fixes for the 1.x series are maintained on the `1.x` branch. Use the latest available 1.x patch release.
 
-Version 1 requires Filament 5.7.6 or newer within the Filament 5 major line. Filament 4 and Filament 6 are not supported by this package line.
+Version 1 requires Filament 5.8.3 or newer within the Filament 5 major line. Filament 4 and Filament 6 are not supported by this package line.
 
 ## Reporting a vulnerability
 

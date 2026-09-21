@@ -31,14 +31,15 @@ Version 1 supports:
 
 - PHP `^8.3`
 - Laravel 13
-- Filament `>=5.8.1 <6.0.0`
+- Filament `>=5.8.3 <6.0.0`
 - `mortalkiller/filament-page-header` `^2.3.1` (required automatically via Composer; the plugin
   registers it on your panel for you)
 
 Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version
-intentionally starts at 5.8.1: `mortalkiller/filament-page-header` itself requires
-`filament/filament: ^4.12.6 || ^5.8.1`, so this package's floor moved up to match it. The MFA
-security advisories that originally motivated a 5.7.6 floor stay covered, since 5.8.1 is above it.
+is 5.8.3. Filament 5.8.1 and 5.8.2 contain an upstream `DataStore` binding bug that can lose
+Livewire per-component state when Filament's support provider is registered after Livewire; Filament
+5.8.3 includes the upstream singleton fix. This baseline also remains above the earlier Filament 5
+releases affected by the MFA security advisories relevant to this package.
 
 ## Installation
 

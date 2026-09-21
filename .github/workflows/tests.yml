@@ -22,11 +22,11 @@ jobs:
     with:
       matrix-json: >-
         {"include":[
-          {"php":"8.3","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"lowest","expected_filament":"5.8.1"},
-          {"php":"8.3","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"latest"},
-          {"php":"8.4","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"lowest","expected_filament":"5.8.1"},
-          {"php":"8.4","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"latest"},
-          {"php":"8.5","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"lowest","expected_filament":"5.8.1"},
-          {"php":"8.5","testbench":"^11.2","filament":">=5.8.1 <6.0.0","dependencies":"latest"}
+          {"php":"8.3","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"lowest","expected_filament":"5.8.3"},
+          {"php":"8.3","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"latest"},
+          {"php":"8.4","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"lowest","expected_filament":"5.8.3"},
+          {"php":"8.4","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"latest"},
+          {"php":"8.5","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"lowest","expected_filament":"5.8.3"},
+          {"php":"8.5","testbench":"^11.2","filament":">=5.8.3 <6.0.0","dependencies":"latest"}
         ]}
       test-command: composer check

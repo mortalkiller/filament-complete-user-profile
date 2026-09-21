@@ -41,7 +41,7 @@ The project follows Semantic Versioning.
 
 ### Requirements
 
-- Filament 5.8.1 or newer, below Filament 6.
+- Filament 5.8.3 or newer, below Filament 6.
 - `mortalkiller/filament-page-header` 2.3.1 or newer.
 
 ### Upgrading from 1.x
@@ -49,7 +49,7 @@ The project follows Semantic Versioning.
 1. Remove `->navigation(AccountNavigationLayout::Tabs)` or `::Sidebar` from your plugin
    configuration, and remove the `AccountNavigationLayout` import.
 2. Remove `->icon(...)` from every custom `AccountSection`.
-3. Raise Filament to 5.8.1 or newer.
+3. Raise Filament to 5.8.3 or newer.
 4. If you already require `mortalkiller/filament-page-header`, raise it to `^2.3.1`.
 
 ## [1.0.0] - Unreleased
@@ -77,6 +77,6 @@ Initial stable release.
 
 - PHP 8.3 or newer within the package's declared PHP 8 major range.
 - Laravel 13.
-- Filament 5.7.6 or newer, below Filament 6.
+- Filament 5.8.3 or newer, below Filament 6.
 
-Filament 5.7.6 is the minimum supported Filament release so version 1 does not install older Filament 5 versions affected by known MFA security advisories.
+Filament 5.8.3 is the minimum supported Filament release. It remains above the Filament 5 releases affected by the known MFA security advisories and includes the upstream fix that binds Livewire's `DataStore` as a singleton.

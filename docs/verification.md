@@ -8,13 +8,21 @@ Version 1 is intentionally limited to:
 
 - PHP `^8.3`
 - Laravel 13
-- Filament `>=5.7.6 <6.0.0`
+- Filament `>=5.8.3 <6.0.0`
 
 Filament 4 and Filament 6 are outside the supported 1.x range.
 
-Filament 5.7.6 is the minimum because it is the first Filament 5 release that includes the relevant fixes for the known authenticator-app MFA advisories reviewed before the 1.0.0 release.
+Filament 5.8.3 is the current minimum. It remains above the releases covered by the earlier MFA security baseline and includes Filament's upstream fix for the Livewire `DataStore` binding bug present in 5.8.1 and 5.8.2.
 
-## Executed checks
+## Baseline adjustment after release-readiness
+
+The original 1.0.0 release-readiness matrix below was executed with Filament 5.7.6 as the minimum and is preserved as historical evidence.
+
+A later `1.x` compatibility run on 2026-09-21 (GitHub Actions run `35650931314`) tested the then-declared 5.8.1 floor and failed every lowest-dependency job on PHP 8.3, 8.4 and 8.5 while all latest-dependency jobs passed. The render failure was `ViewErrorBag::put()` receiving a null message bag from Livewire validation state.
+
+The root cause is upstream Filament issue/PR #20515 and commit `c2537be5a111889f2226c8c1aa9f172dcf0e7fe7`: Filament Support registered Livewire's `DataStore` with `bind()`, which could replace Livewire's shared store with non-shared instances depending on provider order. Filament 5.8.3 contains the `singleton()` fix; 5.8.1 and 5.8.2 do not. The package therefore raises its supported floor to Filament 5.8.3 rather than weakening the render regression test or carrying a package-local workaround for the upstream bug.
+
+## Original release-readiness checks
 
 The release-readiness GitHub Actions matrix validates both the lowest and latest allowed dependency sets on every supported PHP version.
 
