@@ -31,7 +31,9 @@ Depending on the configuration, the command validates areas such as:
 - email MFA requirements;
 - database session requirements;
 - Sanctum availability and `HasApiTokens`;
-- tenant-token context migration and resolver binding.
+- tenant-token context migration and resolver binding;
+- page header plugin registration, reporting whether it was registered by this package or by
+  the application, and its configured mode.
 
 A disabled optional capability should not make the command fail merely because its infrastructure is absent.
 

@@ -8,7 +8,7 @@ use Filament\Actions\Contracts\HasActions;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Tables\Columns\TextColumn;
@@ -102,12 +102,17 @@ class ApiTokensTable extends Component implements HasActions, HasSchemas, HasTab
     {
         return Action::make('showCreatedToken')
             ->modalHeading(static::translate('filament-complete-user-profile::profile.api_tokens.created.heading'))
-            ->modalDescription(static::translate('filament-complete-user-profile::profile.api_tokens.created.description'))
+            ->fillForm(fn (): array => ['plain_text_token' => $this->createdPlainTextToken])
             ->schema([
-                TextEntry::make('plain_text_token')
+                Callout::make(static::translate('filament-complete-user-profile::profile.api_tokens.created.warning.heading'))
+                    ->description(static::translate('filament-complete-user-profile::profile.api_tokens.created.description'))
+                    ->warning(),
+                TextInput::make('plain_text_token')
                     ->label(static::translate('filament-complete-user-profile::profile.api_tokens.created.token'))
-                    ->state(fn (): ?string => $this->createdPlainTextToken)
-                    ->copyable(),
+                    ->readOnly()
+                    ->password()
+                    ->copyable()
+                    ->revealable(),
             ])
             ->closeModalByClickingAway(false)
             ->closeModalByEscaping(false)

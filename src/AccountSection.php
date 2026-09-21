@@ -2,7 +2,6 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile;
 
-use BackedEnum;
 use Closure;
 use Filament\Schemas\Components\Component;
 use Filament\Support\Concerns\EvaluatesClosures;
@@ -15,8 +14,6 @@ final class AccountSection
     use EvaluatesClosures;
 
     protected string|Closure|null $label = null;
-
-    protected string|BackedEnum|null $icon = null;
 
     protected string|Closure|null $description = null;
 
@@ -48,13 +45,6 @@ final class AccountSection
     public function label(string|Closure $label): static
     {
         $this->label = $label;
-
-        return $this;
-    }
-
-    public function icon(string|BackedEnum|null $icon): static
-    {
-        $this->icon = $icon;
 
         return $this;
     }
@@ -99,11 +89,6 @@ final class AccountSection
         return is_string($label) && ($label !== '')
             ? $label
             : Str::headline($this->id);
-    }
-
-    public function getIcon(): string|BackedEnum|null
-    {
-        return $this->icon;
     }
 
     public function getDescription(): ?string

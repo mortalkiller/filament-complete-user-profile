@@ -16,7 +16,6 @@ class AccountSectionTest extends TestCase
 
         self::assertSame('connected-accounts', $section->getId());
         self::assertSame('Connected Accounts', $section->getLabel());
-        self::assertNull($section->getIcon());
         self::assertNull($section->getDescription());
         self::assertSame(100, $section->getSort());
         self::assertTrue($section->isVisible());
@@ -29,14 +28,12 @@ class AccountSectionTest extends TestCase
         $section = AccountSection::make('preferences');
 
         self::assertSame($section, $section->label(fn (): string => 'Preferences'));
-        self::assertSame($section, $section->icon(AccountSectionTestIcon::Preferences));
         self::assertSame($section, $section->description(fn (): string => 'Manage preferences.'));
         self::assertSame($section, $section->sort(25));
         self::assertSame($section, $section->visible(fn (): bool => true));
         self::assertSame($section, $section->schema(fn (): array => [$component]));
 
         self::assertSame('Preferences', $section->getLabel());
-        self::assertSame(AccountSectionTestIcon::Preferences, $section->getIcon());
         self::assertSame('Manage preferences.', $section->getDescription());
         self::assertSame(25, $section->getSort());
         self::assertTrue($section->isVisible());
@@ -92,9 +89,12 @@ class AccountSectionTest extends TestCase
 
         $section->getSchema();
     }
-}
 
-enum AccountSectionTestIcon: string
-{
-    case Preferences = 'preferences';
+    public function test_sections_no_longer_expose_an_icon_api(): void
+    {
+        $reflection = new \ReflectionClass(AccountSection::class);
+
+        self::assertFalse($reflection->hasMethod('icon'));
+        self::assertFalse($reflection->hasMethod('getIcon'));
+    }
 }

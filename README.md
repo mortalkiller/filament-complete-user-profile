@@ -31,9 +31,14 @@ Version 1 supports:
 
 - PHP `^8.3`
 - Laravel 13
-- Filament `>=5.7.6 <6.0.0`
+- Filament `>=5.8.1 <6.0.0`
+- `mortalkiller/filament-page-header` `^2.3.1` (required automatically via Composer; the plugin
+  registers it on your panel for you)
 
-Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version intentionally starts at 5.7.6 so installations do not resolve to earlier Filament 5 releases affected by known MFA security advisories.
+Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version
+intentionally starts at 5.8.1: `mortalkiller/filament-page-header` itself requires
+`filament/filament: ^4.12.6 || ^5.8.1`, so this package's floor moved up to match it. The MFA
+security advisories that originally motivated a 5.7.6 floor stay covered, since 5.8.1 is above it.
 
 ## Installation
 
@@ -120,26 +125,40 @@ php artisan vendor:publish --tag=filament-complete-user-profile-config
 
 ## Navigation layout
 
-The account areas use Filament's native schema tabs by default. You can make the choice explicit with `AccountNavigationLayout::Tabs`:
+The account areas render as a single, iconless sub-navigation inside the account page's header, built with `mortalkiller/filament-page-header`. Every visible account area — built-in features and custom sections alike — appears as a tab in that header, and only the selected area's content renders below it. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
+
+You register one plugin. `CompleteUserProfilePlugin` registers `PageHeaderPlugin` on the panel when it is not already there. To change the header mode without registering a second plugin:
 
 ```php
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 
 CompleteUserProfilePlugin::make()
-    ->navigation(AccountNavigationLayout::Tabs);
+    ->pageHeader(fn (PageHeaderPlugin $header): PageHeaderPlugin => $header->sticky());
 ```
 
-To use Filament's native left-side page sub-navigation instead, select `AccountNavigationLayout::Sidebar`:
+If your application already registers `PageHeaderPlugin` on the same panel, that registration is authoritative in either order and `pageHeader()` is ignored.
 
-```php
-CompleteUserProfilePlugin::make()
-    ->navigation(AccountNavigationLayout::Sidebar);
-```
+This uses native Filament and `filament-page-header` components and requires no package-specific navigation CSS.
 
-`Tabs` renders the visible account areas inside a native Filament `Tabs` schema. `Sidebar` uses Filament's native page sub-navigation at the start of the content area and renders only the selected account area. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
+There is no way to opt out of the header (no `pageHeader(false)`). An application that wants Filament's stock profile heading instead must subclass `CompleteUserProfile` and override `headerSchema()`.
 
-Both layouts use Filament components and require no package-specific navigation CSS. The layout can be configured independently on each panel because it belongs to the plugin instance registered on that panel.
+## Account Security summary
+
+Beside the Overview and Profile areas, the page can render an "Account Security" summary card next to the main content. It lists up to four rows, each gated independently:
+
+| Row | Appears when | State shown |
+| --- | --- | --- |
+| Authenticator app | Security is enabled and app authentication is configured | "Enabled" when the user has a stored app-authentication secret, otherwise "Not configured" |
+| Email MFA | Security is enabled and email authentication is configured | "Enabled" when `hasEmailAuthentication()` returns `true` for the user, otherwise "Not configured" |
+| Active sessions | Sessions is enabled **and** the session store is supported (database session driver with a migrated sessions table) | The user's active session count, correctly pluralized |
+| Personal access tokens | API Tokens is enabled and the user model exposes a `tokens()` relation | The user's token count, correctly pluralized |
+
+Each row links back to the account area it summarizes.
+
+The sessions row is hidden entirely — not shown as "0 active sessions" — when the session store is unsupported (a non-database session driver, or a missing `sessions` table), since a confident zero would contradict the "unsupported" message the Sessions area itself shows in that situation. Every row is independently gated the same way: if none of the four apply, the card does not render at all, and the main content takes the full width.
+
+The card is built by `CompleteUserProfile::getAccountSecurityAsideComponent(): ?Component`, a `protected` method you can override in a subclass to add, remove or reorder rows.
 
 ## Enable MFA
 
@@ -417,14 +436,12 @@ Configure navigation metadata with the same fluent style:
 
 ```php
 use Filament\Schemas\Components\Text;
-use Filament\Support\Icons\Heroicon;
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 
 CompleteUserProfilePlugin::make()
     ->section(
         AccountSection::make('preferences')
             ->label('Preferences')
-            ->icon(Heroicon::AdjustmentsHorizontal)
             ->description('Manage your personal preferences.')
             ->sort(25)
             ->visible(fn (): bool => auth()->user() !== null)
@@ -466,7 +483,7 @@ The following IDs are reserved by the built-in package features and cannot be re
 
 Registering a reserved ID or registering the same custom section ID twice throws a clear exception instead of silently overriding an existing area.
 
-Custom account sections work with both navigation layouts. With `AccountNavigationLayout::Tabs`, they render as native Filament tabs. With `AccountNavigationLayout::Sidebar`, they become native page sub-navigation items and use the same `?section=preferences` query-string selection as built-in areas. Hidden sections are excluded from navigation, and invalid or hidden section values fall back to the first visible account area.
+Custom account sections appear alongside built-in areas in the account navigation and use the same `?section=preferences` query-string selection. Hidden sections are excluded from navigation, and invalid or hidden section values fall back to the first visible account area.
 
 ## AccountSection API reference
 
@@ -476,8 +493,7 @@ Custom account sections work with both navigation layouts. With `AccountNavigati
 
 - `make(string $id)` creates a section. IDs must use lowercase kebab-case, for example `connected-accounts`.
 - `label(string|Closure $label)` sets the navigation label. Without a label, the ID is converted to a headline.
-- `icon(string|BackedEnum|null $icon)` sets the native Filament navigation/tab icon.
-- `description(string|Closure|null $description)` sets the description rendered by the section container.
+- `description(string|Closure|null $description)` sets the description rendered in the page header when the section is active.
 - `sort(int $sort)` controls ordering relative to built-in and custom account areas. The default is `100`.
 - `visible(bool|Closure $condition = true)` controls whether the section can appear or be selected. The default is `true`.
 - `schema(array|Closure $components)` defines the section content. The array or callback result must contain only Filament schema components.
@@ -488,7 +504,6 @@ These methods expose the resolved section configuration for integrations and pac
 
 - `getId()` returns the section ID.
 - `getLabel()` returns the resolved label, including the generated headline fallback.
-- `getIcon()` returns the configured icon or `null`.
 - `getDescription()` returns the resolved description or `null`.
 - `getSort()` returns the configured sort value.
 - `isVisible()` evaluates the visibility condition.

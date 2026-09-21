@@ -8,7 +8,6 @@ use Filament\Contracts\Plugin;
 use Filament\Panel;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
-use Mortalkiller\FilamentCompleteUserProfile\Enums\AccountNavigationLayout;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
@@ -17,6 +16,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\SetUserLocale;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 
 class CompleteUserProfilePlugin implements Plugin
 {
@@ -26,7 +26,11 @@ class CompleteUserProfilePlugin implements Plugin
     /** @var array<string, AccountSection> */
     protected array $sections = [];
 
-    protected AccountNavigationLayout $navigationLayout = AccountNavigationLayout::Tabs;
+    protected PageHeaderPlugin|Closure|null $pageHeader = null;
+
+    protected ?PageHeaderPlugin $registeredPageHeader = null;
+
+    protected ?Panel $pageHeaderPanel = null;
 
     public function __construct()
     {
@@ -54,6 +58,15 @@ class CompleteUserProfilePlugin implements Plugin
         $panel
             ->profile(CompleteUserProfile::class, isSimple: false)
             ->authMiddleware([SetUserLocale::class]);
+
+        if (! $panel->hasPlugin(PageHeaderPlugin::ID)) {
+            $pageHeader = $this->makePageHeaderPlugin();
+
+            $panel->plugin($pageHeader);
+
+            $this->registeredPageHeader = $pageHeader;
+            $this->pageHeaderPanel = $panel;
+        }
 
         $security = $this->getFeature('security');
 
@@ -92,16 +105,21 @@ class CompleteUserProfilePlugin implements Plugin
         return $plugin;
     }
 
-    public function navigation(AccountNavigationLayout $layout): static
+    public function pageHeader(PageHeaderPlugin|Closure $plugin): static
     {
-        $this->navigationLayout = $layout;
+        $this->pageHeader = $plugin;
 
         return $this;
     }
 
-    public function getNavigationLayout(): AccountNavigationLayout
+    public function hasRegisteredPageHeader(): bool
     {
-        return $this->navigationLayout;
+        if ($this->registeredPageHeader === null || $this->pageHeaderPanel === null) {
+            return false;
+        }
+
+        return $this->pageHeaderPanel->hasPlugin(PageHeaderPlugin::ID)
+            && $this->pageHeaderPanel->getPlugin(PageHeaderPlugin::ID) === $this->registeredPageHeader;
     }
 
     public function overview(bool|Closure $condition = true): static
@@ -193,6 +211,25 @@ class CompleteUserProfilePlugin implements Plugin
         );
 
         return $sections;
+    }
+
+    protected function makePageHeaderPlugin(): PageHeaderPlugin
+    {
+        if ($this->pageHeader instanceof PageHeaderPlugin) {
+            return $this->pageHeader;
+        }
+
+        $plugin = PageHeaderPlugin::make();
+
+        if ($this->pageHeader instanceof Closure) {
+            $configured = ($this->pageHeader)($plugin);
+
+            if ($configured instanceof PageHeaderPlugin) {
+                return $configured;
+            }
+        }
+
+        return $plugin;
     }
 
     protected function configureFeature(string $id, bool|Closure $condition): static

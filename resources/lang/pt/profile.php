@@ -6,9 +6,6 @@ return [
         'heading' => 'A minha conta',
         'subheading' => 'Gerir o seu perfil, segurança e acesso.',
     ],
-    'navigation' => [
-        'label' => 'Secções da conta',
-    ],
     'fields' => [
         'avatar' => 'Avatar',
         'locale' => 'Idioma preferido',
@@ -97,7 +94,10 @@ return [
         ],
         'created' => [
             'heading' => 'Token de API criado',
-            'description' => 'Copie este token agora. Não poderá voltar a vê-lo.',
+            'warning' => [
+                'heading' => 'Copie este token agora',
+            ],
+            'description' => 'Esta é a única vez que será mostrado por completo. Certifique-se de que o copiou — não poderá voltar a vê-lo.',
             'token' => 'Token',
         ],
         'requirements' => [
@@ -129,6 +129,29 @@ return [
         'api-tokens' => [
             'label' => 'Tokens de API',
             'description' => 'Criar e revogar tokens pessoais de acesso à API.',
+        ],
+    ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Segurança da conta',
+            'app_authentication' => [
+                'label' => 'Aplicação de autenticação',
+                'enabled' => 'Ativada',
+                'disabled' => 'Por configurar',
+            ],
+            'email_authentication' => [
+                'label' => 'MFA por e-mail',
+                'enabled' => 'Ativada',
+                'disabled' => 'Por configurar',
+            ],
+            'sessions' => [
+                'label' => 'Sessões ativas',
+                'count' => ':count sessão ativa|:count sessões ativas',
+            ],
+            'api_tokens' => [
+                'label' => 'Tokens de acesso pessoal',
+                'count' => ':count token|:count tokens',
+            ],
         ],
     ],
 ];
