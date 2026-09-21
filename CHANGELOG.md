@@ -4,57 +4,11 @@ All notable changes to Filament Complete User Profile are documented here.
 
 The project follows Semantic Versioning.
 
-## [2.0.0] - Unreleased
-
-### Added
-
-- Account navigation rendered inside a page header card, with breadcrumbs, avatar and
-  native sub-navigation.
-- An Account Security summary panel beside the Overview and Profile areas, listing
-  authenticator app, email MFA, active session and API token state for the enabled
-  features.
-- `CompleteUserProfilePlugin::pageHeader()` to configure the header without registering
-  a second plugin.
-- A page header row in the `filament-complete-user-profile:check` diagnostics.
-- `CompleteUserProfile::headerSchema()`, `getBreadcrumbs()` and
-  `getAccountSecurityAsideComponent()`.
-- The created-API-token modal now shows the token in a read-only, masked Filament text
-  input with the native copy, show and hide affix actions, above a warning callout
-  stating the token cannot be viewed again once the dialog closes. Revealing and copying
-  happen in the browser, so neither needs a server round trip.
-
-### Changed
-
-- The page heading, subheading and breadcrumbs follow the active account area.
-- Content cards no longer repeat the area description, which now lives in the header.
-- **Breaking:** `CompleteUserProfile::content()` now always returns a schema whose single
-  top-level component is a `Grid`, not a `Section`. Code that read
-  `$page->content($schema)->getComponents()[0]` and expected a `Section` must instead read
-  the main content component out of the grid's own child schema.
-
-### Removed
-
-- `AccountNavigationLayout`, `CompleteUserProfilePlugin::navigation()` and
-  `getNavigationLayout()`. There is one navigation layout.
-- `AccountSection::icon()` and `getIcon()`. The account navigation has no icons.
-- `CompleteUserProfile::getSubNavigationPosition()` and `getAccountItemIcon()`.
-
-### Requirements
-
-- Filament 5.8.3 or newer, below Filament 6.
-- `mortalkiller/filament-page-header` 2.3.1 or newer.
-
-### Upgrading from 1.x
-
-1. Remove `->navigation(AccountNavigationLayout::Tabs)` or `::Sidebar` from your plugin
-   configuration, and remove the `AccountNavigationLayout` import.
-2. Remove `->icon(...)` from every custom `AccountSection`.
-3. Raise Filament to 5.8.3 or newer.
-4. If you already require `mortalkiller/filament-page-header`, raise it to `^2.3.1`.
-
 ## [1.0.0] - Unreleased
 
 Initial stable release.
+
+This is the package's first public API. Development iterations completed before this release are part of the v1.0.0 baseline and are not treated as upgrade or breaking-change history.
 
 ### Added
 
@@ -62,21 +16,26 @@ Initial stable release.
 - Avatar, name, email and locale profile management.
 - Configurable user-model or separate-table profile storage.
 - Authenticator-app MFA with recovery codes using Filament's native MFA flow.
-- Email MFA with queued notifications and resend cooldown.
+- Email MFA with queued verification notifications and resend cooldown.
 - Browser session listing and revocation for Laravel database sessions.
 - Laravel Sanctum API token management with explicit ability whitelists and expiration limits.
 - Optional tenant-scoped API tokens with fail-closed context validation.
 - Custom profile fields and save hooks.
 - First-class custom account sections.
-- Tabs and sidebar account navigation layouts.
-- Installation diagnostics command.
+- Account navigation rendered inside a page header card with breadcrumbs, avatar and native sub-navigation.
+- Account Security summary beside the Overview and Profile areas, showing applicable MFA, session and API-token state.
+- `CompleteUserProfilePlugin::pageHeader()` for per-panel page-header configuration.
+- Page-header diagnostics in `filament-complete-user-profile:check`.
+- `CompleteUserProfile::headerSchema()`, `getBreadcrumbs()` and `getAccountSecurityAsideComponent()`.
+- Created API tokens displayed in a native read-only masked Filament input with copy, show and hide controls.
 - English, Portuguese, Spanish and French translations.
-- Astro + Starlight public documentation.
+- Astro + Starlight public documentation with release-tag publishing and versioned major channels.
 
 ### Requirements
 
-- PHP 8.3 or newer within the package's declared PHP 8 major range.
+- PHP `^8.3`.
 - Laravel 13.
-- Filament 5.8.3 or newer, below Filament 6.
+- Filament `>=5.8.3 <6.0.0`.
+- `mortalkiller/filament-page-header` `^2.3.1`.
 
-Filament 5.8.3 is the minimum supported Filament release. It remains above the Filament 5 releases affected by the known MFA security advisories and includes the upstream fix that binds Livewire's `DataStore` as a singleton.
+Filament 5.8.3 is the minimum supported Filament release. It remains above the earlier Filament 5 releases affected by the relevant MFA security advisories and includes the upstream Livewire `DataStore` singleton fix required by this package's supported integration.
