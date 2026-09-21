@@ -21,6 +21,16 @@ Full documentation: **https://docs.pedromonteiro.dev/filament-complete-user-prof
 
 It replaces Filament's simple profile screen with a normal panel page and lets you opt into account-security features such as multi-factor authentication, browser session management, Sanctum API tokens, and tenant-scoped tokens while keeping the default setup small.
 
+## Requirements
+
+Version 1 supports:
+
+- PHP `^8.3`
+- Laravel 13
+- Filament `>=5.7.6 <6.0.0`
+
+Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version intentionally starts at 5.7.6 so installations do not resolve to earlier Filament 5 releases affected by known MFA security advisories.
+
 ## Installation
 
 Install the package:
@@ -29,11 +39,29 @@ Install the package:
 composer require mortalkiller/filament-complete-user-profile
 ```
 
-Run migrations:
+The default storage mode is `user`. If that is what you want, run the migrations:
 
 ```bash
 php artisan migrate
 ```
+
+If you want `separate` profile storage, publish the config and select that mode **before the first package migration run**:
+
+```bash
+php artisan vendor:publish --tag=filament-complete-user-profile-config
+```
+
+```php
+'storage' => 'separate',
+```
+
+Then run:
+
+```bash
+php artisan migrate
+```
+
+Storage mode is structural. Package migrations are only executed once by Laravel, so changing between `user` and `separate` after installation requires an application-owned migration/data migration for the transition.
 
 Register the plugin on the Filament panel where you want to expose the account page:
 

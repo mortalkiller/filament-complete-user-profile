@@ -11,10 +11,43 @@ Use the [compatibility guide](../compatibility/) to confirm the supported PHP, L
 
 ```bash
 composer require mortalkiller/filament-complete-user-profile
-php artisan migrate
 ```
 
 The service provider is discovered automatically.
+
+## Choose storage before the first migration
+
+The default mode stores package-managed profile data on the authenticatable model:
+
+```php
+'storage' => 'user',
+```
+
+For the default mode, run:
+
+```bash
+php artisan migrate
+```
+
+If you want the package-owned profile table instead, publish the config first:
+
+```bash
+php artisan vendor:publish --tag=filament-complete-user-profile-config
+```
+
+Set:
+
+```php
+'storage' => 'separate',
+```
+
+and only then run:
+
+```bash
+php artisan migrate
+```
+
+Laravel records package migrations as executed even when a storage-specific migration has nothing to do for the selected mode. Treat storage mode as an installation-time structural decision. Changing modes later requires an application-owned migration/data migration.
 
 ## Register the plugin
 
