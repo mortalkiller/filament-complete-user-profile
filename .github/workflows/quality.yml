@@ -2,7 +2,8 @@ name: Code quality
 
 on:
   push:
-    branches: ['main', 'feature/**', 'codex/**']
+    branches: ['main', '1.x', 'feature/**', 'codex/**', 'release/**']
+    tags: ['v*']
   pull_request:
 
 permissions:
@@ -36,6 +37,9 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Audit dependencies
+        run: composer audit --locked --no-interaction
 
       - name: Check code style
         run: composer lint
@@ -78,6 +82,7 @@ jobs:
             'phpstan.neon.dist'
             'pint.json'
             'CONTRIBUTING.md'
+            'docs-site/'
             'composer.lock'
           )
 
