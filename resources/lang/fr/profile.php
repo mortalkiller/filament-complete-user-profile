@@ -128,4 +128,27 @@ return [
             'description' => "Créez et révoquez des jetons personnels d'accès à l'API.",
         ],
     ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Sécurité du compte',
+            'app_authentication' => [
+                'label' => 'Application d\'authentification',
+                'enabled' => 'Activée',
+                'disabled' => 'Non configurée',
+            ],
+            'email_authentication' => [
+                'label' => 'MFA par e-mail',
+                'enabled' => 'Activée',
+                'disabled' => 'Non configurée',
+            ],
+            'sessions' => [
+                'label' => 'Sessions actives',
+                'count' => ':count session active|:count sessions actives',
+            ],
+            'api_tokens' => [
+                'label' => 'Jetons d\'accès personnels',
+                'count' => ':count jeton|:count jetons',
+            ],
+        ],
+    ],
 ];

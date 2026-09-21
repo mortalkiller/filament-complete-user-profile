@@ -3,6 +3,8 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Pages;
 
 use Filament\Actions\Action;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Auth\Pages\EditProfile;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -12,10 +14,12 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Navigation\NavigationItem;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -30,8 +34,11 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\SessionStore;
+use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
 use MortalKiller\FilamentPageHeader\Components\Header;
@@ -113,9 +120,27 @@ class CompleteUserProfile extends EditProfile
     {
         $item = $this->getActiveAccountItem();
 
-        return $schema->components(
-            $item === null ? [] : [$this->getAccountItemContentComponent($item)],
-        );
+        if ($item === null) {
+            return $schema->components([]);
+        }
+
+        $main = $this->getAccountItemContentComponent($item);
+        $aside = in_array($item->getId(), ['overview', 'profile'], true)
+            ? $this->getAccountSecurityAsideComponent()
+            : null;
+
+        if ($aside === null) {
+            return $schema->components([
+                Grid::make(3)->schema([$main->columnSpan(3)]),
+            ]);
+        }
+
+        return $schema->components([
+            Grid::make(3)->schema([
+                $main->columnSpan(2),
+                $aside->columnSpan(1),
+            ]),
+        ]);
     }
 
     public function headerSchema(Schema $schema): Schema
@@ -500,5 +525,84 @@ class CompleteUserProfile extends EditProfile
         $translation = __($key);
 
         return is_string($translation) ? $translation : $key;
+    }
+
+    protected function getAccountSecurityAsideComponent(): ?Component
+    {
+        $plugin = CompleteUserProfilePlugin::get();
+        $security = $this->getSecurityFeature();
+        $user = $this->getUser();
+        $entries = [];
+
+        if ($security->isEnabled() && $security->hasAppAuthentication()) {
+            $isEnabled = $user instanceof HasAppAuthentication
+                && filled($user->getAppAuthenticationSecret());
+
+            $entries[] = $this->makeAsideEntry(
+                'app_authentication',
+                Heroicon::OutlinedShieldCheck,
+                static::translate('filament-complete-user-profile::profile.aside.security.app_authentication.'.($isEnabled ? 'enabled' : 'disabled')),
+                'security',
+            );
+        }
+
+        if ($security->isEnabled() && $security->hasEmailAuthentication()) {
+            $isEnabled = $user instanceof HasEmailAuthentication
+                && $user->hasEmailAuthentication();
+
+            $entries[] = $this->makeAsideEntry(
+                'email_authentication',
+                Heroicon::OutlinedEnvelope,
+                static::translate('filament-complete-user-profile::profile.aside.security.email_authentication.'.($isEnabled ? 'enabled' : 'disabled')),
+                'security',
+            );
+        }
+
+        $sessions = $plugin->getFeature('sessions');
+
+        if ($sessions instanceof Sessions && $sessions->isEnabled()) {
+            $count = app(SessionStore::class)->sessionsFor($user)->count();
+
+            $entries[] = $this->makeAsideEntry(
+                'sessions',
+                Heroicon::OutlinedComputerDesktop,
+                static::translateChoice('filament-complete-user-profile::profile.aside.security.sessions.count', $count),
+                'sessions',
+            );
+        }
+
+        $tokens = $plugin->getFeature('api-tokens');
+
+        if ($tokens instanceof ApiTokens && $tokens->isEnabled() && method_exists($user, 'tokens')) {
+            $count = $user->tokens()->count();
+
+            $entries[] = $this->makeAsideEntry(
+                'api_tokens',
+                Heroicon::OutlinedKey,
+                static::translateChoice('filament-complete-user-profile::profile.aside.security.api_tokens.count', $count),
+                'api-tokens',
+            );
+        }
+
+        if ($entries === []) {
+            return null;
+        }
+
+        return Section::make(static::translate('filament-complete-user-profile::profile.aside.security.heading'))
+            ->schema($entries);
+    }
+
+    protected function makeAsideEntry(string $key, Heroicon $icon, string $state, string $sectionId): TextEntry
+    {
+        return TextEntry::make("account_security_{$key}")
+            ->label(static::translate("filament-complete-user-profile::profile.aside.security.{$key}.label"))
+            ->state($state)
+            ->icon($icon)
+            ->url(filament()->getProfileUrl(['section' => $sectionId]));
+    }
+
+    protected static function translateChoice(string $key, int $count): string
+    {
+        return trans_choice($key, $count, ['count' => $count]);
     }
 }

@@ -128,4 +128,27 @@ return [
             'description' => 'Create and revoke personal API access tokens.',
         ],
     ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Account Security',
+            'app_authentication' => [
+                'label' => 'Authenticator app',
+                'enabled' => 'Enabled',
+                'disabled' => 'Not configured',
+            ],
+            'email_authentication' => [
+                'label' => 'Email MFA',
+                'enabled' => 'Enabled',
+                'disabled' => 'Not configured',
+            ],
+            'sessions' => [
+                'label' => 'Active sessions',
+                'count' => ':count active session|:count active sessions',
+            ],
+            'api_tokens' => [
+                'label' => 'Personal access tokens',
+                'count' => ':count token|:count tokens',
+            ],
+        ],
+    ],
 ];

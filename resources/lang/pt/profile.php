@@ -128,4 +128,27 @@ return [
             'description' => 'Criar e revogar tokens pessoais de acesso à API.',
         ],
     ],
+    'aside' => [
+        'security' => [
+            'heading' => 'Segurança da conta',
+            'app_authentication' => [
+                'label' => 'Aplicação de autenticação',
+                'enabled' => 'Ativada',
+                'disabled' => 'Por configurar',
+            ],
+            'email_authentication' => [
+                'label' => 'MFA por e-mail',
+                'enabled' => 'Ativada',
+                'disabled' => 'Por configurar',
+            ],
+            'sessions' => [
+                'label' => 'Sessões ativas',
+                'count' => ':count sessão ativa|:count sessões ativas',
+            ],
+            'api_tokens' => [
+                'label' => 'Tokens de acesso pessoal',
+                'count' => ':count token|:count tokens',
+            ],
+        ],
+    ],
 ];

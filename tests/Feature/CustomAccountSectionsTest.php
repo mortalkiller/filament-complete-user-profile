@@ -5,6 +5,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\PanelRegistry;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section as SchemaSection;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Route;
@@ -158,10 +159,20 @@ class CustomAccountSectionsTest extends TestCase
         $components = $page->content(Schema::make($page))->getComponents();
 
         self::assertCount(1, $components);
-        self::assertInstanceOf(SchemaSection::class, $components[0]);
-        self::assertSame('Preferences', $components[0]->getHeading());
+        self::assertInstanceOf(Grid::class, $components[0]);
 
-        $sectionSchema = $components[0]->getChildSchema();
+        $gridSchema = $components[0]->getChildSchema();
+
+        if ($gridSchema === null) {
+            self::fail('The content grid must expose a child schema.');
+        }
+
+        $main = array_values($gridSchema->getComponents())[0];
+
+        self::assertInstanceOf(SchemaSection::class, $main);
+        self::assertSame('Preferences', $main->getHeading());
+
+        $sectionSchema = $main->getChildSchema();
 
         if ($sectionSchema === null) {
             self::fail('Account section must expose a child schema.');

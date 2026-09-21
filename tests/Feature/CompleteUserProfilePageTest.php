@@ -5,6 +5,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 use Filament\Facades\Filament;
 use Filament\Panel;
 use Filament\PanelRegistry;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Schema;
@@ -220,8 +221,18 @@ class CompleteUserProfilePageTest extends TestCase
         $page->section = 'security';
         $components = $page->content(Schema::make($page))->getComponents();
 
-        self::assertInstanceOf(Section::class, $components[0]);
-        self::assertNull($components[0]->getDescription());
+        self::assertInstanceOf(Grid::class, $components[0]);
+
+        $schema = $components[0]->getChildSchema();
+
+        if ($schema === null) {
+            self::fail('The content grid must expose a child schema.');
+        }
+
+        $main = array_values($schema->getComponents())[0];
+
+        self::assertInstanceOf(Section::class, $main);
+        self::assertNull($main->getDescription());
     }
 
     public function test_the_avatar_resolves_a_stored_avatar_through_the_configured_disk(): void
