@@ -8,3 +8,4 @@
 /phpstan.neon.dist export-ignore
 /pint.json export-ignore
 /CONTRIBUTING.md export-ignore
+/docs-site export-ignore
