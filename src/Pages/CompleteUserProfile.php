@@ -559,9 +559,10 @@ class CompleteUserProfile extends EditProfile
         }
 
         $sessions = $plugin->getFeature('sessions');
+        $store = app(SessionStore::class);
 
-        if ($sessions instanceof Sessions && $sessions->isEnabled()) {
-            $count = app(SessionStore::class)->sessionsFor($user)->count();
+        if ($sessions instanceof Sessions && $sessions->isEnabled() && $store->isSupported()) {
+            $count = $store->sessionsFor($user)->count();
 
             $entries[] = $this->makeAsideEntry(
                 'sessions',

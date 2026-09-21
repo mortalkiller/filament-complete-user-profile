@@ -12,6 +12,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
@@ -58,6 +59,24 @@ class AccountSecurityAsideTest extends TestCase
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at')->nullable()->index();
             $table->timestamps();
+        });
+
+        // The session store is only "supported" on the database driver with
+        // a migrated sessions table. Configuring that here means the
+        // existing assertions below exercise a genuinely supported store
+        // (see also the unsupported-store test, which switches the driver
+        // back off).
+        config()->set('session.driver', 'database');
+        config()->set('session.connection', 'testing');
+        config()->set('session.table', 'sessions');
+
+        SchemaFacade::create('sessions', function (Blueprint $table): void {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->text('payload');
+            $table->integer('last_activity')->index();
         });
     }
 
@@ -170,6 +189,94 @@ class AccountSecurityAsideTest extends TestCase
 
         self::assertSame(
             ['Not configured', 'Not configured', '0 active sessions'],
+            $states,
+        );
+    }
+
+    public function test_the_sessions_row_is_hidden_when_the_session_store_is_unsupported(): void
+    {
+        // A non-database session driver makes DatabaseSessionStore::isSupported()
+        // return false. Sessions::sessionsFor() would still return an empty
+        // collection either way, so without the guard this scenario would
+        // render a confident (and wrong) "0 active sessions" row next to a
+        // Sessions area that says the driver is unsupported. The row must
+        // disappear entirely instead, while the unrelated rows stay put.
+        config()->set('session.driver', 'file');
+
+        $page = $this->makePage($this->pluginWithSecurityFeatures());
+        $page->section = 'overview';
+
+        $aside = $this->gridColumns($page)[1];
+        $schema = $aside->getChildSchema();
+
+        if ($schema === null) {
+            self::fail('The aside must expose a child schema.');
+        }
+
+        $labels = array_map(
+            static function ($entry): string {
+                self::assertInstanceOf(TextEntry::class, $entry);
+
+                $label = $entry->getLabel();
+                self::assertIsString($label);
+
+                return $label;
+            },
+            $schema->getComponents(),
+        );
+
+        self::assertSame(
+            ['Authenticator app', 'Email MFA', 'Personal access tokens'],
+            $labels,
+        );
+    }
+
+    public function test_rows_render_their_enabled_states_and_singular_counts(): void
+    {
+        // test_rows_follow_the_enabled_features only checks labels, and
+        // test_rows_stay_safe_... only ever produces the disabled state and
+        // a zero (plural) count. Neither exercises the ".enabled"
+        // translation branch for either MFA row, a non-zero count, or the
+        // singular pluralisation form. An inverted ternary in the row
+        // builders would still pass the rest of the suite.
+        $user = FullSecurityUser::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']);
+        $user->saveAppAuthenticationSecret('totp-secret');
+        $user->toggleEmailAuthentication(true);
+        $user->createToken('CLI');
+
+        DB::connection('testing')->table('sessions')->insert([
+            'id' => 'a-single-session-id',
+            'user_id' => $user->getKey(),
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'payload' => '',
+            'last_activity' => time(),
+        ]);
+
+        $page = $this->makePage($this->pluginWithSecurityFeatures(), $user);
+        $page->section = 'overview';
+
+        $aside = $this->gridColumns($page)[1];
+        $schema = $aside->getChildSchema();
+
+        if ($schema === null) {
+            self::fail('The aside must expose a child schema.');
+        }
+
+        $states = array_map(
+            static function ($entry): string {
+                self::assertInstanceOf(TextEntry::class, $entry);
+
+                $state = $entry->getState();
+                self::assertIsString($state);
+
+                return $state;
+            },
+            $schema->getComponents(),
+        );
+
+        self::assertSame(
+            ['Enabled', 'Enabled', '1 active session', '1 token'],
             $states,
         );
     }
