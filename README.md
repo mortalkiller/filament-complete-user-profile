@@ -4,7 +4,7 @@
 
 [![Latest version](https://img.shields.io/packagist/v/mortalkiller/filament-complete-user-profile.svg)](https://packagist.org/packages/mortalkiller/filament-complete-user-profile)
 [![Total downloads](https://img.shields.io/packagist/dt/mortalkiller/filament-complete-user-profile.svg)](https://packagist.org/packages/mortalkiller/filament-complete-user-profile)
-[![Package tests](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml)
+[![Package tests](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml/badge.svg?branch=1.x)](https://github.com/mortalkiller/filament-complete-user-profile/actions/workflows/tests.yml)
 [![License](https://img.shields.io/packagist/l/mortalkiller/filament-complete-user-profile.svg)](LICENSE.md)
 
 [![Plumb score](https://plumbphp.dev/badges/mortalkiller/filament-complete-user-profile/composite.svg)](https://plumbphp.dev/mortalkiller/filament-complete-user-profile)
