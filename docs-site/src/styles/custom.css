@@ -1,0 +1,16 @@
+:root {
+  --sl-content-width: 52rem;
+  --sl-color-accent-low: #e0e7ff;
+  --sl-color-accent: #4f46e5;
+  --sl-color-accent-high: #312e81;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #1e1b4b;
+  --sl-color-accent: #818cf8;
+  --sl-color-accent-high: #e0e7ff;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  font-size: 0.9em;
+}
