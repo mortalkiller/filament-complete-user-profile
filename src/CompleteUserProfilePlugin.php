@@ -17,6 +17,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\SetUserLocale;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 
 class CompleteUserProfilePlugin implements Plugin
 {
@@ -27,6 +28,10 @@ class CompleteUserProfilePlugin implements Plugin
     protected array $sections = [];
 
     protected AccountNavigationLayout $navigationLayout = AccountNavigationLayout::Tabs;
+
+    protected PageHeaderPlugin|Closure|null $pageHeader = null;
+
+    protected bool $hasRegisteredPageHeader = false;
 
     public function __construct()
     {
@@ -54,6 +59,11 @@ class CompleteUserProfilePlugin implements Plugin
         $panel
             ->profile(CompleteUserProfile::class, isSimple: false)
             ->authMiddleware([SetUserLocale::class]);
+
+        if (! $panel->hasPlugin(PageHeaderPlugin::ID)) {
+            $panel->plugin($this->makePageHeaderPlugin());
+            $this->hasRegisteredPageHeader = true;
+        }
 
         $security = $this->getFeature('security');
 
@@ -102,6 +112,18 @@ class CompleteUserProfilePlugin implements Plugin
     public function getNavigationLayout(): AccountNavigationLayout
     {
         return $this->navigationLayout;
+    }
+
+    public function pageHeader(PageHeaderPlugin|Closure $plugin): static
+    {
+        $this->pageHeader = $plugin;
+
+        return $this;
+    }
+
+    public function hasRegisteredPageHeader(): bool
+    {
+        return $this->hasRegisteredPageHeader;
     }
 
     public function overview(bool|Closure $condition = true): static
@@ -193,6 +215,25 @@ class CompleteUserProfilePlugin implements Plugin
         );
 
         return $sections;
+    }
+
+    protected function makePageHeaderPlugin(): PageHeaderPlugin
+    {
+        if ($this->pageHeader instanceof PageHeaderPlugin) {
+            return $this->pageHeader;
+        }
+
+        $plugin = PageHeaderPlugin::make();
+
+        if ($this->pageHeader instanceof Closure) {
+            $configured = ($this->pageHeader)($plugin);
+
+            if ($configured instanceof PageHeaderPlugin) {
+                return $configured;
+            }
+        }
+
+        return $plugin;
     }
 
     protected function configureFeature(string $id, bool|Closure $condition): static

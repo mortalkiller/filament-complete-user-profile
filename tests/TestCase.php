@@ -6,6 +6,7 @@ use Filament\FilamentServiceProvider;
 use Illuminate\Foundation\Application;
 use Livewire\LivewireServiceProvider;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfileServiceProvider;
+use MortalKiller\FilamentPageHeader\PageHeaderServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -19,6 +20,7 @@ abstract class TestCase extends Orchestra
         return [
             LivewireServiceProvider::class,
             FilamentServiceProvider::class,
+            PageHeaderServiceProvider::class,
             CompleteUserProfileServiceProvider::class,
         ];
     }
