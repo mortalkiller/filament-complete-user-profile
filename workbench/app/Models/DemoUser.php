@@ -11,6 +11,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class DemoUser extends Authenticatable implements FilamentUser, HasAvatar
 {
+    protected $table = 'users';
+
     protected $guarded = [];
 
     protected $hidden = [
