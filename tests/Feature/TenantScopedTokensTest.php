@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
@@ -342,7 +343,7 @@ class TenantScopedTokensTest extends TestCase
         });
     }
 
-    protected function requestTenantProtectedRoute(string $plainTextToken): \Illuminate\Testing\TestResponse
+    protected function requestTenantProtectedRoute(string $plainTextToken): TestResponse
     {
         // Testbench serves multiple requests through the same application instance.
         // Reset request guards so Sanctum authenticates the bearer token from each
