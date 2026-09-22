@@ -15,12 +15,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\PersonalAccessToken;
-use Laravel\Sanctum\Sanctum;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
-use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\CentralPersonalAccessToken;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\CentralTokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -53,7 +51,6 @@ class ApiTokensTest extends TestCase
     protected function tearDown(): void
     {
         CarbonImmutable::setTestNow();
-        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
 
         parent::tearDown();
     }
@@ -202,14 +199,12 @@ class ApiTokensTest extends TestCase
         self::assertFalse(DatabaseSchema::hasColumn('personal_access_tokens', 'context_type'));
         self::assertTrue(DatabaseSchema::connection('tokens')->hasColumn('personal_access_tokens', 'context_type'));
 
-        Sanctum::usePersonalAccessTokenModel(CentralPersonalAccessToken::class);
-
         $feature = ApiTokens::make()
             ->enabled()
             ->tenantScoped()
             ->abilities(['customers:read' => 'Read customers']);
 
-        self::assertNull($feature->getRequirementIssue(new TokenUser));
+        self::assertNull($feature->getRequirementIssue(new CentralTokenUser));
     }
 
     public function test_api_tokens_component_uses_native_table_and_plaintext_only_once(): void

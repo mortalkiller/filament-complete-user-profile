@@ -2,9 +2,11 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures;
 
-use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\HasApiTokens;
 
-class CentralPersonalAccessToken extends PersonalAccessToken
+class CentralTokenUser extends User
 {
+    use HasApiTokens;
+
     protected $connection = 'tokens';
 }
