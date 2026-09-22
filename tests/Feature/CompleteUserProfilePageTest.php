@@ -70,7 +70,9 @@ class CompleteUserProfilePageTest extends TestCase
 
     public function test_package_page_view_is_registered(): void
     {
-        self::assertTrue(view()->exists('filament-complete-user-profile::pages.complete-user-profile'));
+        $view = view('filament-complete-user-profile::pages.complete-user-profile');
+
+        self::assertSame('filament-complete-user-profile::pages.complete-user-profile', $view->name());
     }
 
     public function test_the_navigation_layout_api_is_gone(): void

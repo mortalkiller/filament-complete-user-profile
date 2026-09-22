@@ -20,7 +20,6 @@ use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
@@ -179,10 +178,6 @@ class CompleteUserProfile extends EditProfile
         if (is_string($avatar) && $avatar !== '') {
             $disk = config('filament.default_filesystem_disk');
             $filesystem = Storage::disk(is_string($disk) ? $disk : 'public');
-
-            if (! $filesystem instanceof Cloud) {
-                throw new LogicException('The configured filesystem disk must be able to generate a URL for the stored avatar.');
-            }
 
             return $filesystem->url($avatar);
         }
