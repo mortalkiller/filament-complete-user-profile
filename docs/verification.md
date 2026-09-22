@@ -1,5 +1,13 @@
 # Verification record
 
+## Package Standard v2 migration
+
+The current `1.x` line adopts MortalKiller Package Standard v2 as a maintainer/tooling migration without changing the package major or intentionally changing its public runtime API.
+
+Current CI adds Larastan level 8, strict randomized PHPUnit behavior, Zizmor, Template v2 reusable workflows and root Playwright Dependabot coverage. Exact migration evidence is recorded in the migration issue/PR and merge-commit workflows.
+
+The historical release-readiness evidence below is preserved as history. References there to raw PHPStan, `main`, earlier workflow topology or previous template pins describe the state at the time and are superseded for current maintenance by Standard v2.
+
 Verified on 2026-09-21 on `release/1.0.0-readiness` as part of the version 1.0.0 release-readiness review.
 
 ## Supported runtime baseline

@@ -10,7 +10,7 @@ Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 
 ## Branch model
 
-Read [Development and release flow](docs/development-flow.md). Permanent branches are package-major lines, without a separate stable-promotion branch. `1.x` is the current development/support line and default branch. Temporary branches start from, and target, the affected major. Breaking public API changes do not belong in the 1.x line.
+Read [Development and release flow](docs/development-flow.md) and the [MortalKiller Package Standard v2](https://github.com/mortalkiller/filament-package-standard/blob/2.x/docs/package-standard.md). Permanent branches are package-major lines, without a separate stable-promotion branch. `1.x` is the current development/support line and default branch. A Standard/tooling major does not itself require a package major bump. Temporary branches start from, and target, the affected major. Breaking public API changes do not belong in the 1.x line.
 
 Release new immutable tags from verified major commits. A branch may include unreleased work; a tag identifies exactly what was published. Create a future major only when incompatible work begins, and keep the current stable major as the default until the next major's first stable release is complete.
 
@@ -41,7 +41,7 @@ composer validate --strict
 composer check
 ```
 
-`composer check` runs Pint, PHPStan and PHPUnit. CI validates PHP 8.3, 8.4 and 8.5 against both the lowest and latest dependency sets allowed by the version 1 constraints, including the supported Filament 5 range. Distribution archive checks remain required. Documentation CI validates canonical and major-version build paths without deployment.
+`composer check` runs Pint, Larastan level 8 and PHPUnit. CI validates PHP 8.3, 8.4 and 8.5 against both the lowest and latest dependency sets allowed by the version 1 constraints, including the supported Filament 5 range. Distribution archive checks remain required. Documentation CI validates canonical and major-version build paths without deployment.
 
 Do not commit dependencies, generated environment files, test reports, PHPStan logs or lockfiles produced by local library development.
 

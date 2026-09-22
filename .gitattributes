@@ -4,6 +4,7 @@
 /tests export-ignore
 /docs/superpowers export-ignore
 /docs/verification.md export-ignore
+/.editorconfig export-ignore
 /phpunit.xml.dist export-ignore
 /phpstan.neon.dist export-ignore
 /pint.json export-ignore

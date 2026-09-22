@@ -6,7 +6,7 @@ The current development line and default branch are `1.x`. Use permanent branche
 
 Create a temporary `feature/*`, `fix/*`, `docs/*`, `test/*`, `refactor/*`, or `chore/*` branch from the affected major and open a PR back to that major. Review, run CI, squash the focused work and remove its temporary branch. There is no promotion merge into a separate permanent branch.
 
-A major branch may contain unreleased work. Immutable tags identify exact published versions. Package majors are not Filament majors.
+A major branch may contain unreleased work. Immutable tags identify exact published versions. Package majors are independent from Filament, Template and Package Standard majors. Adopting Package Standard v2 does not by itself require a new package major.
 
 ## Choose a version
 
@@ -36,4 +36,4 @@ Keep `1.x` as the default branch and protect supported majors. Configure `docs-p
 
 Before deleting an old promotion branch, preserve exclusive history and review open PR targets, branch protections, explicit `dev-main` consumers and deployment rules. Preserve published tags. Update installed agent skills deliberately; repository changes do not update local skill copies.
 
-External workflow references and their checker/publication tooling must share a reviewed full template SHA. Adopt template improvements explicitly through PRs. See the [canonical standard](https://github.com/mortalkiller/filament-package-template/blob/1.x/docs/package-standard.md).
+External workflow references and their checker/publication tooling must share a reviewed full template SHA. Adopt template improvements explicitly through PRs. See the [canonical Package Standard v2](https://github.com/mortalkiller/filament-package-standard/blob/2.x/docs/package-standard.md) and its [migration guide](https://github.com/mortalkiller/filament-package-standard/blob/2.x/docs/migrating-to-v2.md).
