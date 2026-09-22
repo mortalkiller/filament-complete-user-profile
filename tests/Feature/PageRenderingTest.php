@@ -42,7 +42,9 @@ class PageRenderingTest extends TestCase
     {
         CompleteUserProfilePlugin::get()->security(fn (Security $security): Security => $security->appAuthentication()->emailAuthentication());
 
-        Livewire::withQueryParams(['section' => 'profile'])->test(CompleteUserProfile::class)
+        Livewire::withQueryParams(['section' => 'profile']);
+
+        Livewire::test(CompleteUserProfile::class)
             ->assertSee('Profile Information')
             ->assertSee('Update your personal information and profile details.')
             ->assertSee('Review your account security settings.')

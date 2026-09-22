@@ -94,7 +94,7 @@ final class AccountSection
         return $this;
     }
 
-    /** @param class-string<Page> $page */
+    /** @param class-string $page */
     public function page(string $page): static
     {
         if ($this->hasConfiguredSchema) {

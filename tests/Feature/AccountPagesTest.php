@@ -115,7 +115,9 @@ class AccountPagesTest extends TestCase
     {
         $this->authenticate();
         $this->panel();
-        $page = Livewire::withQueryParams(['section' => 'billing'])->test(CompleteUserProfile::class)
+        Livewire::withQueryParams(['section' => 'billing']);
+
+        $page = Livewire::test(CompleteUserProfile::class)
             ->assertSeeHtml('/admin/account/billing');
 
         /** @var CompleteUserProfile $instance */
