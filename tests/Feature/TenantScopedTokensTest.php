@@ -129,7 +129,8 @@ class TenantScopedTokensTest extends TestCase
         $token = $manager->create($user, $this->feature(), 'CLI', ['customers:read']);
         $user->withAccessToken($token->accessToken);
 
-        $resolver = new class implements TokenContextResolver {
+        $resolver = new class implements TokenContextResolver
+        {
             public ?Model $context = null;
 
             public function resolve(): ?Model
@@ -162,7 +163,8 @@ class TenantScopedTokensTest extends TestCase
         $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
         $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
 
-        $resolver = new class($tenantA) implements TenancyResolver {
+        $resolver = new class($tenantA) implements TenancyResolver
+        {
             public function __construct(
                 public ?Model $tenant,
             ) {}
