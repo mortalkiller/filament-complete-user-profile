@@ -7,6 +7,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -231,8 +232,7 @@ class TenantScopedTokensTest extends TestCase
             ['customers:read'],
         );
 
-        $this->withToken($token->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($token->plainTextToken)
             ->assertOk()
             ->assertJson([
                 'token_id' => (string) $token->accessToken->getKey(),
@@ -241,14 +241,12 @@ class TenantScopedTokensTest extends TestCase
 
         $resolver->tenant = $tenantB;
 
-        $this->withToken($token->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($token->plainTextToken)
             ->assertForbidden();
 
         $resolver->tenant = $tenantA;
 
-        $this->withToken($token->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($token->plainTextToken)
             ->assertOk()
             ->assertJson([
                 'token_id' => (string) $token->accessToken->getKey(),
@@ -284,30 +282,26 @@ class TenantScopedTokensTest extends TestCase
 
         $resolver->tenant = $tenantA;
 
-        $this->withToken($tokenA->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($tokenA->plainTextToken)
             ->assertOk()
             ->assertJson([
                 'token_id' => (string) $tokenA->accessToken->getKey(),
                 'tenant_id' => (string) $tenantA->getKey(),
             ]);
 
-        $this->withToken($tokenB->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($tokenB->plainTextToken)
             ->assertForbidden();
 
         $resolver->tenant = $tenantB;
 
-        $this->withToken($tokenB->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($tokenB->plainTextToken)
             ->assertOk()
             ->assertJson([
                 'token_id' => (string) $tokenB->accessToken->getKey(),
                 'tenant_id' => (string) $tenantB->getKey(),
             ]);
 
-        $this->withToken($tokenA->plainTextToken)
-            ->getJson('/__test/tenant-token')
+        $this->requestTenantProtectedRoute($tokenA->plainTextToken)
             ->assertForbidden();
     }
 
@@ -346,6 +340,17 @@ class TenantScopedTokensTest extends TestCase
                 'tenant_id' => $tenant instanceof Model ? (string) $tenant->getKey() : null,
             ]);
         });
+    }
+
+    protected function requestTenantProtectedRoute(string $plainTextToken): \Illuminate\Testing\TestResponse
+    {
+        // Testbench serves multiple requests through the same application instance.
+        // Reset request guards so Sanctum authenticates the bearer token from each
+        // request instead of reusing the user cached by the previous RequestGuard.
+        Auth::forgetGuards();
+
+        return $this->withToken($plainTextToken)
+            ->getJson('/__test/tenant-token');
     }
 
     protected function feature(): ApiTokens
