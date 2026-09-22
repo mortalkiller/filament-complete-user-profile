@@ -21,12 +21,11 @@ permissions:
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.release.draft == false && github.event.release.prerelease == false && vars.DOCS_DEPLOY_ENABLED == 'true')
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@5ed6a6b06b4d8e7c2b2d013eedbe86aeba01d5af
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@6ceb549dd431ccbec57e1fcf67321df2b40b0a92
     with:
-      standard-ref: 5ed6a6b06b4d8e7c2b2d013eedbe86aeba01d5af
+      standard-ref: 6ceb549dd431ccbec57e1fcf67321df2b40b0a92
       artifact-name: filament-complete-user-profile-release-docs
       release-tag: ${{ inputs.release-tag || github.event.release.tag_name }}
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
       docs-port: ${{ vars.DOCS_PORT || '22' }}
       docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
-    secrets: inherit
