@@ -103,11 +103,38 @@ The Livewire component can use native Filament Tables, Forms, Actions and Schema
 
 `AccountSection::schema()` accepts Filament schema `Component` instances. A `Filament\Pages\Page` is a routed page and is not accepted directly as section content.
 
-Use schema components or a Livewire component when the feature should remain inside the account center. Register a separate Filament Page when the feature needs its own route and page lifecycle. The current `AccountSection` API does not provide a custom navigation URL for redirecting a section to another page.
+Use `page()` when the feature needs its own route and page lifecycle while sharing the account navigation:
+
+```php
+use Filament\Pages\Page;
+use Mortalkiller\FilamentCompleteUserProfile\Concerns\InteractsWithAccountSection;
+
+class Billing extends Page
+{
+    use InteractsWithAccountSection;
+
+    protected static ?string $slug = 'profile/billing';
+
+    // Define content, actions and authorization as for any custom page.
+}
+
+CompleteUserProfilePlugin::make()
+    ->section(
+        AccountSection::make('billing')
+            ->label('Billing')
+            ->description('Manage your subscription and payment details.')
+            ->sort(60)
+            ->page(Billing::class),
+    );
+```
+
+The plugin registers the page; do not embed it in another page. The trait supplies account presentation without replacing `mount()`, forms, tables, actions or `canAccess()`. It hides the main-sidebar entry by default. Page classes cannot belong to a cluster, use route parameters or `PageConfiguration`, or represent resource, auth/profile or cluster pages. Schema and page configuration cannot be combined. Register each class only once per panel and configure sections before registering the plugin.
+
+A hidden page can still be visited directly if authorized. Use `canAccess()` and action-level checks for security, not `visible()`. The trait rejects requests when no section maps to that page on the current panel. Native tenant pages use the current Filament tenant; custom token tenancy resolvers do not alter page routing. Rebuild route and Filament component caches after changing registrations.
 
 ## Visibility, ordering and persistence
 
-A custom section defaults to visible with sort `100`. Visible custom sections are sorted together with built-in account areas and selected through the `section` query parameter.
+A custom section defaults to visible with sort `100`. Visible sections are sorted together with built-in account areas. Inline sections use the `section` query parameter; routed sections use their native page URL. `?section=billing` falls back to an inline area instead of rendering a routed page. If all inline areas are disabled or hidden, the profile redirects to the first visible, accessible page section. If none is available, it retains its empty state.
 
 These IDs are reserved:
 

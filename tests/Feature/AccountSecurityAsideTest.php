@@ -279,6 +279,10 @@ class AccountSecurityAsideTest extends TestCase
             ['Enabled', 'Enabled', '1 active session', '1 token'],
             $states,
         );
+
+        foreach (array_slice($schema->getComponents(), 0, 2) as $entry) {
+            self::assertTrue($entry->getViewData()['securityEnabled']);
+        }
     }
 
     private function pluginWithSecurityFeatures(): CompleteUserProfilePlugin

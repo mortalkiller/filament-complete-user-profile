@@ -1,0 +1,137 @@
+.fcup-account-security > .fi-section {
+    background: linear-gradient(135deg, #fff, #f8fafc);
+    border-radius: 0.75rem;
+}
+
+.fcup-account-security > .fi-section > .fi-section-header {
+    padding: 1rem 1rem 0.875rem;
+}
+
+.fcup-account-security > .fi-section > .fi-section-content-ctn {
+    border-top: 0;
+}
+
+.fcup-account-security > .fi-section > .fi-section-content-ctn > .fi-section-content {
+    padding: 0 1rem 1rem;
+}
+
+.fcup-account-security .fi-section-content {
+    gap: 0.625rem;
+}
+
+.fcup-account-security .fi-section-header-description,
+.fcup-profile-information .fi-section-header-description {
+    margin-top: 0.125rem;
+}
+
+.fcup-security-card {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) 1rem;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3.75rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--gray-200, #e5e7eb);
+    border-radius: 0.5rem;
+    background: rgb(255 255 255 / 0.7);
+    color: var(--gray-950, #030712);
+    text-decoration: none;
+    transition: background-color 150ms, border-color 150ms;
+}
+
+.fcup-security-card:hover {
+    background: var(--gray-50, #f9fafb);
+    border-color: var(--gray-300, #d1d5db);
+}
+
+.fcup-security-card:focus-visible {
+    outline: 2px solid var(--primary-500, #6366f1);
+    outline-offset: 3px;
+}
+
+.fcup-security-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding-inline-end: 0.625rem;
+    border-inline-end: 1px solid var(--gray-200, #e5e7eb);
+}
+
+.fcup-security-card-icon > svg {
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.fcup-security-card-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.fcup-security-card-label {
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+    font-weight: 600;
+}
+
+.fcup-security-card-state {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--gray-500, #6b7280);
+    font-size: 0.75rem;
+    line-height: 1.125rem;
+}
+
+.fcup-security-card-dot {
+    flex: none;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background: var(--gray-400, #9ca3af);
+}
+
+.fcup-security-card[data-security-enabled="true"] .fcup-security-card-dot {
+    background: var(--success-500, #22c55e);
+}
+
+.fcup-security-card-chevron {
+    width: 1rem;
+    height: 1rem;
+    color: var(--gray-400, #9ca3af);
+}
+
+[dir="rtl"] .fcup-security-card-chevron {
+    transform: rotate(180deg);
+}
+
+.dark .fcup-account-security > .fi-section {
+    background: linear-gradient(135deg, var(--gray-900, #111827), var(--gray-950, #030712));
+}
+
+.dark .fcup-security-card {
+    color: var(--gray-100, #f3f4f6);
+    background: rgb(255 255 255 / 0.025);
+    border-color: rgb(255 255 255 / 0.1);
+}
+
+.dark .fcup-security-card:hover {
+    background: rgb(255 255 255 / 0.05);
+    border-color: rgb(255 255 255 / 0.2);
+}
+
+.dark .fcup-security-card-icon {
+    border-color: rgb(255 255 255 / 0.1);
+}
+
+.dark .fcup-security-card-state {
+    color: var(--gray-400, #9ca3af);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fcup-security-card {
+        transition: none;
+    }
+}

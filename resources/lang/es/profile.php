@@ -10,6 +10,10 @@ return [
         'avatar' => 'Avatar',
         'locale' => 'Idioma preferido',
     ],
+    'profile_information' => [
+        'heading' => 'Información del perfil',
+        'description' => 'Actualice su información personal y los datos del perfil.',
+    ],
     'overview' => [
         'name' => 'Nombre',
         'email' => 'Correo electrónico',
@@ -133,6 +137,7 @@ return [
     ],
     'aside' => [
         'security' => [
+            'description' => 'Revise la configuración de seguridad de su cuenta.',
             'heading' => 'Seguridad de la cuenta',
             'app_authentication' => [
                 'label' => 'Aplicación de autenticación',

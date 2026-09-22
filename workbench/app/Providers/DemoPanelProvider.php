@@ -17,6 +17,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Schemas\Components\Actions;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -28,8 +29,11 @@ use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
+use MortalKiller\FilamentPageHeader\Enums\HeaderMode;
+use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Workbench\App\Http\Middleware\LocalDemoUser;
 use Workbench\App\Models\DemoUser;
+use Workbench\App\Pages\DemoBilling;
 use Workbench\App\Settings\DemoSettings;
 
 final class DemoPanelProvider extends PanelProvider
@@ -41,11 +45,20 @@ final class DemoPanelProvider extends PanelProvider
             ->id('demo')
             ->path('demo')
             ->brandName('Complete User Profile')
-            ->spa()
+            ->spa((bool) env('WORKBENCH_SPA', true))
             ->font('sans-serif', provider: LocalFontProvider::class)
             ->colors(['primary' => Color::Indigo])
             ->plugin(
                 CompleteUserProfilePlugin::make()
+                    ->maxContentWidth(Width::SixExtraLarge)
+                    ->pageHeader(PageHeaderPlugin::make()->mode(HeaderMode::from((string) env('WORKBENCH_HEADER_MODE', 'normal'))))
+                    ->section(
+                        AccountSection::make('billing')
+                            ->label('Billing')
+                            ->description('A standalone Filament page inside the account center.')
+                            ->sort(80)
+                            ->page(DemoBilling::class),
+                    )
                     ->profile(fn (Profile $profile): Profile => $profile
                         ->locale([
                             'en' => 'English',

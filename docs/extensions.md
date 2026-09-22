@@ -157,6 +157,6 @@ AccountSection::make('addresses')
 
 `AccountSection::schema()` accepts Filament schema components. A full `Filament\Pages\Page` is a routed page with its own lifecycle and is not a schema component.
 
-Use a section when the feature belongs inside the account center. Register a normal Filament Page separately when the feature needs its own route, page lifecycle or independent navigation destination. Do not mount a complete Filament Page inside another Filament Page just to reuse its UI.
+Use `AccountSection::page(Billing::class)` with the `InteractsWithAccountSection` trait when a page needs its own route and lifecycle while sharing account navigation. The plugin registers it with Filament. Do not mount a complete Filament Page inside another page. `schema()` and `page()` are mutually exclusive; routed pages keep native `canAccess()` and application-owned action authorization. Visibility only controls the menu. See the README's routed-page example for unsupported page types and cache deployment guidance.
 
 [Back to the README](../README.md)

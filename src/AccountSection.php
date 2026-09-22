@@ -3,11 +3,17 @@
 namespace Mortalkiller\FilamentCompleteUserProfile;
 
 use Closure;
+use Filament\Auth\Pages\EditProfile;
+use Filament\Clusters\Cluster;
+use Filament\Pages\Page;
+use Filament\Resources\Pages\Page as ResourcePage;
 use Filament\Schemas\Components\Component;
 use Filament\Support\Concerns\EvaluatesClosures;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LogicException;
+use Mortalkiller\FilamentCompleteUserProfile\Concerns\InteractsWithAccountSection;
+use ReflectionClass;
 
 final class AccountSection
 {
@@ -23,6 +29,11 @@ final class AccountSection
 
     /** @var array<array-key, mixed>|Closure */
     protected array|Closure $schema = [];
+
+    protected bool $hasConfiguredSchema = false;
+
+    /** @var class-string<Page>|null */
+    protected ?string $page = null;
 
     protected function __construct(
         protected string $id,
@@ -73,9 +84,48 @@ final class AccountSection
     /** @param array<array-key, mixed>|Closure $components */
     public function schema(array|Closure $components): static
     {
+        if ($this->page !== null) {
+            throw new LogicException('An account section must use either a schema or a page, not both.');
+        }
+
+        $this->hasConfiguredSchema = true;
         $this->schema = $components;
 
         return $this;
+    }
+
+    /** @param class-string<Page> $page */
+    public function page(string $page): static
+    {
+        if ($this->hasConfiguredSchema) {
+            throw new LogicException('An account section must use either a schema or a page, not both.');
+        }
+
+        if (! is_subclass_of($page, Page::class)
+            || ! (new ReflectionClass($page))->isInstantiable()
+            || is_a($page, ResourcePage::class, true)
+            || is_a($page, EditProfile::class, true)
+            || is_a($page, Cluster::class, true)) {
+            throw new LogicException("Account section page [{$page}] must be a concrete custom Filament panel page.");
+        }
+
+        if (! in_array(InteractsWithAccountSection::class, class_uses_recursive($page), true)) {
+            throw new LogicException("Account section page [{$page}] must use InteractsWithAccountSection.");
+        }
+
+        if ($page::getCluster() !== null) {
+            throw new LogicException("Account section page [{$page}] cannot belong to a cluster.");
+        }
+
+        $this->page = $page;
+
+        return $this;
+    }
+
+    /** @return class-string<Page>|null */
+    public function getPage(): ?string
+    {
+        return $this->page;
     }
 
     public function getLabel(): string

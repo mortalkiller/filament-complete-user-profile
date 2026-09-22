@@ -19,12 +19,11 @@ use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Livewire as LivewireComponent;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Contracts\Filesystem\Cloud;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Attributes\Url;
@@ -41,9 +40,8 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\SessionsTable;
-use MortalKiller\FilamentPageHeader\Components\Header;
+use Mortalkiller\FilamentCompleteUserProfile\Support\AccountPresentation;
 use MortalKiller\FilamentPageHeader\Concerns\HasPageHeader;
-use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
 use SensitiveParameter;
 
 class CompleteUserProfile extends EditProfile
@@ -56,9 +54,29 @@ class CompleteUserProfile extends EditProfile
     /** @var array<string, mixed> */
     protected array $savedProfileData = [];
 
+    public function mount(): void
+    {
+        if ($this->getActiveAccountItem() === null) {
+            $destination = $this->getSubNavigation()[0] ?? null;
+
+            if ($destination !== null) {
+                $this->redirect((string) $destination->getUrl());
+
+                return;
+            }
+        }
+
+        parent::mount();
+    }
+
     public function getView(): string
     {
         return 'filament-complete-user-profile::pages.complete-user-profile';
+    }
+
+    public function getMaxContentWidth(): Width|string|null
+    {
+        return parent::getMaxContentWidth() ?? CompleteUserProfilePlugin::get()->getMaxContentWidth();
     }
 
     public static function getLabel(): string
@@ -100,20 +118,11 @@ class CompleteUserProfile extends EditProfile
     /** @return array<NavigationItem> */
     public function getSubNavigation(): array
     {
-        $activeItemId = $this->getActiveAccountItem()?->getId();
-
-        return array_values(array_map(
-            function (ProfileFeature|AccountSection $item) use ($activeItemId): NavigationItem {
-                $itemId = $item->getId();
-
-                return NavigationItem::make($this->getAccountItemLabel($item))
-                    ->key("account-{$itemId}")
-                    ->sort($item->getSort())
-                    ->url(filament()->getProfileUrl(['section' => $itemId]))
-                    ->isActiveWhen(static fn (): bool => $activeItemId === $itemId);
-            },
+        return AccountPresentation::navigation(
             $this->getVisibleAccountItems(),
-        ));
+            $this->getActiveAccountItem()?->getId(),
+            fn (ProfileFeature|AccountSection $item): string => $this->getAccountItemLabel($item),
+        );
     }
 
     public function content(Schema $schema): Schema
@@ -146,13 +155,11 @@ class CompleteUserProfile extends EditProfile
     public function headerSchema(Schema $schema): Schema
     {
         return $schema->components([
-            Header::make()
-                ->heading(fn (): string|Htmlable => $this->getHeading())
-                ->description(fn (): string|Htmlable|null => $this->getSubheading())
-                ->avatar(fn (): ?string => $this->getAccountAvatarUrl())
-                ->initials(fn (): string => (string) $this->getUser()->getAttribute('name'))
-                ->breadcrumbs(BreadcrumbPosition::Inside)
-                ->subNavigation(),
+            AccountPresentation::header(
+                $this,
+                fn (): ?string => $this->getAccountAvatarUrl(),
+                fn (): string => (string) $this->getUser()->getAttribute('name'),
+            ),
         ]);
     }
 
@@ -174,20 +181,7 @@ class CompleteUserProfile extends EditProfile
 
     protected function getAccountAvatarUrl(): ?string
     {
-        $avatar = app(ProfileStorage::class)->get($this->getUser(), 'avatar');
-
-        if (is_string($avatar) && $avatar !== '') {
-            $disk = config('filament.default_filesystem_disk');
-            $filesystem = Storage::disk(is_string($disk) ? $disk : 'public');
-
-            if (! $filesystem instanceof Cloud) {
-                throw new LogicException('The configured filesystem disk must be able to generate a URL for the stored avatar.');
-            }
-
-            return $filesystem->url($avatar);
-        }
-
-        return filament()->getUserAvatarUrl($this->getUser());
+        return AccountPresentation::avatar($this->getUser());
     }
 
     public function form(Schema $schema): Schema
@@ -337,18 +331,7 @@ class CompleteUserProfile extends EditProfile
     /** @return array<int, ProfileFeature|AccountSection> */
     protected function getVisibleAccountItems(): array
     {
-        $plugin = CompleteUserProfilePlugin::get();
-        $items = [
-            ...array_values($plugin->getVisibleFeatures()),
-            ...array_values($plugin->getVisibleSections()),
-        ];
-
-        usort(
-            $items,
-            static fn (ProfileFeature|AccountSection $first, ProfileFeature|AccountSection $second): int => $first->getSort() <=> $second->getSort(),
-        );
-
-        return $items;
+        return AccountPresentation::items();
     }
 
     protected function getAccountItemLabel(ProfileFeature|AccountSection $item): string
@@ -380,7 +363,9 @@ class CompleteUserProfile extends EditProfile
     protected function getFeatureContentComponent(ProfileFeature $feature): Component
     {
         return match ($feature->getId()) {
-            'profile' => Section::make($this->getFeatureLabel($feature))
+            'profile' => Section::make(static::translate('filament-complete-user-profile::profile.profile_information.heading'))
+                ->description(static::translate('filament-complete-user-profile::profile.profile_information.description'))
+                ->extraAttributes(['class' => 'fcup-profile-information'])
                 ->schema([Group::make([$this->getFormContentComponent()])]),
             'overview' => $this->getOverviewContentComponent($feature),
             'security' => $this->getSecurityContentComponent($feature),
@@ -506,7 +491,10 @@ class CompleteUserProfile extends EditProfile
 
     protected function getActiveAccountItem(): ProfileFeature|AccountSection|null
     {
-        $items = $this->getVisibleAccountItems();
+        $items = array_values(array_filter(
+            $this->getVisibleAccountItems(),
+            static fn (ProfileFeature|AccountSection $item): bool => ! $item instanceof AccountSection || $item->getPage() === null,
+        ));
         $requestedItemId = $this->section;
 
         if (is_string($requestedItemId)) {
@@ -543,7 +531,7 @@ class CompleteUserProfile extends EditProfile
                 Heroicon::OutlinedShieldCheck,
                 static::translate('filament-complete-user-profile::profile.aside.security.app_authentication.'.($isEnabled ? 'enabled' : 'disabled')),
                 'security',
-            );
+            )->viewData(['securityEnabled' => $isEnabled]);
         }
 
         if ($security->isEnabled() && $security->hasEmailAuthentication()) {
@@ -555,7 +543,7 @@ class CompleteUserProfile extends EditProfile
                 Heroicon::OutlinedEnvelope,
                 static::translate('filament-complete-user-profile::profile.aside.security.email_authentication.'.($isEnabled ? 'enabled' : 'disabled')),
                 'security',
-            );
+            )->viewData(['securityEnabled' => $isEnabled]);
         }
 
         $sessions = $plugin->getFeature('sessions');
@@ -590,12 +578,16 @@ class CompleteUserProfile extends EditProfile
         }
 
         return Section::make(static::translate('filament-complete-user-profile::profile.aside.security.heading'))
+            ->description(static::translate('filament-complete-user-profile::profile.aside.security.description'))
+            ->compact()
+            ->extraAttributes(['class' => 'fcup-account-security'])
             ->schema($entries);
     }
 
     protected function makeAsideEntry(string $key, Heroicon $icon, string $state, string $sectionId): TextEntry
     {
         return TextEntry::make("account_security_{$key}")
+            ->view('filament-complete-user-profile::infolists.security-card')
             ->label(static::translate("filament-complete-user-profile::profile.aside.security.{$key}.label"))
             ->state($state)
             ->icon($icon)

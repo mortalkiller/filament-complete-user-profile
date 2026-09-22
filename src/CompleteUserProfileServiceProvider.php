@@ -2,6 +2,8 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile;
 
+use Filament\Support\Assets\Css;
+use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Commands\CheckCompleteUserProfile;
@@ -49,6 +51,10 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        FilamentAsset::register([
+            Css::make('profile', __DIR__.'/../resources/css/profile.css'),
+        ], package: 'mortalkiller/filament-complete-user-profile');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-complete-user-profile');
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'filament-complete-user-profile');
@@ -62,6 +68,10 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/filament-complete-user-profile.php' => config_path('filament-complete-user-profile.php'),
         ], 'filament-complete-user-profile-config');
+
+        $this->publishes([
+            __DIR__.'/../resources/lang' => lang_path('vendor/filament-complete-user-profile'),
+        ], 'filament-complete-user-profile-translations');
 
         $this->publishes([
             __DIR__.'/../database/migrations/add_context_columns_to_personal_access_tokens.php.stub' => database_path(

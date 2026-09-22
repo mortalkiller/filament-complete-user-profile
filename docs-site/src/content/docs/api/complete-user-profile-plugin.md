@@ -59,6 +59,17 @@ than a cached flag, so it returns `false` if the application later registers its
 `PageHeaderPlugin` on the same panel and overwrites this plugin's registration. This backs
 the `Page header` row in the `filament-complete-user-profile:check` diagnostics.
 
+## Content width
+
+```php
+maxContentWidth(Width|string|null $width): static
+getMaxContentWidth(): Width|string|null
+```
+
+`Width` is `Filament\Support\Enums\Width`. The default is `null`, which preserves the panel's native width fallback. For example, `->maxContentWidth(Width::SixExtraLarge)` sets the width of the default profile page and every inline section it hosts, without changing other panel pages. Raw Filament width strings are also accepted.
+
+Separately routed page sections retain their own native `getMaxContentWidth()` configuration. Explicit native width overrides on a custom profile-page subclass take precedence over the plugin value. Configuration is isolated per panel.
+
 ## Tenancy resolver
 
 ```php
@@ -89,6 +100,12 @@ getVisibleSections(): array
 `section()` rejects reserved built-in IDs and duplicate custom IDs with `LogicException`.
 
 `getVisibleSections()` filters by `AccountSection::isVisible()` and sorts ascending by `getSort()`.
+
+Page sections are registered through the panel's native `pages()` API during plugin
+registration, independently of user access. Configure sections before registering the
+plugin. Duplicate page classes in one plugin, parameterized routes, clusters and
+`PageConfiguration` variants are rejected. `getVisibleSections()` does not apply page
+authorization; the rendered navigation additionally checks `canAccess()` and tenant context.
 
 ## Feature accessors
 

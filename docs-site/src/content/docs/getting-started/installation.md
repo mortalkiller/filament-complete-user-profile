@@ -15,6 +15,28 @@ composer require mortalkiller/filament-complete-user-profile
 
 The service provider is discovered automatically.
 
+Publish the registered styles after installation and updates, unless your deployment already runs `filament:upgrade`:
+
+```bash
+php artisan filament:assets
+```
+
+The security-card CSS is loaded through Filament's asset registry; it does not require a custom theme rebuild.
+
+## Optional: publish translations
+
+The package ships translations for English, Portuguese, Spanish and French. Publish them when you want to inspect or customize the package text in the host application:
+
+```bash
+php artisan vendor:publish --tag=filament-complete-user-profile-translations
+```
+
+With the default language path, the files are copied to `lang/vendor/filament-complete-user-profile` (for example, `lang/vendor/filament-complete-user-profile/pt/profile.php`). If the application uses a custom language path, the provider follows the path resolved by `lang_path()`. Text customized by the application takes precedence over the package defaults; when a key is not defined by the application, the package translation is used.
+
+The published files contain all package keys. Keep only the keys you customize where possible, so future translation improvements from the package can still apply to the remaining keys.
+
+Publishing without `--force` keeps existing application translation files. Add `--force` only when you deliberately want to replace those files; it overwrites customizations.
+
 ## Choose storage before the first migration
 
 The default mode stores package-managed profile data on the authenticatable model:
@@ -96,4 +118,5 @@ A correctly configured default installation exits with code `0`. See [Diagnostic
 - Review [basic configuration](../configuration/).
 - Review the [account navigation](../../guides/navigation/).
 - Configure [profile fields](../../guides/profile/).
+- Customize [profile translations](../../guides/profile/#translations).
 - Enable optional security capabilities only after satisfying their requirements.

@@ -110,6 +110,28 @@ Install the package:
 composer require mortalkiller/filament-complete-user-profile
 ```
 
+Publish the registered styles after installation and package updates (or through your deployment's `filament:upgrade` step):
+
+```bash
+php artisan filament:assets
+```
+
+The security-card styles load through Filament's asset registry; a custom theme rebuild is not required.
+
+### Publish translations
+
+The package includes translations for English, Portuguese, Spanish and French. To publish them into the host application, run:
+
+```bash
+php artisan vendor:publish --tag=filament-complete-user-profile-translations
+```
+
+The provider publishes the package translation files to `lang_path('vendor/filament-complete-user-profile')` — normally `lang/vendor/filament-complete-user-profile` (for example, `pt/profile.php`). A custom application language path is respected. Application translations take precedence over the package defaults; keys that are not defined by the application fall back to the package translations.
+
+The published files initially contain all package keys. Keep only the keys you customize where possible, so future package translation improvements remain available for the other keys.
+
+Publishing without `--force` preserves translation files that already exist in the application. Use `--force` only when you intentionally want to overwrite those files, because it replaces application customizations.
+
 The default storage mode is `user`. If that is what you want, run the migrations:
 
 ```bash
@@ -187,7 +209,7 @@ php artisan vendor:publish --tag=filament-complete-user-profile-config
 
 ## Navigation layout
 
-The account areas render as a single, iconless sub-navigation inside the account page's header, built with `mortalkiller/filament-page-header`. Every visible account area — built-in features and custom sections alike — appears as a tab in that header, and only the selected area's content renders below it. The selected area is reflected in the `section` query parameter, for example `?section=security`. Invalid or missing section values fall back to the first visible account area.
+The account areas render as a single, iconless sub-navigation inside the account page's header, built with `mortalkiller/filament-page-header`. Built-in features and custom sections share that navigation. Inline areas use the `section` query parameter, for example `?section=security`; page sections use their own native Filament URLs. Invalid or missing section values fall back to the first visible inline area. If only accessible page sections remain, the profile redirects to the first one; an empty account center retains its empty state.
 
 You register one plugin. `CompleteUserProfilePlugin` registers `PageHeaderPlugin` on the panel when it is not already there. To change the header mode without registering a second plugin:
 
@@ -205,6 +227,19 @@ This uses native Filament and `filament-page-header` components and requires no 
 
 There is no way to opt out of the header (no `pageHeader(false)`). An application that wants Filament's stock profile heading instead must subclass `CompleteUserProfile` and override `headerSchema()`.
 
+## Content width
+
+Configure the default account page width per panel:
+
+```php
+use Filament\Support\Enums\Width;
+
+CompleteUserProfilePlugin::make()
+    ->maxContentWidth(Width::SixExtraLarge);
+```
+
+`maxContentWidth()` accepts `Width|string|null`. The default `null` preserves Filament's panel fallback. This affects the built-in and inline custom sections, not separately routed page sections. Those keep their native page widths. An explicit width on a custom profile page subclass takes precedence.
+
 ## Account Security summary
 
 Beside the Overview and Profile areas, the page can render an "Account Security" summary card next to the main content. It lists up to four rows, each gated independently:
@@ -216,7 +251,7 @@ Beside the Overview and Profile areas, the page can render an "Account Security"
 | Active sessions | Sessions is enabled **and** the session store is supported (database session driver with a migrated sessions table) | The user's active session count, correctly pluralized |
 | Personal access tokens | API Tokens is enabled and the user model exposes a `tokens()` relation | The user's token count, correctly pluralized |
 
-Each row links back to the account area it summarizes.
+Each bordered row is a keyboard-accessible link to the account area it summarizes. Only MFA rows have a status dot: green for enabled, neutral for not configured. Counts are not security assessments. The card uses a neutral description and adapts to mobile and dark mode.
 
 The sessions row is hidden entirely — not shown as "0 active sessions" — when the session store is unsupported (a non-database session driver, or a missing `sessions` table), since a confident zero would contradict the "unsupported" message the Sessions area itself shows in that situation. Every row is independently gated the same way: if none of the four apply, the card does not render at all, and the main content takes the full width.
 
@@ -537,7 +572,7 @@ The section ID uses lowercase kebab-case. When no label is configured, the packa
 
 ### Back a section with another package
 
-`AccountSection` only composes navigation and Filament schema components, so persistence can come from any application-owned service. For example, the workbench uses `spatie/laravel-settings` without making it a runtime dependency of this package:
+`AccountSection` composes navigation with either Filament schema components or a routed page; persistence stays application-owned. For example, the workbench uses `spatie/laravel-settings` without making it a runtime dependency of this package:
 
 ```php
 use Filament\Actions\Action;
@@ -600,11 +635,38 @@ AccountSection::make('addresses')
     ]);
 ```
 
-### Filament Page boundary
+### Routed Filament Pages
 
-A custom section currently accepts Filament schema `Component` instances. It does **not** accept a `Filament\Pages\Page::class` as its content and it does not provide a custom navigation URL.
+A section can point to a native Filament page instead of defining an inline schema:
 
-If the feature belongs inside the account center, use schema components or a dedicated Livewire component. If it needs the lifecycle and route of a full Filament Page, register that page separately with Filament rather than trying to mount a complete Page inside the profile page.
+```php
+use Filament\Pages\Page;
+use Mortalkiller\FilamentCompleteUserProfile\Concerns\InteractsWithAccountSection;
+
+class Billing extends Page
+{
+    use InteractsWithAccountSection;
+
+    protected static ?string $slug = 'profile/billing';
+
+    // Define your page content, actions and authorization as usual.
+}
+
+CompleteUserProfilePlugin::make()
+    ->section(
+        AccountSection::make('billing')
+            ->label('Billing')
+            ->description('Manage your subscription and payment details.')
+            ->sort(60)
+            ->page(Billing::class),
+    );
+```
+
+The plugin registers the page with the panel. The trait adopts the account header, breadcrumbs and navigation, hides the page from the main sidebar by default, and requires its section to be registered on the current panel. The page keeps its own URL, `mount()`, forms, tables, actions and native `canAccess()` authorization. It is never mounted inside the profile page. Override presentation methods normally when needed.
+
+`schema()` and `page()` are mutually exclusive, including an explicitly empty schema. Only concrete custom panel pages using the trait are supported: not resources, authentication/profile pages, clusters, pages inside a cluster, pages with route parameters, or `PageConfiguration` variants. A page class can back only one section per panel. Configure sections before registering the plugin; separate panels can register the same class with their own metadata. Clear/rebuild Filament component and route caches when deploying registration changes.
+
+`visible()` controls navigation, **not authorization**. A hidden page can still be opened directly when its `canAccess()` allows it. Inaccessible pages are omitted from navigation; sensitive actions must enforce their own permissions. Native tenant pages require the current tenant and use Filament URL generation; a custom token tenancy resolver does not replace Filament routing. `?section=billing` does not load a routed page: follow its navigation link or use `Billing::getUrl()`.
 
 `AccountSection` does not automatically persist fields to the user model, `ProfileStorage`, or any package-owned table. The application owns migrations, validation and persistence for domain-specific data rendered inside a custom section.
 
@@ -630,8 +692,9 @@ Registering a reserved ID or registering the same custom section ID twice throws
 - `label(string|Closure $label)` sets the navigation label. Without a label, the ID is converted to a headline.
 - `description(string|Closure|null $description)` sets the description rendered in the page header when the section is active.
 - `sort(int $sort)` controls ordering relative to built-in and custom account areas. The default is `100`.
-- `visible(bool|Closure $condition = true)` controls whether the section can appear or be selected. The default is `true`.
+- `visible(bool|Closure $condition = true)` controls navigation visibility and inline selection, not routed-page authorization. The default is `true`.
 - `schema(array|Closure $components)` defines the section content. The array or callback result must contain only Filament schema components.
+- `page(string $page)` selects a concrete custom Filament page using `InteractsWithAccountSection`, instead of an inline schema.
 
 ### Read-only accessors
 
@@ -643,6 +706,7 @@ These methods expose the resolved section configuration for integrations and pac
 - `getSort()` returns the configured sort value.
 - `isVisible()` evaluates the visibility condition.
 - `getSchema()` evaluates and validates the schema, returning the normalized list of Filament schema components.
+- `getPage()` returns the configured page class or `null` for an inline section.
 
 ### Plugin registration API
 
