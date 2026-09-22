@@ -48,6 +48,8 @@ The plugin reserves `overview`, `profile`, `security`, `sessions` and `api-token
 
 `CompleteUserProfilePlugin::section()` rejects a reserved ID or duplicate custom ID with `LogicException`.
 
-## Persistence boundary
+## Integration boundary
 
-`AccountSection` is a navigation and content-composition API. It does not persist arbitrary application data automatically.
+`AccountSection` is a navigation and content-composition API. It does not persist arbitrary application data automatically. A section can use application-owned services, external settings packages, Eloquent relationships, Filament actions or embedded Livewire components.
+
+`schema()` accepts Filament schema `Component` instances. A complete `Filament\\Pages\\Page` is not a schema component and is not accepted directly. The current API also does not expose a custom section navigation URL; register a separate Filament Page when a feature needs its own route and page lifecycle.
