@@ -20,6 +20,12 @@ for (const theme of ['light', 'dark']) {
             await expect(page.locator('.fi-page')).toBeVisible();
             await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
+            await page.evaluate(() => {
+                if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                }
+            });
+
             await page.locator('.fi-page').screenshot({
                 path: testInfo.outputPath(`profile-${theme}-${width}.png`),
             });
