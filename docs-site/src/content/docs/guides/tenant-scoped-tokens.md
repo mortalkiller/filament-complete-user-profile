@@ -1,21 +1,29 @@
 ---
 title: Tenant-scoped API tokens
-description: Bind Sanctum tokens to the active tenant or application context.
+description: Bind Sanctum tokens to Filament, stancl/tenancy, or another active tenant context.
 ---
 
 Tenant-scoped tokens are opt-in and intentionally fail closed.
+
+The package uses one tenancy resolver for the complete tenant-token lifecycle:
+
+- token creation;
+- token listing;
+- token revocation;
+- API request enforcement through `EnsureTokenContext`.
 
 ## Requirements
 
 You need all of the following:
 
 1. Laravel Sanctum and `HasApiTokens`.
-2. An active Filament tenant when a token is created, listed or revoked.
+2. An active tenant/context resolved as an Eloquent model.
 3. `context_type` and `context_id` columns on `personal_access_tokens`.
-4. A `TokenContextResolver` container binding.
-5. `EnsureTokenContext` after `auth:sanctum` on tenant-sensitive API routes.
+4. `EnsureTokenContext` after `auth:sanctum` on tenant-sensitive API routes.
 
-## Enable tenant scoping
+## Native Filament tenancy
+
+No resolver configuration is required when the application uses Filament's native tenancy. The package defaults to `Filament::getTenant()`:
 
 ```php
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
@@ -37,28 +45,61 @@ php artisan migrate
 
 The opt-in migration adds nullable `context_type` and `context_id` metadata to Sanctum's personal access token table.
 
-## Bind the context resolver
+## Custom tenancy resolver
 
-The resolver must return the active Eloquent model that represents the context for the current API request:
+For a non-Filament tenancy system, implement:
 
 ```php
-use App\Models\Workspace;
-use Illuminate\Database\Eloquent\Model;
-use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
-
-$this->app->bind(TokenContextResolver::class, function (): TokenContextResolver {
-    return new class implements TokenContextResolver {
-        public function resolve(): ?Model
-        {
-            $workspace = request()->route('workspace');
-
-            return $workspace instanceof Workspace ? $workspace : null;
-        }
-    };
-});
+Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver
 ```
 
-Use your own routing and tenancy mechanism. The package does not guess the current context.
+The resolver returns the active Eloquent tenant/context model or `null`.
+
+### stancl/tenancy / archtechx/tenancy
+
+```php
+namespace App\Support\Tenancy;
+
+use Illuminate\Database\Eloquent\Model;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
+
+final class StanclTenancyResolver implements TenancyResolver
+{
+    public function resolve(): ?Model
+    {
+        $tenant = tenant();
+
+        return $tenant instanceof Model ? $tenant : null;
+    }
+}
+```
+
+Register it on the same Filament panel plugin:
+
+```php
+use App\Support\Tenancy\StanclTenancyResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
+
+CompleteUserProfilePlugin::make()
+    ->tenancyResolver(StanclTenancyResolver::class)
+    ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+        ->tenantScoped()
+        ->abilities([
+            'projects:read' => 'Read projects',
+        ]));
+```
+
+The package does not depend on `stancl/tenancy`. The adapter belongs to the consuming application, so the same API works with any tenancy package.
+
+`tenancyResolver()` accepts:
+
+```php
+->tenancyResolver(StanclTenancyResolver::class)
+->tenancyResolver(new StanclTenancyResolver())
+->tenancyResolver(fn (): ?Model => tenant() instanceof Model ? tenant() : null)
+```
+
+Class-strings are the recommended form because Laravel resolves constructor dependencies through the container.
 
 ## Protect API routes
 
@@ -75,16 +116,21 @@ Route::middleware([
 });
 ```
 
+The middleware uses the same tenancy resolver configured for token management.
+
 ## Fail-closed behavior
+
+Tenant-aware token operations fail when no active tenant can be resolved.
 
 The middleware returns HTTP 403 when:
 
 - no authenticated API token is available;
-- the resolver is not bound;
 - the resolver returns no active context;
 - the token does not contain valid context metadata;
 - the token context does not match the active context.
 
-Token creation also fails when tenant scoping is enabled but no active Filament tenant is available. Listing and revocation are scoped to the active tenant.
+Token creation, listing, and revocation are all scoped through the same resolver, so a token created for one context cannot be managed or accepted from another context through the package flow.
 
-Do not remove the resolver or middleware requirement merely because token creation already writes context metadata. Both sides are part of the package's security boundary.
+## Backwards compatibility
+
+The previous `TokenContextResolver` contract remains available and extends `TenancyResolver`. Existing container bindings continue to work. New integrations should use `TenancyResolver` and configure it with `tenancyResolver()`.

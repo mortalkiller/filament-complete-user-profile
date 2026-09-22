@@ -5,11 +5,15 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Http\Middleware;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenContext;
 
 class EnsureTokenContext
 {
+    public function __construct(
+        protected TenancyManager $tenancy,
+    ) {}
+
     public function handle(Request $request, Closure $next): mixed
     {
         $user = $request->user();
@@ -25,11 +29,7 @@ class EnsureTokenContext
             abort(403, 'An authenticated API token is required.');
         }
 
-        if (app()->bound(TokenContextResolver::class) === false) {
-            abort(403, 'A token context resolver is required for tenant-scoped API tokens.');
-        }
-
-        $contextModel = app(TokenContextResolver::class)->resolve();
+        $contextModel = $this->tenancy->resolve();
 
         if ($contextModel instanceof Model === false) {
             abort(403, 'An active API token context is required.');

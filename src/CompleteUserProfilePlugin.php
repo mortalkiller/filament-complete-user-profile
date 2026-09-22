@@ -6,8 +6,10 @@ use Closure;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Model;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Overview;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
@@ -16,6 +18,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\SetUserLocale;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 
 class CompleteUserProfilePlugin implements Plugin
@@ -27,6 +30,9 @@ class CompleteUserProfilePlugin implements Plugin
     protected array $sections = [];
 
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
+
+    /** @var TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>|null */
+    protected TenancyResolver|Closure|string|null $tenancyResolver = null;
 
     protected ?PageHeaderPlugin $registeredPageHeader = null;
 
@@ -55,6 +61,10 @@ class CompleteUserProfilePlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        if ($this->tenancyResolver !== null) {
+            app(TenancyManager::class)->useResolver($this->tenancyResolver);
+        }
+
         $panel
             ->profile(CompleteUserProfile::class, isSimple: false)
             ->authMiddleware([SetUserLocale::class]);
@@ -110,6 +120,31 @@ class CompleteUserProfilePlugin implements Plugin
         $this->pageHeader = $plugin;
 
         return $this;
+    }
+
+    /**
+     * @param  TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>  $resolver
+     */
+    public function tenancyResolver(TenancyResolver|Closure|string $resolver): static
+    {
+        if (is_string($resolver) && ! is_a($resolver, TenancyResolver::class, true)) {
+            throw new LogicException("Tenancy resolver [{$resolver}] must implement ".TenancyResolver::class.'.');
+        }
+
+        $this->tenancyResolver = $resolver;
+
+        return $this;
+    }
+
+    public function hasCustomTenancyResolver(): bool
+    {
+        return $this->tenancyResolver !== null;
+    }
+
+    /** @return TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>|null */
+    public function getTenancyResolver(): TenancyResolver|Closure|string|null
+    {
+        return $this->tenancyResolver;
     }
 
     public function hasRegisteredPageHeader(): bool

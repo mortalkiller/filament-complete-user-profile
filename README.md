@@ -355,15 +355,9 @@ The whitelist is mandatory. Wildcard (`*`) abilities and abilities outside the c
 
 ## Tenant-scoped tokens
 
-Tenant-scoped tokens are opt-in and fail closed. They require all of the following:
+Tenant-scoped tokens are opt-in and fail closed. By default, the package resolves the active tenant through Filament's native `Filament::getTenant()`. Applications using another tenancy system can replace that behavior once on the panel plugin with `tenancyResolver()`; the same resolver is then used for token creation, listing, revocation, and API request enforcement.
 
-1. Sanctum and `HasApiTokens`.
-2. A current Filament tenant when a token is created, listed, or revoked.
-3. Context columns on `personal_access_tokens`.
-4. A `TokenContextResolver` binding for API requests.
-5. `EnsureTokenContext` middleware after `auth:sanctum` on tenant-sensitive API routes.
-
-Enable tenant scoping:
+Enable tenant scoping with the native Filament resolver:
 
 ```php
 CompleteUserProfilePlugin::make()
@@ -381,24 +375,46 @@ php artisan vendor:publish --tag=filament-complete-user-profile-token-migrations
 php artisan migrate
 ```
 
-Bind the context resolver in your application service provider. The resolver must return the active tenant/context model for the current API request:
+### Custom tenancy resolver
+
+A resolver must implement `TenancyResolver` and return the active Eloquent tenant/context model or `null`:
 
 ```php
-use App\Models\Tenant;
+namespace App\Support\Tenancy;
+
 use Illuminate\Database\Eloquent\Model;
-use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
 
-$this->app->bind(TokenContextResolver::class, function (): TokenContextResolver {
-    return new class implements TokenContextResolver {
-        public function resolve(): ?Model
-        {
-            $tenant = request()->route('tenant');
+final class StanclTenancyResolver implements TenancyResolver
+{
+    public function resolve(): ?Model
+    {
+        $tenant = tenant();
 
-            return $tenant instanceof Tenant ? $tenant : null;
-        }
-    };
-});
+        return $tenant instanceof Model ? $tenant : null;
+    }
+}
 ```
+
+Configure it on the Filament panel:
+
+```php
+use App\Support\Tenancy\StanclTenancyResolver;
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
+
+CompleteUserProfilePlugin::make()
+    ->tenancyResolver(StanclTenancyResolver::class)
+    ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+        ->tenantScoped()
+        ->abilities([
+            'customers:read' => 'Read customers',
+        ]));
+```
+
+`tenancyResolver()` accepts a resolver class-string, a resolver instance, or a closure returning `?Model`. Class-strings are recommended for reusable integrations because Laravel can resolve their constructor dependencies.
+
+This works with `stancl/tenancy` / `archtechx/tenancy` without making it a dependency of this package. The same pattern can adapt any tenancy implementation.
 
 Protect tenant-sensitive API routes after Sanctum authentication:
 
@@ -413,7 +429,9 @@ Route::middleware([
 });
 ```
 
-A missing resolver, missing context, token without context metadata, or context mismatch returns HTTP 403. A token created for one tenant cannot be listed, revoked, or accepted for another tenant through the package's tenant-scoped flow.
+The middleware uses the same configured resolver. A missing active context, token without context metadata, or context mismatch returns HTTP 403. A token created for one tenant cannot be listed, revoked, or accepted for another tenant through the package's tenant-scoped flow.
+
+The previous `TokenContextResolver` contract remains supported for backwards compatibility, but new integrations should use `TenancyResolver`.
 
 ## Customize Profile fields
 
@@ -692,7 +710,7 @@ The package deliberately keeps authentication and tenancy integration replaceabl
 
 `SessionStore` abstracts browser-session storage. The built-in implementation supports Laravel's database session driver.
 
-`TokenContextResolver` resolves the active tenant/context for an authenticated API request when tenant-scoped tokens are enabled.
+`TenancyResolver` resolves the active tenant/context for all tenant-aware package operations. The default implementation uses Filament native tenancy; applications can replace it through `CompleteUserProfilePlugin::tenancyResolver()`. `TokenContextResolver` remains as a deprecated backwards-compatible alias.
 
 `HasMultiFactorAuthentication` is the package-facing contract that connects the user model to Filament's native authenticator-app MFA storage. `InteractsWithMultiFactorAuthentication` is the provided implementation for the package storage modes.
 

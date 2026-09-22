@@ -144,7 +144,8 @@ class CheckCommandTest extends TestCase
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('FAIL', $output);
         self::assertStringContainsString('token-context migration', $output);
-        self::assertStringContainsString('TokenContextResolver', $output);
+        self::assertStringContainsString('Tenancy resolver', $output);
+        self::assertStringContainsString('default Filament tenancy resolver', $output);
     }
 
     public function test_the_check_reports_the_page_header_registration(): void

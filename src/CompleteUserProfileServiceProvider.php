@@ -8,12 +8,15 @@ use Mortalkiller\FilamentCompleteUserProfile\Commands\CheckCompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\Reauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\SessionStore;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Security\PasswordReauthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Sessions\DatabaseSessionStore;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\SeparateProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Storage\UserProfileStorage;
 use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
 use Mortalkiller\FilamentCompleteUserProfile\Support\UserModelResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\FilamentTenancyResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 
 class CompleteUserProfileServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,12 @@ class CompleteUserProfileServiceProvider extends ServiceProvider
 
         $this->app->singleton(UserModelResolver::class);
         $this->app->singleton(ProfileColumnMap::class);
+
+        if (! $this->app->bound(TenancyResolver::class)) {
+            $this->app->bind(TenancyResolver::class, FilamentTenancyResolver::class);
+        }
+
+        $this->app->singleton(TenancyManager::class);
         $this->app->bind(Reauthentication::class, PasswordReauthentication::class);
         $this->app->bind(SessionStore::class, DatabaseSessionStore::class);
 

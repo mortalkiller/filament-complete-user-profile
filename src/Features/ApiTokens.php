@@ -4,7 +4,6 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Features;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Schema;
-use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
 
 class ApiTokens extends AbstractFeature
 {
@@ -99,13 +98,6 @@ class ApiTokens extends AbstractFeature
                 || Schema::hasColumn('personal_access_tokens', 'context_id') === false
             ) {
                 return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.context_migration');
-            }
-
-            if (app()->bound(TokenContextResolver::class) === false) {
-                return static::translate(
-                    'filament-complete-user-profile::profile.api_tokens.requirements.context_resolver',
-                    ['contract' => TokenContextResolver::class],
-                );
             }
         }
 

@@ -59,6 +59,25 @@ than a cached flag, so it returns `false` if the application later registers its
 `PageHeaderPlugin` on the same panel and overwrites this plugin's registration. This backs
 the `Page header` row in the `filament-complete-user-profile:check` diagnostics.
 
+## Tenancy resolver
+
+```php
+tenancyResolver(TenancyResolver|Closure|class-string<TenancyResolver> $resolver): static
+hasCustomTenancyResolver(): bool
+getTenancyResolver(): TenancyResolver|Closure|class-string<TenancyResolver>|null
+```
+
+The package defaults to its built-in Filament tenancy resolver, which reads `Filament::getTenant()`.
+
+Configure `tenancyResolver()` when the application uses another tenancy implementation. The configured resolver is shared by tenant-scoped token creation, listing, revocation, and API middleware enforcement.
+
+```php
+CompleteUserProfilePlugin::make()
+    ->tenancyResolver(StanclTenancyResolver::class);
+```
+
+The method accepts a resolver class-string, resolver instance, or a closure returning an Eloquent model or `null`.
+
 ## Custom sections
 
 ```php

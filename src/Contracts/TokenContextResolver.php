@@ -2,9 +2,7 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Contracts;
 
-use Illuminate\Database\Eloquent\Model;
-
-interface TokenContextResolver
-{
-    public function resolve(): ?Model;
-}
+/**
+ * @deprecated Use TenancyResolver instead.
+ */
+interface TokenContextResolver extends TenancyResolver {}

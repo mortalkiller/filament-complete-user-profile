@@ -63,17 +63,25 @@ getUnsupportedReason(): ?string
 
 The package provides a database-session implementation.
 
-## TokenContextResolver
+## TenancyResolver
 
 ```php
-Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver
+Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver
 ```
 
 ```php
 resolve(): ?Model
 ```
 
-The host application must bind this contract when tenant-scoped API tokens are enabled.
+The resolver supplies the active tenant/context model for all tenant-aware package operations. The package provides a Filament-native default resolver. Applications using another tenancy implementation can replace it through `CompleteUserProfilePlugin::tenancyResolver()`.
+
+## TokenContextResolver
+
+```php
+Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver
+```
+
+This legacy contract now extends `TenancyResolver` and remains available for backwards compatibility. New integrations should implement `TenancyResolver`.
 
 ## HasMultiFactorAuthentication
 

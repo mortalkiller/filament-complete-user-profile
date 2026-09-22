@@ -9,6 +9,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\EnsureTokenContext;
@@ -150,6 +152,63 @@ class TenantScopedTokensTest extends TestCase
 
         $this->expectException(HttpException::class);
         app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
+    }
+
+    public function test_custom_tenancy_resolver_is_used_for_management_and_api_requests(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+
+        $resolver = new class($tenantA) implements TenancyResolver
+        {
+            public function __construct(
+                public ?Model $tenant,
+            ) {}
+
+            public function resolve(): ?Model
+            {
+                return $this->tenant;
+            }
+        };
+
+        $panel = Panel::make()
+            ->id('custom-tenancy')
+            ->plugin(
+                CompleteUserProfilePlugin::make()
+                    ->tenancyResolver($resolver),
+            );
+
+        Filament::setCurrentPanel($panel);
+        Filament::setTenant(null, isQuiet: true);
+
+        $token = app(TokenManager::class)->create(
+            $user,
+            $this->feature(),
+            'Custom tenancy CLI',
+            ['customers:read'],
+        );
+
+        self::assertSame($tenantA->getMorphClass(), $token->accessToken->getAttribute('context_type'));
+        self::assertSame((string) $tenantA->getKey(), (string) $token->accessToken->getAttribute('context_id'));
+
+        $user->withAccessToken($token->accessToken);
+
+        $request = Request::create('/api/customers');
+        $request->setUserResolver(fn (): TokenUser => $user);
+
+        $response = app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $resolver->tenant = $tenantB;
+
+        try {
+            app(EnsureTokenContext::class)->handle($request, fn () => response('ok'));
+            self::fail('Expected the custom tenancy resolver mismatch to be rejected.');
+        } catch (HttpException $exception) {
+            self::assertSame(403, $exception->getStatusCode());
+        }
     }
 
     public function test_token_context_migration_is_shipped_as_opt_in_stub(): void

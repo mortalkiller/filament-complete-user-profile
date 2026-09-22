@@ -17,6 +17,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Sessions;
 use Mortalkiller\FilamentCompleteUserProfile\Support\ProfileColumnMap;
 use Mortalkiller\FilamentCompleteUserProfile\Support\UserModelResolver;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Throwable;
 
@@ -227,7 +228,7 @@ class CheckCompleteUserProfile extends Command
             $this->requirement("Panel [{$panelId}] API Tokens", $issue, 'Sanctum token requirements are satisfied.');
 
             if ($tokens->isTenantScoped()) {
-                $this->checkTenantTokenInfrastructure($panelId, $user);
+                $this->checkTenantTokenInfrastructure($panelId, $user, $plugin);
             }
         }
     }
@@ -269,7 +270,7 @@ class CheckCompleteUserProfile extends Command
         }
     }
 
-    protected function checkTenantTokenInfrastructure(string $panelId, Authenticatable $user): void
+    protected function checkTenantTokenInfrastructure(string $panelId, Authenticatable $user, CompleteUserProfilePlugin $plugin): void
     {
         $tokens = [$user, 'tokens'];
         $relation = is_callable($tokens) ? $tokens() : null;
@@ -294,13 +295,13 @@ class CheckCompleteUserProfile extends Command
             }
         }
 
-        if (app()->bound(TokenContextResolver::class)) {
-            $this->pass("Panel [{$panelId}] TokenContextResolver", 'A TokenContextResolver binding is registered.');
+        if ($plugin->hasCustomTenancyResolver()) {
+            $this->pass("Panel [{$panelId}] Tenancy resolver", 'A custom tenancy resolver is configured on the plugin.');
+        } elseif (app()->bound(TokenContextResolver::class)) {
+            $this->pass("Panel [{$panelId}] Tenancy resolver", 'Using the legacy TokenContextResolver binding.');
         } else {
-            $this->failCheck(
-                "Panel [{$panelId}] TokenContextResolver",
-                'Bind Mortalkiller\\FilamentCompleteUserProfile\\Contracts\\TokenContextResolver in your application service provider.',
-            );
+            app(TenancyManager::class);
+            $this->pass("Panel [{$panelId}] Tenancy resolver", 'Using the default Filament tenancy resolver.');
         }
     }
 

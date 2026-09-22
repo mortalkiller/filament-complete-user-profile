@@ -2,7 +2,6 @@
 
 namespace Mortalkiller\FilamentCompleteUserProfile\Tokens;
 
-use Filament\Facades\Filament;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -10,9 +9,14 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 
 class TokenManager
 {
+    public function __construct(
+        protected TenancyManager $tenancy,
+    ) {}
+
     /** @param array<int, string> $abilities */
     public function create(
         Authenticatable $user,
@@ -173,14 +177,6 @@ class TokenManager
 
     protected function resolveManagementContext(): TokenContext
     {
-        $tenant = Filament::getTenant();
-
-        if ($tenant instanceof Model === false) {
-            throw ValidationException::withMessages([
-                'tokens' => 'An active Filament tenant is required for tenant-scoped API tokens.',
-            ]);
-        }
-
-        return TokenContext::fromModel($tenant);
+        return TokenContext::fromModel($this->tenancy->requireTenant());
     }
 }
