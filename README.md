@@ -15,6 +15,12 @@
 
 A complete, modular account center for Filament 5 and Laravel 13.
 
+## Why
+
+Filament provides a solid native profile page, but real applications often need more than name, email and password changes. MFA, active sessions, API tokens, locale, application-specific profile fields and other account tools can quickly become separate pages with different navigation and interaction patterns.
+
+This package keeps those concerns in one native Filament account experience. Built-in capabilities are opt-in where they need extra infrastructure, while application-specific data stays in the application through extension points such as custom profile fields and custom account sections. The goal is to avoid published-view forks and one-off profile pages without taking ownership of your domain models or persistence.
+
 ## Documentation
 
 Full documentation: **https://docs.pedromonteiro.dev/filament-complete-user-profile/**
@@ -22,8 +28,46 @@ Full documentation: **https://docs.pedromonteiro.dev/filament-complete-user-prof
 - [Getting Started](https://docs.pedromonteiro.dev/filament-complete-user-profile/getting-started/installation/)
 - [Configuration](https://docs.pedromonteiro.dev/filament-complete-user-profile/getting-started/configuration/)
 - [API Reference](https://docs.pedromonteiro.dev/filament-complete-user-profile/api/)
+- [Extension examples](docs/extensions.md)
 
-It replaces Filament's simple profile screen with a normal panel page and lets you opt into account-security features such as multi-factor authentication, browser session management, Sanctum API tokens, and tenant-scoped tokens while keeping the default setup small.
+## Contents
+
+- [Why](#why)
+- [Documentation](#documentation)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Default experience](#default-experience)
+- [Navigation layout](#navigation-layout)
+- [Account Security summary](#account-security-summary)
+- [Enable MFA](#enable-mfa)
+- [Enable Sessions](#enable-sessions)
+- [Enable API Tokens](#enable-api-tokens)
+- [Tenant-scoped tokens](#tenant-scoped-tokens)
+- [Customize Profile fields](#customize-profile-fields)
+- [Custom account sections](#custom-account-sections)
+- [AccountSection API reference](#accountsection-api-reference)
+- [Structural config](#structural-config)
+- [Diagnostics](#diagnostics)
+- [Advanced contracts](#advanced-contracts)
+- [Roadmap](#roadmap)
+- [Development](#development)
+- [Security](#security)
+- [License](#license)
+
+## Features
+
+- Native Filament account page with header sub-navigation.
+- Avatar, name, email and locale profile fields.
+- Application-owned custom fields saved through the existing Profile form.
+- First-class custom account sections composed from native Filament schema components.
+- Custom sections backed by external storage, application services or Eloquent relationships.
+- Authenticator-app and email MFA.
+- Database-backed browser session management.
+- Laravel Sanctum API token management, including optional tenant scoping.
+- User-table or separate package profile storage.
+- Installation diagnostics for optional infrastructure.
 
 ## Screenshots
 
@@ -49,6 +93,8 @@ Version 1 supports:
 - Filament `>=5.8.3 <6.0.0`
 - `mortalkiller/filament-page-header` `^2.3.1` (required automatically via Composer; the plugin
   registers it on your panel for you)
+
+The workbench also installs `spatie/laravel-settings` as a **development-only** dependency to demonstrate that a custom account section can use application-owned external persistence. Consuming applications do not need that package unless they choose the same integration.
 
 Filament 4 and Filament 6 are not supported by the 1.x package line. The minimum Filament version
 is 5.8.3. Filament 5.8.1 and 5.8.2 contain an upstream `DataStore` binding bug that can lose
@@ -413,7 +459,18 @@ CompleteUserProfilePlugin::make()
             ->helperText('Your public display name.')));
 ```
 
-Add fields:
+### Add application-owned user fields
+
+Add the columns in the consuming application:
+
+```php
+Schema::table('users', function (Blueprint $table): void {
+    $table->string('job_title')->nullable();
+    $table->string('phone')->nullable();
+});
+```
+
+Then add normal Filament fields to the existing Profile form:
 
 ```php
 use Filament\Forms\Components\TextInput;
@@ -421,13 +478,19 @@ use Filament\Forms\Components\TextInput;
 CompleteUserProfilePlugin::make()
     ->profile(fn (Profile $profile): Profile => $profile
         ->fields([
-            TextInput::make('job_title'),
+            TextInput::make('job_title')
+                ->maxLength(120),
+            TextInput::make('phone')
+                ->tel()
+                ->maxLength(40),
         ]));
 ```
 
+Additional fields are filled from the authenticated Eloquent model and participate in the normal profile save. The application still owns the columns, casts, validation rules and Eloquent mass-assignment policy. The package does not create arbitrary domain columns.
+
 For advanced cases, `Profile` also exposes `modifyFieldsUsing()`, `mutateDataBeforeSaveUsing()`, and `afterSave()`.
 
-Additional custom fields are part of the host application's user/domain model; the package does not automatically create arbitrary columns for them.
+The local workbench demonstrates this with `job_title` and `phone`. See [Extension examples](docs/extensions.md) for the complete example.
 
 ## Custom account sections
 
@@ -440,26 +503,9 @@ use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 CompleteUserProfilePlugin::make()
     ->section(
         AccountSection::make('preferences')
-            ->schema([
-                Text::make('Manage your personal preferences here.'),
-            ]),
-    );
-```
-
-The section ID uses lowercase kebab-case. When no label is configured, the package derives one from the ID, so `connected-accounts` becomes `Connected Accounts`.
-
-Configure navigation metadata with the same fluent style:
-
-```php
-use Filament\Schemas\Components\Text;
-use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
-
-CompleteUserProfilePlugin::make()
-    ->section(
-        AccountSection::make('preferences')
             ->label('Preferences')
             ->description('Manage your personal preferences.')
-            ->sort(25)
+            ->sort(60)
             ->visible(fn (): bool => auth()->user() !== null)
             ->schema([
                 Text::make('Preferences content'),
@@ -467,27 +513,82 @@ CompleteUserProfilePlugin::make()
     );
 ```
 
-Custom sections participate in the same ordering as the built-in account areas. Built-ins use their existing sort values, while a custom section defaults to sort `100`. A section with `sort(25)` therefore appears between Profile and Security with the default feature ordering.
+The section ID uses lowercase kebab-case. When no label is configured, the package derives one from the ID, so `connected-accounts` becomes `Connected Accounts`. Custom sections participate in the same ordering as built-in account areas and use the same `?section=...` selection.
 
-For application-owned forms or other stateful interfaces, compose the section from a native Filament Livewire schema component:
+### Back a section with another package
+
+`AccountSection` only composes navigation and Filament schema components, so persistence can come from any application-owned service. For example, the workbench uses `spatie/laravel-settings` without making it a runtime dependency of this package:
+
+```php
+use Filament\Actions\Action;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Actions;
+
+AccountSection::make('application-settings')
+    ->schema([
+        TextEntry::make('weekly_digest')
+            ->state(fn (): string => app(DemoSettings::class)->weekly_digest ? 'Enabled' : 'Disabled'),
+        Actions::make([
+            Action::make('editSettings')
+                ->schema([
+                    Toggle::make('weekly_digest'),
+                ])
+                ->fillForm(fn (): array => app(DemoSettings::class)->toArray())
+                ->action(function (array $data): void {
+                    $settings = app(DemoSettings::class);
+                    $settings->weekly_digest = (bool) $data['weekly_digest'];
+                    $settings->save();
+                }),
+        ]),
+    ]);
+```
+
+The settings class, migrations and package installation remain the consuming application's responsibility.
+
+### Show an Eloquent relationship
+
+A custom section can also read or mutate a relationship. The workbench demonstrates a `User::addresses()` relation with native Filament entries and actions:
+
+```php
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+
+AccountSection::make('addresses')
+    ->schema([
+        RepeatableEntry::make('addresses')
+            ->state(fn (): array => auth()->user()
+                ->addresses()
+                ->get(['label', 'line_one', 'city'])
+                ->toArray())
+            ->schema([
+                TextEntry::make('label'),
+                TextEntry::make('line_one'),
+                TextEntry::make('city'),
+            ]),
+    ]);
+```
+
+For a full table, filters or richer CRUD behavior, compose the section from a Livewire component:
 
 ```php
 use Filament\Schemas\Components\Livewire;
-use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
 
-CompleteUserProfilePlugin::make()
-    ->section(
-        AccountSection::make('preferences')
-            ->label('Preferences')
-            ->schema([
-                Livewire::make(\App\Livewire\Account\Preferences::class),
-            ]),
-    );
+AccountSection::make('addresses')
+    ->schema([
+        Livewire::make(\App\Livewire\Account\AddressesTable::class),
+    ]);
 ```
 
-`AccountSection` is a navigation and content extension point. It **does not automatically persist** fields to the user model, `ProfileStorage`, or any package-owned table. The application owns migrations, validation and persistence for domain-specific data rendered inside a custom section.
+### Filament Page boundary
 
-Use `Profile::fields()` when a field naturally belongs to the existing Profile form and should participate in that form's normal save flow. Use `AccountSection` when the feature deserves its own navigable area and can own its behaviour through native Filament schema components, Livewire components or actions.
+A custom section currently accepts Filament schema `Component` instances. It does **not** accept a `Filament\Pages\Page::class` as its content and it does not provide a custom navigation URL.
+
+If the feature belongs inside the account center, use schema components or a dedicated Livewire component. If it needs the lifecycle and route of a full Filament Page, register that page separately with Filament rather than trying to mount a complete Page inside the profile page.
+
+`AccountSection` does not automatically persist fields to the user model, `ProfileStorage`, or any package-owned table. The application owns migrations, validation and persistence for domain-specific data rendered inside a custom section.
+
+Use `Profile::fields()` when a field naturally belongs to the existing Profile form and should participate in that form's normal save flow. Use `AccountSection` when the feature deserves its own navigable area.
 
 The following IDs are reserved by the built-in package features and cannot be registered as custom sections:
 
@@ -498,8 +599,6 @@ The following IDs are reserved by the built-in package features and cannot be re
 - `api-tokens`
 
 Registering a reserved ID or registering the same custom section ID twice throws a clear exception instead of silently overriding an existing area.
-
-Custom account sections appear alongside built-in areas in the account navigation and use the same `?section=preferences` query-string selection. Hidden sections are excluded from navigation, and invalid or hidden section values fall back to the first visible account area.
 
 ## AccountSection API reference
 

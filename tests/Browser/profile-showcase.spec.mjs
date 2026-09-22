@@ -6,9 +6,11 @@ const sections = [
     { id: 'security', heading: 'Security' },
     { id: 'sessions', heading: 'Sessions' },
     { id: 'api-tokens', heading: 'API Tokens' },
+    { id: 'application-settings', heading: 'Application Settings' },
+    { id: 'addresses', heading: 'Addresses' },
 ];
 
-test('full workbench enables every built-in account feature', async ({ page }) => {
+test('full workbench enables built-in features and extension examples', async ({ page }) => {
     const errors = [];
 
     page.on('pageerror', error => errors.push(error.message));
@@ -25,6 +27,8 @@ test('full workbench enables every built-in account feature', async ({ page }) =
     await page.goto('/demo/profile?section=profile');
     await expect(page.locator('h1').filter({ hasText: 'Profile' })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toHaveValue('alex@example.test');
+    await expect(page.getByLabel('Job title')).toHaveValue('Product Engineer');
+    await expect(page.getByLabel('Phone')).toHaveValue('+351 210 000 000');
 
     await page.goto('/demo/profile?section=security');
     await expect(page.locator('h1').filter({ hasText: 'Security' })).toBeVisible();
@@ -44,6 +48,17 @@ test('full workbench enables every built-in account feature', async ({ page }) =
     await expect(page.getByText('Laravel Sanctum must be installed to enable API token management.', { exact: true })).toHaveCount(0);
     await expect(page.getByText('The authenticated user model must use Laravel\\Sanctum\\HasApiTokens when API token management is enabled.', { exact: true })).toHaveCount(0);
     await expect(page.getByText('Configure at least one allowed API token ability before enabling API token management.', { exact: true })).toHaveCount(0);
+
+    await page.goto('/demo/profile?section=application-settings');
+    await expect(page.locator('h1').filter({ hasText: 'Application Settings' })).toBeVisible();
+    await expect(page.getByText('Europe/Lisbon', { exact: true })).toBeVisible();
+    await expect(page.getByText('Edit settings', { exact: true })).toBeVisible();
+
+    await page.goto('/demo/profile?section=addresses');
+    await expect(page.locator('h1').filter({ hasText: 'Addresses' })).toBeVisible();
+    await expect(page.getByText('12 Example Street', { exact: true })).toBeVisible();
+    await expect(page.getByText('42 Demo Avenue', { exact: true })).toBeVisible();
+    await expect(page.getByText('Add address', { exact: true })).toBeVisible();
 
     expect(errors).toEqual([]);
 });

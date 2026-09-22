@@ -30,7 +30,8 @@
         "mortalkiller/filament-package-standard": "^1.0",
         "orchestra/testbench": "^11.2",
         "phpstan/phpstan": "^2.2",
-        "phpunit/phpunit": "^12.5"
+        "phpunit/phpunit": "^12.5",
+        "spatie/laravel-settings": "^3.9"
     },
     "suggest": {
         "laravel/sanctum": "Required only when the API Tokens feature is enabled."

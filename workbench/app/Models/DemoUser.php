@@ -8,6 +8,7 @@ use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -30,6 +31,12 @@ class DemoUser extends Authenticatable implements FilamentUser, HasAvatar, HasEm
         'password',
         'remember_token',
     ];
+
+    /** @return HasMany<DemoAddress, $this> */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(DemoAddress::class, 'user_id');
+    }
 
     public function canAccessPanel(Panel $panel): bool
     {
