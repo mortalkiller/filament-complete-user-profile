@@ -12,7 +12,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
 
 final class TenancyManager
 {
-    /** @var TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>|null */
+    /** @var TenancyResolver|Closure(): (Model|null)|string|null */
     protected TenancyResolver|Closure|string|null $resolver = null;
 
     public function __construct(
@@ -20,7 +20,7 @@ final class TenancyManager
     ) {}
 
     /**
-     * @param  TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>  $resolver
+     * @param  TenancyResolver|Closure(): (Model|null)|string  $resolver
      */
     public function useResolver(TenancyResolver|Closure|string $resolver): static
     {
@@ -79,21 +79,9 @@ final class TenancyManager
     protected function defaultResolver(): TenancyResolver
     {
         if ($this->container->bound(TokenContextResolver::class)) {
-            $legacyResolver = $this->container->make(TokenContextResolver::class);
-
-            if (! $legacyResolver instanceof TokenContextResolver) {
-                throw new LogicException('The legacy token context resolver binding is invalid.');
-            }
-
-            return $legacyResolver;
+            return $this->container->make(TokenContextResolver::class);
         }
 
-        $resolver = $this->container->make(TenancyResolver::class);
-
-        if (! $resolver instanceof TenancyResolver) {
-            throw new LogicException('The tenancy resolver binding is invalid.');
-        }
-
-        return $resolver;
+        return $this->container->make(TenancyResolver::class);
     }
 }
