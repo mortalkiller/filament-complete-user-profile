@@ -27,14 +27,18 @@ It replaces Filament's simple profile screen with a normal panel page and lets y
 
 ## Screenshots
 
-Real captures of the package's local account demo. The example uses fictional user data and the package's default Profile area, including the page header navigation, avatar, native Filament fields and actions.
+Real captures of the package's full local workbench with every built-in account feature enabled. The demo uses fictional user data and real Filament components.
 
-| Layout | Light | Dark |
+| Area | Light | Dark |
 | --- | --- | --- |
-| Desktop | ![Complete user profile desktop view in light mode](docs/screenshots/desktop-light.png) | ![Complete user profile desktop view in dark mode](docs/screenshots/desktop-dark.png) |
-| Mobile | ![Complete user profile mobile view in light mode](docs/screenshots/mobile-light.png) | ![Complete user profile mobile view in dark mode](docs/screenshots/mobile-dark.png) |
+| Overview | ![Complete user profile overview in light mode](docs/screenshots/overview-light.png) | ![Complete user profile overview in dark mode](docs/screenshots/overview-dark.png) |
+| Profile | ![Complete user profile form in light mode](docs/screenshots/profile-light.png) | ![Complete user profile form in dark mode](docs/screenshots/profile-dark.png) |
+| Security | ![Complete user profile security settings in light mode](docs/screenshots/security-light.png) | ![Complete user profile security settings in dark mode](docs/screenshots/security-dark.png) |
+| Sessions | ![Complete user profile browser sessions in light mode](docs/screenshots/sessions-light.png) | ![Complete user profile browser sessions in dark mode](docs/screenshots/sessions-dark.png) |
+| API Tokens | ![Complete user profile API tokens in light mode](docs/screenshots/api-tokens-light.png) | ![Complete user profile API tokens in dark mode](docs/screenshots/api-tokens-dark.png) |
+| Mobile Profile | ![Complete user profile mobile view in light mode](docs/screenshots/mobile-light.png) | ![Complete user profile mobile view in dark mode](docs/screenshots/mobile-dark.png) |
 
-[Run the demo locally](docs/testing.md) to explore the account page and regenerate the screenshots.
+[Run the full demo locally](docs/testing.md) to explore every area and regenerate the screenshots.
 
 ## Requirements
 
