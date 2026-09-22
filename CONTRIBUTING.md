@@ -26,13 +26,13 @@ Use English for code, comments and test descriptions. Keep public API changes ex
 
 ## Agent skill
 
-The repository includes `laravel/boost` and `mortalkiller/filament-package-standard` as development dependencies. After `composer install` or after updating either package, synchronize the canonical maintainer skill with:
+The repository includes `mortalkiller/filament-package-standard` as a direct development dependency. After `composer install`, read and use:
 
-```bash
-vendor/bin/testbench boost:update
+```text
+vendor/mortalkiller/filament-package-standard/resources/boost/skills/developing-filament-packages/SKILL.md
 ```
 
-Laravel Boost discovers `developing-filament-packages` from the direct `mortalkiller/filament-package-standard` dependency.
+In real Laravel applications that install both the Standard and Laravel Boost directly, Boost can discover and synchronize the same skill.
 
 ## Checks
 
