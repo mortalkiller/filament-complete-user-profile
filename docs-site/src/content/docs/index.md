@@ -20,13 +20,20 @@ hero:
 
 Filament Complete User Profile replaces the basic profile screen with a normal Filament panel page and lets each panel opt into the account capabilities it needs.
 
+## Why this package
+
+Real account areas often grow beyond name, email and password changes. MFA, active sessions, API tokens, locale and application-specific account tools can otherwise become separate pages with different navigation and interaction patterns.
+
+This package keeps those concerns in one native Filament account experience while leaving domain data in the consuming application. Add normal fields to the Profile form, or compose first-class custom sections from Filament schema components, Livewire components, application services and Eloquent relationships.
+
 ![Filament Complete User Profile account center](/filament-complete-user-profile/filament-complete-user-profile.png)
 
 ## Highlights
 
 - Native Filament panel page, tabs or sidebar navigation.
 - Profile fields for avatar, name, email and locale.
-- Extensible profile fields and first-class custom account sections.
+- Application-owned profile fields saved through the existing Profile form.
+- First-class custom account sections backed by services, settings packages or Eloquent relationships.
 - Authenticator-app and email multi-factor authentication.
 - Database-backed browser session management.
 - Laravel Sanctum API token management.
