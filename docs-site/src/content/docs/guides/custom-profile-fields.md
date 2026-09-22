@@ -1,9 +1,25 @@
 ---
 title: Custom profile fields
-description: Extend the existing Profile form with application-owned fields and save hooks.
+description: Extend the existing Profile form with application-owned user attributes and save hooks.
 ---
 
 Use custom profile fields when the data belongs naturally inside the existing Profile form.
+
+## Add the application columns
+
+The package does not create arbitrary domain columns. Add them in your application first:
+
+```php
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+Schema::table('users', function (Blueprint $table): void {
+    $table->string('job_title')->nullable();
+    $table->string('phone')->nullable();
+});
+```
+
+Keep your user model's mass-assignment configuration and casts aligned with those fields.
 
 ## Add native Filament fields
 
@@ -14,10 +30,15 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
 CompleteUserProfilePlugin::make()
     ->profile(fn (Profile $profile): Profile => $profile
         ->fields([
-            TextInput::make('job_title'),
-            TextInput::make('phone'),
+            TextInput::make('job_title')
+                ->maxLength(120),
+            TextInput::make('phone')
+                ->tel()
+                ->maxLength(40),
         ]));
 ```
+
+The Profile form is bound to the authenticated Eloquent model. Additional fields are filled from model attributes and participate in the normal profile save.
 
 The array, or a Closure returning the array, must contain Filament schema `Component` instances. Invalid values cause a `LogicException`.
 
@@ -51,14 +72,8 @@ The callback must return an array.
 })
 ```
 
-## Persistence responsibility
+## Workbench example
 
-The package does not create arbitrary columns for application fields. Your consuming application owns:
+The repository workbench adds `job_title` and `phone` to its demo user table, renders both in Profile, and verifies their values in the browser suite.
 
-- migrations;
-- casts;
-- validation specific to its domain;
-- relationships;
-- any storage outside the package-managed profile fields.
-
-When a feature needs its own navigation destination and stateful behavior, prefer a [custom account section](../custom-account-sections/) rather than forcing it into the Profile form.
+When a feature needs its own account navigation destination and behavior, use a [custom account section](../custom-account-sections/) rather than forcing it into the Profile form.
