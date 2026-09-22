@@ -18,6 +18,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\EnsureTokenContext;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MutableTenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\Tenant;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
+use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenManager;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -128,8 +129,7 @@ class TenantScopedTokensTest extends TestCase
         $token = $manager->create($user, $this->feature(), 'CLI', ['customers:read']);
         $user->withAccessToken($token->accessToken);
 
-        $resolver = new class implements TokenContextResolver
-        {
+        $resolver = new class implements TokenContextResolver {
             public ?Model $context = null;
 
             public function resolve(): ?Model
@@ -162,8 +162,7 @@ class TenantScopedTokensTest extends TestCase
         $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
         $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
 
-        $resolver = new class($tenantA) implements TenancyResolver
-        {
+        $resolver = new class($tenantA) implements TenancyResolver {
             public function __construct(
                 public ?Model $tenant,
             ) {}
@@ -338,7 +337,7 @@ class TenantScopedTokensTest extends TestCase
             $token = is_object($user) && is_callable([$user, 'currentAccessToken'])
                 ? $user->currentAccessToken()
                 : null;
-            $tenant = app(\Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager::class)->resolve();
+            $tenant = app(TenancyManager::class)->resolve();
 
             return response()->json([
                 'token_id' => $token instanceof Model ? (string) $token->getKey() : null,
