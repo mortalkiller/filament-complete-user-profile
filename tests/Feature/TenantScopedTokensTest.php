@@ -23,6 +23,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\Tenant;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
 use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenManager;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TenantScopedTokensTest extends TestCase
@@ -343,6 +344,7 @@ class TenantScopedTokensTest extends TestCase
         });
     }
 
+    /** @return TestResponse<Response> */
     protected function requestTenantProtectedRoute(string $plainTextToken): TestResponse
     {
         // Testbench serves multiple requests through the same application instance.
