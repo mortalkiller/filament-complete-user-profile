@@ -4,6 +4,7 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tests;
 
 use Filament\FilamentServiceProvider;
 use Illuminate\Foundation\Application;
+use Laravel\Sanctum\SanctumServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfileServiceProvider;
 use MortalKiller\FilamentPageHeader\PageHeaderServiceProvider;
@@ -20,6 +21,7 @@ abstract class TestCase extends Orchestra
         return [
             LivewireServiceProvider::class,
             FilamentServiceProvider::class,
+            SanctumServiceProvider::class,
             PageHeaderServiceProvider::class,
             CompleteUserProfileServiceProvider::class,
         ];
