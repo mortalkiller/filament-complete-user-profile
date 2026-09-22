@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Workbench\App\Providers;
 
 use Filament\FontProviders\LocalFontProvider;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
@@ -51,9 +50,6 @@ final class DemoPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 LocalDemoUser::class,
-            ], isPersistent: true)
-            ->authMiddleware([
-                Authenticate::class,
-            ]);
+            ], isPersistent: true);
     }
 }
