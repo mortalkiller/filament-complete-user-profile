@@ -40,7 +40,7 @@ npx playwright install chromium
 npm run test:browser -- tests/Browser/profile-showcase.spec.mjs
 ```
 
-The browser suite verifies that every built-in account area is available with its required infrastructure, then captures the Profile area in desktop/mobile and light/dark modes. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
+The browser suite verifies that every built-in account area is available with its required infrastructure. It captures Overview, Profile, Security, Sessions, and API Tokens at desktop width in light/dark modes, plus the Profile area at mobile width. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
 
 The README screenshots use fictional account data and are direct browser captures. They are not reconstructed UI mockups.
 
