@@ -13,3 +13,8 @@
 /workbench/database/*.sqlite
 /workbench/storage/
 /workbench/vendor
+/workbench/database/*.sqlite*
+/workbench/bootstrap/cache/*.php
+/workbench/public/css/
+/workbench/public/js/
+/workbench/public/fonts/
