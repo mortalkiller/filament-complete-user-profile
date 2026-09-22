@@ -26,6 +26,8 @@ final class LocalDemoUser
             ['email' => 'alex@example.test'],
             [
                 'name' => 'Alex Morgan',
+                'job_title' => 'Product Engineer',
+                'phone' => '+351 210 000 000',
                 'password' => Hash::make(self::DEMO_PASSWORD),
             ],
         );
@@ -38,9 +40,31 @@ final class LocalDemoUser
             $storage->put($user, 'locale', 'en');
         }
 
+        $this->ensureDemoAddresses($user);
         $this->ensureSecondarySession($user);
 
         return $next($request);
+    }
+
+    private function ensureDemoAddresses(DemoUser $user): void
+    {
+        $user->addresses()->firstOrCreate(
+            ['label' => 'Home'],
+            [
+                'line_one' => '12 Example Street',
+                'city' => 'Lisbon',
+                'country_code' => 'PT',
+            ],
+        );
+
+        $user->addresses()->firstOrCreate(
+            ['label' => 'Studio'],
+            [
+                'line_one' => '42 Demo Avenue',
+                'city' => 'Porto',
+                'country_code' => 'PT',
+            ],
+        );
     }
 
     private function ensureSecondarySession(DemoUser $user): void
