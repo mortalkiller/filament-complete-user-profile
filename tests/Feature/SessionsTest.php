@@ -95,9 +95,14 @@ class SessionsTest extends TestCase
         self::assertTrue($sessions->has(self::CURRENT_SESSION_ID));
         self::assertTrue($sessions->has(self::OTHER_SESSION_ID));
         self::assertFalse($sessions->has(self::FOREIGN_SESSION_ID));
-        self::assertTrue($sessions[self::CURRENT_SESSION_ID]->current);
-        self::assertFalse($sessions[self::OTHER_SESSION_ID]->current);
-        self::assertSame('Firefox · Linux · Desktop', $sessions[self::CURRENT_SESSION_ID]->device);
+        $currentSession = $sessions->get(self::CURRENT_SESSION_ID);
+        $otherSession = $sessions->get(self::OTHER_SESSION_ID);
+
+        self::assertNotNull($currentSession);
+        self::assertNotNull($otherSession);
+        self::assertTrue($currentSession->current);
+        self::assertFalse($otherSession->current);
+        self::assertSame('Firefox · Linux · Desktop', $currentSession->device);
     }
 
     public function test_current_session_cannot_be_revoked_and_foreign_session_ids_are_ignored(): void
