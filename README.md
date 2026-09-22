@@ -25,6 +25,17 @@ Full documentation: **https://docs.pedromonteiro.dev/filament-complete-user-prof
 
 It replaces Filament's simple profile screen with a normal panel page and lets you opt into account-security features such as multi-factor authentication, browser session management, Sanctum API tokens, and tenant-scoped tokens while keeping the default setup small.
 
+## Screenshots
+
+Real captures of the package's local account demo. The example uses fictional user data and the package's default Profile area, including the page header navigation, avatar, native Filament fields and actions.
+
+| Layout | Light | Dark |
+| --- | --- | --- |
+| Desktop | ![Complete user profile desktop view in light mode](docs/screenshots/desktop-light.png) | ![Complete user profile desktop view in dark mode](docs/screenshots/desktop-dark.png) |
+| Mobile | ![Complete user profile mobile view in light mode](docs/screenshots/mobile-light.png) | ![Complete user profile mobile view in dark mode](docs/screenshots/mobile-dark.png) |
+
+[Run the demo locally](docs/testing.md) to explore the account page and regenerate the screenshots.
+
 ## Requirements
 
 Version 1 supports:
