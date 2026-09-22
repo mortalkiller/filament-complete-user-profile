@@ -14,3 +14,89 @@
 .sl-markdown-content code:not(:where(.not-content *)) {
   font-size: 0.9em;
 }
+
+/* Match Starlight's theme select without targeting its generated CSS classes. */
+.versioned-site-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.versioned-site-title .site-title span {
+  text-overflow: ellipsis;
+}
+
+.docs-version-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--sl-color-gray-2);
+}
+
+.docs-version-picker:has(.docs-version-select:enabled):hover {
+  color: var(--sl-color-white);
+}
+
+.docs-version-select {
+  appearance: none;
+  background-color: transparent;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  color-scheme: dark;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--sl-text-base);
+  margin: 0;
+  max-width: 100%;
+  padding-block: 0.625rem;
+  padding-inline: 0.5rem 2rem;
+  text-overflow: ellipsis;
+}
+
+:root[data-theme='light'] .docs-version-select {
+  color-scheme: light;
+}
+
+.docs-version-select option {
+  background-color: var(--sl-color-bg-nav);
+  color: var(--sl-color-gray-1);
+}
+
+.docs-version-select:focus-visible {
+  outline: 2px solid var(--sl-color-text-accent);
+  outline-offset: var(--sl-outline-offset-inside);
+}
+
+.docs-version-select:disabled,
+.docs-version-select:disabled + .docs-version-chevron {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.docs-version-chevron {
+  position: absolute;
+  inset-inline-end: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  pointer-events: none;
+}
+
+@media (min-width: 50rem) {
+  .docs-version-select {
+    font-size: var(--sl-text-sm);
+  }
+}
+
+@media (max-width: 49.999rem) {
+  .versioned-site-title {
+    gap: 0.25rem;
+  }
+}
