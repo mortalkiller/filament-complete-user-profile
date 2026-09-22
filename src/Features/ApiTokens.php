@@ -3,7 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Features;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Support\Facades\Schema;
+use Mortalkiller\FilamentCompleteUserProfile\Tokens\TokenStorage;
 
 class ApiTokens extends AbstractFeature
 {
@@ -87,18 +87,19 @@ class ApiTokens extends AbstractFeature
             return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.user_model');
         }
 
+        $storage = app(TokenStorage::class);
+        $relation = $storage->relationFor($user);
+
+        if ($relation === null) {
+            return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.user_model');
+        }
+
         if ($this->abilities === []) {
             return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.abilities');
         }
 
-        if ($this->tenantScoped) {
-            if (
-                Schema::hasTable('personal_access_tokens') === false
-                || Schema::hasColumn('personal_access_tokens', 'context_type') === false
-                || Schema::hasColumn('personal_access_tokens', 'context_id') === false
-            ) {
-                return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.context_migration');
-            }
+        if ($this->tenantScoped && ! $storage->hasContextColumns($relation)) {
+            return static::translate('filament-complete-user-profile::profile.api_tokens.requirements.context_migration');
         }
 
         return null;

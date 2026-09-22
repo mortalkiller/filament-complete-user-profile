@@ -45,6 +45,8 @@ php artisan migrate
 
 The opt-in migration adds nullable `context_type` and `context_id` metadata to Sanctum's personal access token table.
 
+In multi-database or database-per-tenant applications, the columns must exist on the connection used by Sanctum's configured `PersonalAccessToken` model. The package resolves the user's actual `tokens()` relationship and checks that related model's connection; it does not assume the request's current/default database connection.
+
 ## Custom tenancy resolver
 
 For a non-Filament tenancy system, implement:

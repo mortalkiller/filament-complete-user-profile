@@ -4,7 +4,6 @@ namespace Mortalkiller\FilamentCompleteUserProfile\Tokens;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use LogicException;
@@ -15,6 +14,7 @@ class TokenManager
 {
     public function __construct(
         protected TenancyManager $tenancy,
+        protected TokenStorage $storage,
     ) {}
 
     /** @param array<int, string> $abilities */
@@ -31,11 +31,11 @@ class TokenManager
             ]);
         }
 
-        $relation = $this->relationFor($user);
+        $relation = $this->storage->requireRelation($user);
         $context = null;
 
         if ($feature->isTenantScoped()) {
-            $this->ensureContextColumns($relation);
+            $this->storage->ensureContextColumns($relation);
             $context = $this->resolveManagementContext();
         }
 
@@ -103,11 +103,11 @@ class TokenManager
     /** @return Collection<int, Model> */
     public function tokensFor(Authenticatable $user, ApiTokens $feature): Collection
     {
-        $relation = $this->relationFor($user);
+        $relation = $this->storage->requireRelation($user);
         $query = $relation->getQuery();
 
         if ($feature->isTenantScoped()) {
-            $this->ensureContextColumns($relation);
+            $this->storage->ensureContextColumns($relation);
             $context = $this->resolveManagementContext();
 
             $query
@@ -120,11 +120,11 @@ class TokenManager
 
     public function revoke(Authenticatable $user, string $tokenId, ?ApiTokens $feature = null): void
     {
-        $relation = $this->relationFor($user);
+        $relation = $this->storage->requireRelation($user);
         $query = $relation->getQuery()->whereKey($tokenId);
 
         if ($feature?->isTenantScoped()) {
-            $this->ensureContextColumns($relation);
+            $this->storage->ensureContextColumns($relation);
             $context = $this->resolveManagementContext();
 
             $query
@@ -133,46 +133,6 @@ class TokenManager
         }
 
         $query->delete();
-    }
-
-    /** @return MorphMany<Model, Model> */
-    protected function relationFor(Authenticatable $user): MorphMany
-    {
-        $tokens = [$user, 'tokens'];
-
-        if (is_callable($tokens) === false) {
-            throw ValidationException::withMessages([
-                'tokens' => 'The authenticated user model must use Laravel\\Sanctum\\HasApiTokens.',
-            ]);
-        }
-
-        $relation = $tokens();
-
-        if ($relation instanceof MorphMany === false) {
-            throw ValidationException::withMessages([
-                'tokens' => 'The authenticated user model must expose the Sanctum tokens relationship.',
-            ]);
-        }
-
-        /** @var MorphMany<Model, Model> $relation */
-        return $relation;
-    }
-
-    /** @param MorphMany<Model, Model> $relation */
-    protected function ensureContextColumns(MorphMany $relation): void
-    {
-        $related = $relation->getRelated();
-        $schema = $related->getConnection()->getSchemaBuilder();
-        $table = $related->getTable();
-
-        if (
-            $schema->hasColumn($table, 'context_type') === false
-            || $schema->hasColumn($table, 'context_id') === false
-        ) {
-            throw ValidationException::withMessages([
-                'tokens' => 'Publish and run the filament-complete-user-profile token-context migration before using tenant-scoped API tokens.',
-            ]);
-        }
     }
 
     protected function resolveManagementContext(): TokenContext

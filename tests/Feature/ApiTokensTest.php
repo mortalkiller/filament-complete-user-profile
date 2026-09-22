@@ -13,11 +13,14 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Schema\Blueprint;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\Sanctum;
 use Illuminate\Support\Facades\Schema as DatabaseSchema;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Livewire\ApiTokensTable;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\CentralPersonalAccessToken;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -50,6 +53,7 @@ class ApiTokensTest extends TestCase
     protected function tearDown(): void
     {
         CarbonImmutable::setTestNow();
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
 
         parent::tearDown();
     }
@@ -171,6 +175,40 @@ class ApiTokensTest extends TestCase
             ->abilities(['customers:read' => 'Read customers']);
 
         self::assertNotNull($feature->getRequirementIssue(new User));
+        self::assertNull($feature->getRequirementIssue(new TokenUser));
+    }
+
+    public function test_tenant_context_readiness_uses_the_sanctum_token_model_connection(): void
+    {
+        config()->set('database.connections.tokens', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+
+        DatabaseSchema::connection('tokens')->create('personal_access_tokens', function (Blueprint $table): void {
+            $table->id();
+            $table->morphs('tokenable');
+            $table->text('name');
+            $table->string('token', 64)->unique();
+            $table->text('abilities')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->string('context_type')->nullable()->index();
+            $table->string('context_id')->nullable()->index();
+            $table->timestamps();
+        });
+
+        self::assertFalse(DatabaseSchema::hasColumn('personal_access_tokens', 'context_type'));
+        self::assertTrue(DatabaseSchema::connection('tokens')->hasColumn('personal_access_tokens', 'context_type'));
+
+        Sanctum::usePersonalAccessTokenModel(CentralPersonalAccessToken::class);
+
+        $feature = ApiTokens::make()
+            ->enabled()
+            ->tenantScoped()
+            ->abilities(['customers:read' => 'Read customers']);
+
         self::assertNull($feature->getRequirementIssue(new TokenUser));
     }
 

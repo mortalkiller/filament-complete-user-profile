@@ -375,6 +375,8 @@ php artisan vendor:publish --tag=filament-complete-user-profile-token-migrations
 php artisan migrate
 ```
 
+In multi-database applications, run the migration on the database connection used by Sanctum's `PersonalAccessToken` model. The package checks the token model's actual relation and connection rather than assuming Laravel's current default connection.
+
 ### Custom tenancy resolver
 
 A resolver must implement `TenancyResolver` and return the active Eloquent tenant/context model or `null`:

@@ -51,8 +51,8 @@ When enabled, the feature validates the infrastructure visible to the current ap
 1. Sanctum is installed.
 2. The user exposes `createToken()` and `tokens()`, normally through `HasApiTokens`.
 3. The ability whitelist is not empty.
-4. If tenant-scoped, `personal_access_tokens` contains `context_type` and `context_id`.
+4. If tenant-scoped, the Sanctum token model's actual table/connection contains `context_type` and `context_id`.
 
-The method returns the first translated requirement issue or `null` when ready.
+The method returns the first translated requirement issue or `null` when ready. Context-column readiness is checked through the user's Sanctum `tokens()` relationship, so custom token models and multi-database connections are respected.
 
 Tenant-scoped management and API request enforcement both use the package `TenancyResolver`. Filament native tenancy is the default; applications can replace it through `CompleteUserProfilePlugin::tenancyResolver()`.
