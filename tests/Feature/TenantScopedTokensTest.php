@@ -7,6 +7,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
@@ -14,6 +15,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Contracts\TenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\TokenContextResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\EnsureTokenContext;
+use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\MutableTenancyResolver;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\Tenant;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\TokenUser;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -211,9 +213,138 @@ class TenantScopedTokensTest extends TestCase
         }
     }
 
+    public function test_real_bearer_token_can_only_access_its_own_tenant_context(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+        $resolver = new MutableTenancyResolver($tenantA);
+
+        $this->registerCustomTenancyPanel($resolver);
+        $this->registerTenantProtectedRoute();
+
+        $token = app(TokenManager::class)->create(
+            $user,
+            $this->feature(),
+            'Tenant A CLI',
+            ['customers:read'],
+        );
+
+        $this->withToken($token->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertOk()
+            ->assertJson([
+                'token_id' => (string) $token->accessToken->getKey(),
+                'tenant_id' => (string) $tenantA->getKey(),
+            ]);
+
+        $resolver->tenant = $tenantB;
+
+        $this->withToken($token->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertForbidden();
+
+        $resolver->tenant = $tenantA;
+
+        $this->withToken($token->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertOk()
+            ->assertJson([
+                'token_id' => (string) $token->accessToken->getKey(),
+                'tenant_id' => (string) $tenantA->getKey(),
+            ]);
+    }
+
+    public function test_real_bearer_tokens_are_isolated_between_two_tenants(): void
+    {
+        $user = TokenUser::query()->create(['email' => 'pedro@example.test']);
+        $tenantA = Tenant::query()->create(['name' => 'Tenant A']);
+        $tenantB = Tenant::query()->create(['name' => 'Tenant B']);
+        $resolver = new MutableTenancyResolver($tenantA);
+
+        $this->registerCustomTenancyPanel($resolver);
+        $this->registerTenantProtectedRoute();
+
+        $tokenA = app(TokenManager::class)->create(
+            $user,
+            $this->feature(),
+            'Tenant A CLI',
+            ['customers:read'],
+        );
+
+        $resolver->tenant = $tenantB;
+
+        $tokenB = app(TokenManager::class)->create(
+            $user,
+            $this->feature(),
+            'Tenant B CLI',
+            ['customers:read'],
+        );
+
+        $resolver->tenant = $tenantA;
+
+        $this->withToken($tokenA->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertOk()
+            ->assertJson([
+                'token_id' => (string) $tokenA->accessToken->getKey(),
+                'tenant_id' => (string) $tenantA->getKey(),
+            ]);
+
+        $this->withToken($tokenB->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertForbidden();
+
+        $resolver->tenant = $tenantB;
+
+        $this->withToken($tokenB->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertOk()
+            ->assertJson([
+                'token_id' => (string) $tokenB->accessToken->getKey(),
+                'tenant_id' => (string) $tenantB->getKey(),
+            ]);
+
+        $this->withToken($tokenA->plainTextToken)
+            ->getJson('/__test/tenant-token')
+            ->assertForbidden();
+    }
+
     public function test_token_context_migration_is_shipped_as_opt_in_stub(): void
     {
         self::assertFileExists(__DIR__.'/../../database/migrations/add_context_columns_to_personal_access_tokens.php.stub');
+    }
+
+    protected function registerCustomTenancyPanel(MutableTenancyResolver $resolver): void
+    {
+        $panel = Panel::make()
+            ->id('http-tenancy')
+            ->plugin(
+                CompleteUserProfilePlugin::make()
+                    ->tenancyResolver($resolver),
+            );
+
+        Filament::setCurrentPanel($panel);
+        Filament::setTenant(null, isQuiet: true);
+    }
+
+    protected function registerTenantProtectedRoute(): void
+    {
+        Route::middleware([
+            'auth:sanctum',
+            EnsureTokenContext::class,
+        ])->get('/__test/tenant-token', function (Request $request) {
+            $user = $request->user();
+            $token = is_object($user) && is_callable([$user, 'currentAccessToken'])
+                ? $user->currentAccessToken()
+                : null;
+            $tenant = app(\Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager::class)->resolve();
+
+            return response()->json([
+                'token_id' => $token instanceof Model ? (string) $token->getKey() : null,
+                'tenant_id' => $tenant instanceof Model ? (string) $tenant->getKey() : null,
+            ]);
+        });
     }
 
     protected function feature(): ApiTokens
