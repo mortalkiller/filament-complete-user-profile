@@ -11,4 +11,4 @@ When available, use the `developing-filament-packages` skill before package feat
 
 Before claiming completion, run the repository's required CI-equivalent checks and verify public documentation contains no private consumer, customer, or infrastructure information. Distinguish local/build checks from actual release and live deployment verification.
 
-For package development, install dev dependencies and run `vendor/bin/testbench boost:update` to discover and synchronize the canonical `developing-filament-packages` skill through Laravel Boost.
+After `composer install`, read and use `vendor/mortalkiller/filament-package-standard/resources/boost/skills/developing-filament-packages/SKILL.md`. If dependencies are not installed, use the canonical skill URL above.
