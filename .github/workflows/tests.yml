@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   tests:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-tests.yml@5ed6a6b06b4d8e7c2b2d013eedbe86aeba01d5af
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-tests.yml@6ceb549dd431ccbec57e1fcf67321df2b40b0a92
     with:
       matrix-json: >-
         {"include":[
@@ -29,7 +29,7 @@ jobs:
       test-command: composer check
 
   browser:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-browser-tests.yml@5ed6a6b06b4d8e7c2b2d013eedbe86aeba01d5af
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-browser-tests.yml@6ceb549dd431ccbec57e1fcf67321df2b40b0a92
     with:
       filament-matrix-json: >-
         {"include":[{"filament":"^5.8.3"}]}
