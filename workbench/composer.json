@@ -1,0 +1,11 @@
+{
+    "name": "mortalkiller/filament-complete-user-profile-workbench",
+    "description": "Local-only demonstration using the parent package dependencies.",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Workbench\\App\\": "app/"
+        }
+    }
+}

@@ -28,6 +28,14 @@ jobs:
         ]}
       test-command: composer check
 
+
+  browser:
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-browser-tests.yml@fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
+    with:
+      filament-matrix-json: >-
+        {"include":[{"filament":"^5.8.3"}]}
+      php-version: '8.4'
+
   skills:
     name: Package standard skill distribution
     runs-on: ubuntu-latest

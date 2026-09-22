@@ -42,7 +42,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Mortalkiller\\FilamentCompleteUserProfile\\Tests\\": "tests/"
+            "Mortalkiller\\FilamentCompleteUserProfile\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/"
         }
     },
     "extra": {
@@ -67,6 +68,12 @@
             "@lint",
             "@analyse",
             "@test"
+        ],
+        "browser:prepare": [
+            "@php bin/prepare-workbench.php",
+            "@php workbench/artisan package:discover",
+            "@php workbench/artisan migrate:fresh --force",
+            "@php workbench/artisan filament:assets"
         ]
     }
 }

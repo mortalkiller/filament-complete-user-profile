@@ -6,3 +6,10 @@
 /.vscode/
 .env
 /.superpowers/
+/node_modules/
+/playwright-report/
+/test-results/
+/workbench/.env
+/workbench/database/*.sqlite
+/workbench/storage/
+/workbench/vendor
