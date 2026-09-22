@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   quality:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-quality.yml@fd1b3f6ef3fd383de952c8a4f210c51b49f63e36
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-quality.yml@5ed6a6b06b4d8e7c2b2d013eedbe86aeba01d5af
     with:
       php-version: '8.4'
       static-analysis: true
@@ -33,7 +33,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           archive_contents="$(git archive HEAD | tar -tf -)"
 
           required_paths=(
@@ -57,6 +56,7 @@ jobs:
             'tests/'
             'docs/superpowers/'
             'docs/verification.md'
+            '.editorconfig'
             'phpunit.xml.dist'
             'phpstan.neon.dist'
             'pint.json'
