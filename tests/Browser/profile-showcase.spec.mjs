@@ -15,7 +15,7 @@ for (const theme of ['light', 'dark']) {
                 document.documentElement.classList.toggle('dark', currentTheme === 'dark');
             }, theme);
 
-            await expect(page.getByRole('heading', { name: 'Profile', exact: true })).toBeVisible();
+            await expect(page.locator('h1').filter({ hasText: 'Profile' })).toBeVisible();
             await expect(page.locator('input[type="email"]')).toHaveValue('alex@example.test');
             await expect(page.locator('.fi-page')).toBeVisible();
             await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
