@@ -24,6 +24,7 @@ The workbench enables every built-in account area:
 - Custom `job_title` and `phone` fields persisted on the demo user
 - An `Application Settings` section persisted with `spatie/laravel-settings`
 - An `Addresses` section backed by a `DemoUser::addresses()` Eloquent relationship
+- A routed `Billing` section at `/demo/profile/billing`, with local demo data and a native refresh action (no payment provider)
 
 The fictional demo user is `alex@example.test`. Use `workbench-password` whenever a reauthentication form asks for the current password.
 
@@ -41,10 +42,18 @@ Run the browser showcase suite with:
 npm install
 npx playwright install chromium
 npm run test:browser -- tests/Browser/profile-showcase.spec.mjs
+npm run test:browser -- tests/Browser/account-pages.spec.mjs
 ```
 
 The browser suite verifies that every built-in account area and both extension examples are available with their required infrastructure. It captures Overview, Profile, Security, Sessions, API Tokens, Application Settings, and Addresses at desktop width in light/dark modes, plus the Profile area at mobile width. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
 
 The README screenshots use fictional account data and are direct browser captures. They are not reconstructed UI mockups.
+
+The routed-page tests cover desktop tabs, mobile navigation, active state, a native action,
+direct URLs, reload and browser history. Run them with `WORKBENCH_SPA=false` as well as the
+default SPA mode. `WORKBENCH_HEADER_MODE=normal|sticky|compact` selects the header mode.
+If Chromium is already installed outside Playwright's default cache, set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` to that executable. Do not run `browser:prepare` against
+demo data you want to retain: it includes `migrate:fresh`.
 
 [Back to the README](../README.md)

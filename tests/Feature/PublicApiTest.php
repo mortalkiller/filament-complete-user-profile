@@ -22,7 +22,7 @@ class PublicApiTest extends TestCase
     {
         $reflection = new ReflectionClass(AccountSection::class);
 
-        foreach (['make', 'label', 'description', 'sort', 'visible', 'schema'] as $method) {
+        foreach (['make', 'label', 'description', 'sort', 'visible', 'schema', 'page', 'getPage'] as $method) {
             self::assertTrue($reflection->hasMethod($method), "[{$method}] should be part of the AccountSection API.");
         }
 
@@ -90,6 +90,9 @@ class PublicApiTest extends TestCase
         self::assertStringContainsString('AccountSection::make(', $readme);
         self::assertStringContainsString('does not automatically persist', $readme);
         self::assertStringContainsString('## AccountSection API reference', $readme);
+        self::assertStringContainsString('page(string $page)', $readme);
+        self::assertStringContainsString('getPage()', $readme);
+        self::assertStringContainsString('InteractsWithAccountSection', $readme);
 
         foreach (['make(string $id)', 'label(string|Closure $label)', 'description(string|Closure|null $description)', 'sort(int $sort)', 'visible(bool|Closure $condition = true)', 'schema(array|Closure $components)', 'getId()', 'getLabel()', 'getDescription()', 'getSort()', 'isVisible()', 'getSchema()'] as $signature) {
             self::assertStringContainsString($signature, $readme, "README should document AccountSection::{$signature}.");

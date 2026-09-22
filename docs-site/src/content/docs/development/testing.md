@@ -26,6 +26,18 @@ composer analyse
 composer test
 ```
 
+## Routed-page browser checks
+
+The local workbench includes a `Billing` page section with a local refresh action and no
+external payment calls. After preparing the workbench, run
+`npm run test:browser -- tests/Browser/account-pages.spec.mjs`. Repeat with
+`WORKBENCH_SPA=false` and with `WORKBENCH_HEADER_MODE=sticky` or `compact` to cover both
+navigation modes and header variants. The default header mode is `normal`.
+
+The browser tests exercise desktop/mobile navigation, active state, native actions,
+direct URLs, reload and history. The preparation command resets the local demo database;
+do not use it against data you want to retain.
+
 ## CI matrix
 
 The repository test workflow exercises the supported PHP matrix defined by the project. The code-quality workflow separately validates Composer metadata, style, static analysis, PHP syntax and the distribution archive.

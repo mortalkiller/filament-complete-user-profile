@@ -6,6 +6,7 @@ use Closure;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileFeature;
@@ -30,6 +31,8 @@ class CompleteUserProfilePlugin implements Plugin
     protected array $sections = [];
 
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
+
+    protected Width|string|null $maxContentWidth = null;
 
     /** @var TenancyResolver|Closure(): (Model|null)|string|null */
     protected TenancyResolver|Closure|string|null $tenancyResolver = null;
@@ -69,6 +72,12 @@ class CompleteUserProfilePlugin implements Plugin
             ->profile(CompleteUserProfile::class, isSimple: false)
             ->authMiddleware([SetUserLocale::class]);
 
+        $this->validatePageSections($panel);
+        $panel->pages(array_values(array_filter(array_map(
+            static fn (AccountSection $section): ?string => $section->getPage(),
+            $this->sections,
+        ))));
+
         if (! $panel->hasPlugin(PageHeaderPlugin::ID)) {
             $pageHeader = $this->makePageHeaderPlugin();
 
@@ -99,7 +108,39 @@ class CompleteUserProfilePlugin implements Plugin
         }
     }
 
-    public function boot(Panel $panel): void {}
+    public function boot(Panel $panel): void
+    {
+        $this->validatePageSections($panel);
+    }
+
+    protected function validatePageSections(Panel $panel): void
+    {
+        $pages = [];
+
+        foreach ($this->sections as $section) {
+            $page = $section->getPage();
+
+            if ($page === null) {
+                continue;
+            }
+
+            if (isset($pages[$page])) {
+                throw new LogicException("Account section page [{$page}] is already registered.");
+            }
+
+            $pages[$page] = true;
+
+            if ($page::getCluster() !== null || str_contains($page::getRoutePath($panel), '{')) {
+                throw new LogicException("Account section page [{$page}] must have a standalone route without route parameters.");
+            }
+
+            foreach ($panel->getPageConfigurations() as $configuration) {
+                if ($configuration->getPage() === $page) {
+                    throw new LogicException("Account section page [{$page}] cannot use PageConfiguration.");
+                }
+            }
+        }
+    }
 
     public static function get(): static
     {
@@ -120,6 +161,18 @@ class CompleteUserProfilePlugin implements Plugin
         $this->pageHeader = $plugin;
 
         return $this;
+    }
+
+    public function maxContentWidth(Width|string|null $width): static
+    {
+        $this->maxContentWidth = $width;
+
+        return $this;
+    }
+
+    public function getMaxContentWidth(): Width|string|null
+    {
+        return $this->maxContentWidth;
     }
 
     /**
@@ -192,6 +245,14 @@ class CompleteUserProfilePlugin implements Plugin
 
         if (array_key_exists($id, $this->sections)) {
             throw new LogicException("Account section [{$id}] is already registered.");
+        }
+
+        if ($section->getPage() !== null) {
+            foreach ($this->sections as $registered) {
+                if ($registered->getPage() === $section->getPage()) {
+                    throw new LogicException("Account section page [{$section->getPage()}] is already registered.");
+                }
+            }
         }
 
         $this->sections[$id] = $section;

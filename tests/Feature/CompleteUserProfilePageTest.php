@@ -8,6 +8,7 @@ use Filament\PanelRegistry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,36 @@ use ReflectionMethod;
 
 class CompleteUserProfilePageTest extends TestCase
 {
+    public function test_profile_width_defaults_to_the_panel_and_accepts_an_explicit_override(): void
+    {
+        $plugin = CompleteUserProfilePlugin::make();
+        $page = $this->makePage($plugin);
+
+        self::assertNull($page->getMaxContentWidth());
+        self::assertSame($plugin, $plugin->maxContentWidth(Width::SixExtraLarge));
+        self::assertSame(Width::SixExtraLarge, $page->getMaxContentWidth());
+        self::assertSame(Width::SixExtraLarge, $plugin->getMaxContentWidth());
+
+        $plugin->maxContentWidth('5xl');
+        self::assertSame('5xl', $page->getMaxContentWidth());
+
+        $plugin->maxContentWidth(null);
+        self::assertNull($page->getMaxContentWidth());
+    }
+
+    public function test_profile_width_is_resolved_per_panel(): void
+    {
+        $first = Panel::make()->id('first')->plugin(CompleteUserProfilePlugin::make()->maxContentWidth(Width::SixExtraLarge));
+        $second = Panel::make()->id('second')->plugin(CompleteUserProfilePlugin::make()->maxContentWidth(Width::Full));
+        app(PanelRegistry::class)->register($first);
+        app(PanelRegistry::class)->register($second);
+
+        Filament::setCurrentPanel($first);
+        self::assertSame(Width::SixExtraLarge, app(CompleteUserProfile::class)->getMaxContentWidth());
+        Filament::setCurrentPanel($second);
+        self::assertSame(Width::Full, app(CompleteUserProfile::class)->getMaxContentWidth());
+    }
+
     public function test_plugin_registers_the_native_profile_slot_with_standard_panel_layout(): void
     {
         $panel = Panel::make()->id('admin');

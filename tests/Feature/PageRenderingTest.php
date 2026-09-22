@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Livewire\Livewire;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
@@ -37,6 +38,20 @@ use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
  */
 class PageRenderingTest extends TestCase
 {
+    public function test_profile_information_and_security_cards_render_real_states_and_destinations(): void
+    {
+        CompleteUserProfilePlugin::get()->security(fn (Security $security): Security => $security->appAuthentication()->emailAuthentication());
+
+        Livewire::withQueryParams(['section' => 'profile'])->test(CompleteUserProfile::class)
+            ->assertSee('Profile Information')
+            ->assertSee('Update your personal information and profile details.')
+            ->assertSee('Review your account security settings.')
+            ->assertSee('Not configured')
+            ->assertSeeHtml('fcup-security-card')
+            ->assertSeeHtml('section=security')
+            ->assertDontSeeHtml('data-security-enabled="true"');
+    }
+
     /**
      * The shared TestCase only registers the four providers every other
      * schema-level test needs. Actually rendering the page's Blade view

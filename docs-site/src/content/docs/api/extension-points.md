@@ -48,6 +48,15 @@ Two public customization APIs intentionally accept native Filament components:
 
 Use a Filament Livewire schema component inside a custom section when the host application needs a stateful domain-specific form.
 
+## Routed account pages
+
+`AccountSection::page()` accepts a custom Filament page using the public
+`Concerns\InteractsWithAccountSection` trait. The trait supplies header, breadcrumbs and
+account navigation while preserving the page's native lifecycle and authorization.
+Presentation methods can be overridden normally. The internal `Support\AccountPresentation`
+helper is not an extension contract. See [custom account sections](../../guides/custom-account-sections/)
+for registration and supported page boundaries.
+
 ## Public API stability
 
 Prefer these documented contracts and fluent methods over reaching into package Livewire components, page internals or storage implementation classes. Internal implementation details can change without becoming part of the public extension surface.

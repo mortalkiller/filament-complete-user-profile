@@ -25,7 +25,11 @@ state, so the card reflects exactly what is enabled and configured for the curre
 | Active sessions | The Sessions feature is enabled **and** the session store reports itself supported | The user's active session count, using the singular or plural translation form |
 | Personal access tokens | The API Tokens feature is enabled and the user model exposes a `tokens()` relation | The user's token count, using the singular or plural translation form |
 
-Each row links to the account area it summarizes.
+Each bordered row is a full-row link to the account area it summarizes, with a leading icon, label, state and trailing chevron. Links support keyboard navigation and Filament SPA navigation. Only the two MFA rows have a status dot: green means enabled, neutral means not configured. Session and token counts have no dot and do not imply that an account is secure.
+
+The card has a neutral description, moves below the main content on narrow screens and supports dark mode. Its scoped CSS is registered with Filament and loads in the document head. Run `php artisan filament:assets` after installing or updating the package; no custom theme rebuild is needed.
+
+The card heading and description inherit the active Filament theme's typography. The compact row layout does not override the section header's font size, line height or weight.
 
 ## The sessions row and unsupported session stores
 
