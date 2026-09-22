@@ -31,7 +31,7 @@ class CompleteUserProfilePlugin implements Plugin
 
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
 
-    /** @var TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>|null */
+    /** @var TenancyResolver|Closure(): (Model|null)|string|null */
     protected TenancyResolver|Closure|string|null $tenancyResolver = null;
 
     protected ?PageHeaderPlugin $registeredPageHeader = null;
@@ -123,7 +123,7 @@ class CompleteUserProfilePlugin implements Plugin
     }
 
     /**
-     * @param  TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>  $resolver
+     * @param  TenancyResolver|Closure(): (Model|null)|string  $resolver
      */
     public function tenancyResolver(TenancyResolver|Closure|string $resolver): static
     {
@@ -141,7 +141,7 @@ class CompleteUserProfilePlugin implements Plugin
         return $this->tenancyResolver !== null;
     }
 
-    /** @return TenancyResolver|Closure(): (Model|null)|class-string<TenancyResolver>|null */
+    /** @return TenancyResolver|Closure(): (Model|null)|string|null */
     public function getTenancyResolver(): TenancyResolver|Closure|string|null
     {
         return $this->tenancyResolver;
