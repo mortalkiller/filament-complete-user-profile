@@ -6,6 +6,7 @@ namespace Workbench\App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Mortalkiller\FilamentCompleteUserProfile\Contracts\ProfileStorage;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,6 +14,10 @@ use Workbench\App\Models\DemoUser;
 
 final class LocalDemoUser
 {
+    private const DEMO_PASSWORD = 'workbench-password';
+
+    private const SECONDARY_SESSION_ID = 'workbench-secondary-session';
+
     public function handle(Request $request, Closure $next): Response
     {
         abort_unless(app()->environment('local', 'testing'), 404);
@@ -21,7 +26,7 @@ final class LocalDemoUser
             ['email' => 'alex@example.test'],
             [
                 'name' => 'Alex Morgan',
-                'password' => Hash::make('workbench-password'),
+                'password' => Hash::make(self::DEMO_PASSWORD),
             ],
         );
 
@@ -33,6 +38,26 @@ final class LocalDemoUser
             $storage->put($user, 'locale', 'en');
         }
 
+        $this->ensureSecondarySession($user);
+
         return $next($request);
+    }
+
+    private function ensureSecondarySession(DemoUser $user): void
+    {
+        if (! DB::getSchemaBuilder()->hasTable('sessions')) {
+            return;
+        }
+
+        DB::table('sessions')->updateOrInsert(
+            ['id' => self::SECONDARY_SESSION_ID],
+            [
+                'user_id' => $user->getAuthIdentifier(),
+                'ip_address' => '203.0.113.24',
+                'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15',
+                'payload' => '',
+                'last_activity' => now()->subMinutes(8)->timestamp,
+            ],
+        );
     }
 }

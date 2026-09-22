@@ -1,6 +1,6 @@
 # Demo and browser testing
 
-The repository includes a local workbench for inspecting the package in a real Filament panel.
+The repository includes a full local workbench for inspecting the package in a real Filament panel.
 
 From the repository root:
 
@@ -10,9 +10,27 @@ composer browser:prepare
 php workbench/artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Open `http://127.0.0.1:8000/demo/profile?section=profile`.
+Open `http://127.0.0.1:8000/demo/profile`.
 
-The workbench is a local testing application. It uses SQLite, creates a fictional demo user, stores package-owned profile data in the package profile table, and must not be exposed publicly.
+The workbench enables every built-in account area:
+
+- Overview
+- Profile, avatar and locale
+- Password management
+- Authenticator-app MFA with recovery codes
+- Email MFA
+- Browser session management
+- Sanctum API tokens with configured abilities and expiration limits
+
+The fictional demo user is `alex@example.test`. Use `workbench-password` whenever a reauthentication form asks for the current password.
+
+Browser sessions use Laravel's database session driver. The workbench also creates a secondary fictional Safari/macOS session so revoke actions can be tested without another browser.
+
+Email MFA uses the `log` mailer. Verification codes are written to `workbench/storage/logs/laravel.log`, so no external mail service is required.
+
+API token management uses a local Sanctum `personal_access_tokens` table and the following demo abilities: `profile:read`, `profile:update`, and `security:read`. Tenant-scoped tokens are an integration mode and remain application-specific because they require the consuming application's tenant model and `TokenContextResolver`.
+
+The workbench is a local testing application backed by SQLite. It stores package-owned profile data in the package profile table and must not be exposed publicly.
 
 Run the browser showcase suite with:
 
@@ -22,7 +40,7 @@ npx playwright install chromium
 npm run test:browser -- tests/Browser/profile-showcase.spec.mjs
 ```
 
-The showcase captures the real Filament account page in desktop/mobile and light/dark modes. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
+The browser suite verifies that every built-in account area is available with its required infrastructure, then captures the Profile area in desktop/mobile and light/dark modes. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
 
 The README screenshots use fictional account data and are direct browser captures. They are not reconstructed UI mockups.
 

@@ -73,6 +73,7 @@
             "@php bin/prepare-workbench.php",
             "@php workbench/artisan package:discover",
             "@php workbench/artisan migrate:fresh --force",
+            "@php workbench/artisan storage:link --force",
             "@php workbench/artisan filament:assets"
         ]
     }

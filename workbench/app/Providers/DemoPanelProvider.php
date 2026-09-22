@@ -17,7 +17,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Mortalkiller\FilamentCompleteUserProfile\CompleteUserProfilePlugin;
+use Mortalkiller\FilamentCompleteUserProfile\Features\ApiTokens;
 use Mortalkiller\FilamentCompleteUserProfile\Features\Profile;
+use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Workbench\App\Http\Middleware\LocalDemoUser;
 
 final class DemoPanelProvider extends PanelProvider
@@ -38,7 +40,19 @@ final class DemoPanelProvider extends PanelProvider
                         ->locale([
                             'en' => 'English',
                             'pt' => 'Português',
-                        ])),
+                        ]))
+                    ->security(fn (Security $security): Security => $security
+                        ->appAuthentication()
+                        ->emailAuthentication())
+                    ->sessions()
+                    ->apiTokens(fn (ApiTokens $tokens): ApiTokens => $tokens
+                        ->abilities([
+                            'profile:read' => 'Read profile',
+                            'profile:update' => 'Update profile',
+                            'security:read' => 'Read security settings',
+                        ])
+                        ->defaultExpiration(7)
+                        ->maxExpiration(30)),
             )
             ->middleware([
                 EncryptCookies::class,
