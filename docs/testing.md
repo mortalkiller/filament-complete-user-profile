@@ -21,6 +21,9 @@ The workbench enables every built-in account area:
 - Email MFA
 - Browser session management
 - Sanctum API tokens with configured abilities and expiration limits
+- Custom `job_title` and `phone` fields persisted on the demo user
+- An `Application Settings` section persisted with `spatie/laravel-settings`
+- An `Addresses` section backed by a `DemoUser::addresses()` Eloquent relationship
 
 The fictional demo user is `alex@example.test`. Use `workbench-password` whenever a reauthentication form asks for the current password.
 
@@ -30,7 +33,7 @@ Email MFA uses the `log` mailer. Verification codes are written to `workbench/st
 
 API token management uses a local Sanctum `personal_access_tokens` table and the following demo abilities: `profile:read`, `profile:update`, and `security:read`. Tenant-scoped tokens are an integration mode and remain application-specific because they require the consuming application's tenant model and `TokenContextResolver`.
 
-The workbench is a local testing application backed by SQLite. It stores package-owned profile data in the package profile table and must not be exposed publicly.
+The workbench is a local testing application backed by SQLite. It stores package-owned profile data in the package profile table and must not be exposed publicly. `spatie/laravel-settings` is installed only in `require-dev` for the integration example and is not a runtime dependency of the package.
 
 Run the browser showcase suite with:
 
@@ -40,7 +43,7 @@ npx playwright install chromium
 npm run test:browser -- tests/Browser/profile-showcase.spec.mjs
 ```
 
-The browser suite verifies that every built-in account area is available with its required infrastructure. It captures Overview, Profile, Security, Sessions, and API Tokens at desktop width in light/dark modes, plus the Profile area at mobile width. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
+The browser suite verifies that every built-in account area and both extension examples are available with their required infrastructure. It captures Overview, Profile, Security, Sessions, API Tokens, Application Settings, and Addresses at desktop width in light/dark modes, plus the Profile area at mobile width. Generated screenshots are written below `test-results/`; inspect them before copying the selected captures to `docs/screenshots/`.
 
 The README screenshots use fictional account data and are direct browser captures. They are not reconstructed UI mockups.
 
