@@ -26,6 +26,59 @@ jobs:
       standard-ref: 6ceb549dd431ccbec57e1fcf67321df2b40b0a92
       artifact-name: filament-complete-user-profile-release-docs
       release-tag: ${{ inputs.release-tag || github.event.release.tag_name }}
-      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+      dry-run: true
       docs-port: ${{ vars.DOCS_PORT || '22' }}
       docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
+
+  deploy:
+    name: Publish versioned documentation
+    needs: publish
+    if: needs.publish.result == 'success' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.dry-run == false))
+    runs-on: ubuntu-latest
+    environment: docs-production
+    steps:
+      - name: Checkout pinned publication tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: mortalkiller/filament-package-template
+          ref: 6ceb549dd431ccbec57e1fcf67321df2b40b0a92
+          path: .mortal-package-standard
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.20.0'
+
+      - name: Download verified artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: filament-complete-user-profile-release-docs
+          path: .docs-release
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DOCS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DOCS_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Publish without downgrading or deleting other major versions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release-tag || github.event.release.tag_name }}
+          DOCS_HOST: ${{ secrets.DOCS_HOST }}
+          DOCS_USER: ${{ secrets.DOCS_USER }}
+          DOCS_PORT: ${{ vars.DOCS_PORT || '22' }}
+          DOCS_REMOTE_PATH: ${{ vars.DOCS_REMOTE_PATH }}
+        run: node .mortal-package-standard/tools/docs-release.mjs publish
+
+      - name: Remove the deployment key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
