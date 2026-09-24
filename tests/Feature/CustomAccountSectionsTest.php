@@ -132,7 +132,7 @@ class CustomAccountSectionsTest extends TestCase
 
         $page->section = 'missing-section';
 
-        self::assertSame(
+        self::assertEquals(
             [true, false, false],
             array_map(static fn ($item): bool => $item->isActive(), $page->getSubNavigation()),
         );
