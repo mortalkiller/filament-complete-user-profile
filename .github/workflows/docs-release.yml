@@ -21,14 +21,12 @@ permissions:
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.release.draft == false && github.event.release.prerelease == false && vars.DOCS_DEPLOY_ENABLED == 'true')
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@6ceb549dd431ccbec57e1fcf67321df2b40b0a92
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@830e5953c0a1244b4e7a772b6e728492bdd8ef9f
     with:
-      standard-ref: 6ceb549dd431ccbec57e1fcf67321df2b40b0a92
+      standard-ref: 830e5953c0a1244b4e7a772b6e728492bdd8ef9f
       artifact-name: filament-complete-user-profile-release-docs
       release-tag: ${{ inputs.release-tag || github.event.release.tag_name }}
-      dry-run: true
-      docs-port: ${{ vars.DOCS_PORT || '22' }}
-      docs-remote-path: ${{ vars.DOCS_REMOTE_PATH }}
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
 
   deploy:
     name: Publish versioned documentation
@@ -41,7 +39,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: mortalkiller/filament-package-template
-          ref: 6ceb549dd431ccbec57e1fcf67321df2b40b0a92
+          ref: 830e5953c0a1244b4e7a772b6e728492bdd8ef9f
           path: .mortal-package-standard
           persist-credentials: false
 
