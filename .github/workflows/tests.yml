@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   tests:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-tests.yml@830e5953c0a1244b4e7a772b6e728492bdd8ef9f
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-tests.yml@ab75c479985ea2281b3a551ef70881b3b7094a51
     with:
       matrix-json: >-
         {"include":[
