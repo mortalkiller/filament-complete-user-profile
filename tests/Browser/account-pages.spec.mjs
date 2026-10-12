@@ -35,7 +35,9 @@ test('routed account page uses the mobile account menu without overflow', async 
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
     await page.screenshot({ path: testInfo.outputPath('billing-mobile.png'), fullPage: true });
     await dropdown.getByRole('button').first().click();
-    await dropdown.getByRole('link', { name: 'Profile', exact: true }).click();
+    await dropdown.getByRole('link', { name: 'Profile', exact: true })
+        .or(dropdown.getByRole('menuitem', { name: 'Profile', exact: true }))
+        .click();
     await expect(page.getByRole('heading', { name: 'Profile', exact: true, level: 1 })).toBeVisible();
     expect(errors).toEqual([]);
 });
