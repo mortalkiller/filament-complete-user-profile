@@ -3,8 +3,8 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Auth\MultiFactor\Email\EmailAuthentication as FilamentEmailAuthentication;
-use Filament\Panel;
 use Filament\Facades\Filament;
+use Filament\Panel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Notifications\Messages\MailMessage;
