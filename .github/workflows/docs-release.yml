@@ -21,7 +21,7 @@ permissions:
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.release.draft == false && github.event.release.prerelease == false && vars.DOCS_DEPLOY_ENABLED == 'true')
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@6fa3047f0fcb02c9b6f296d95944ffd473a8901c
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@c331dbb3a1ff6f2b75dd42f29435556acfb2e5d4
     with:
       standard-ref: 830e5953c0a1244b4e7a772b6e728492bdd8ef9f
       artifact-name: filament-complete-user-profile-release-docs
