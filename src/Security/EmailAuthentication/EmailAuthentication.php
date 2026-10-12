@@ -13,7 +13,6 @@ use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\Actions\SetUpEmailAuthenticationAction;
@@ -52,26 +51,8 @@ class EmailAuthentication extends FilamentEmailAuthentication
 
         RateLimiter::hit($rateLimitingKey, $this->getResendCooldownSeconds());
 
-        $code = $this->generateCode();
-        $codeExpiryMinutes = $this->getCodeExpiryMinutes();
-
-        session()->put($this->getCodeSessionKey($model), Hash::make($code));
-        session()->put($this->getCodeExpirySessionKey($model), now()->addMinutes($codeExpiryMinutes));
-
-        $notify = [$model, 'notify'];
-
-        if (! is_callable($notify)) {
-            $modelClass = $model::class;
-
-            throw new LogicException("Model [{$modelClass}] does not have a [notify()] method.");
-        }
-
-        $notify(app($this->getCodeNotification(), [
-            'code' => $code,
-            'codeExpiryMinutes' => $codeExpiryMinutes,
-        ]));
-
-        return true;
+        // Filament owns code storage and verification across supported versions.
+        return parent::sendCode($model);
     }
 
     public function makeResendAction(HasEmailAuthentication $user): Action

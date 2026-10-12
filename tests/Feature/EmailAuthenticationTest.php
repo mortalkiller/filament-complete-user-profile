@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests\Feature;
 
 use Filament\Auth\MultiFactor\Email\EmailAuthentication as FilamentEmailAuthentication;
+use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
@@ -34,6 +35,7 @@ class EmailAuthenticationTest extends TestCase
         });
 
         $this->startSession();
+        Filament::setCurrentPanel(Panel::make()->id('admin'));
     }
 
     public function test_email_authentication_registers_the_package_provider_under_filaments_native_id(): void
@@ -113,6 +115,42 @@ class EmailAuthenticationTest extends TestCase
         self::assertTrue($provider->sendCode($user));
         self::assertFalse($provider->canSendCode($user));
 
+        Notification::assertCount(2);
+    }
+
+    public function test_sent_code_is_bound_to_its_user_and_cannot_be_reused(): void
+    {
+        $provider = $this->makeProvider();
+        $provider->generateCodesUsing(static fn (): string => '483921');
+        $user = EmailMfaUser::query()->create(['email' => 'first@example.test']);
+        $otherUser = EmailMfaUser::query()->create(['email' => 'second@example.test']);
+        Notification::fake();
+
+        self::assertTrue($provider->sendCode($user));
+        Notification::assertSentTo($user, VerifyEmailAuthentication::class);
+        self::assertFalse($provider->verifyCode('483921', $otherUser));
+        self::assertTrue($provider->verifyCode('483921', $user));
+        self::assertFalse($provider->verifyCode('483921', $user));
+    }
+
+    public function test_resending_replaces_the_previous_code_after_cooldown(): void
+    {
+        $code = '123456';
+        $provider = $this->makeProvider();
+        $provider->generateCodesUsing(static function () use (&$code): string {
+            return $code;
+        });
+        $user = EmailMfaUser::query()->create(['email' => 'first@example.test']);
+        Notification::fake();
+
+        self::assertTrue($provider->sendCode($user));
+
+        $this->travel(61)->seconds();
+        $code = '654321';
+
+        self::assertTrue($provider->sendCode($user));
+        self::assertFalse($provider->verifyCode('123456', $user));
+        self::assertTrue($provider->verifyCode('654321', $user));
         Notification::assertCount(2);
     }
 
