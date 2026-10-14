@@ -8,7 +8,6 @@ use Filament\PanelRegistry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section as SchemaSection;
 use Filament\Schemas\Schema;
-use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Route;
 use LogicException;
 use Mortalkiller\FilamentCompleteUserProfile\AccountSection;
@@ -106,11 +105,7 @@ class CustomAccountSectionsTest extends TestCase
 
         self::assertSame(
             ['Overview', 'Profile', 'Preferences', 'Security'],
-            array_map(static function ($item): string {
-                $label = $item->getLabel();
-
-                return $label instanceof Htmlable ? $label->toHtml() : $label;
-            }, $navigation),
+            array_map(static fn ($item): string => self::navigationLabelToString($item->getLabel()), $navigation),
         );
         self::assertSame(
             [false, false, true, false],
