@@ -125,7 +125,7 @@ class CompleteUserProfilePageTest extends TestCase
 
         self::assertSame(
             ['Overview', 'Profile', 'Security'],
-            array_map(static fn ($item): string => $item->getLabel(), $navigation),
+            array_map(static fn ($item): string => self::navigationLabelToString($item->getLabel()), $navigation),
         );
         self::assertSame(
             [false, false, true],

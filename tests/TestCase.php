@@ -3,6 +3,7 @@
 namespace Mortalkiller\FilamentCompleteUserProfile\Tests;
 
 use Filament\FilamentServiceProvider;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Foundation\Application;
 use Laravel\Sanctum\SanctumServiceProvider;
 use Livewire\LivewireServiceProvider;
@@ -12,6 +13,11 @@ use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
 {
+    protected static function navigationLabelToString(Htmlable|string $label): string
+    {
+        return $label instanceof Htmlable ? $label->toHtml() : $label;
+    }
+
     /**
      * @param  Application  $app
      * @return array<class-string>
