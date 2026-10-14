@@ -105,7 +105,7 @@ class CustomAccountSectionsTest extends TestCase
 
         self::assertSame(
             ['Overview', 'Profile', 'Preferences', 'Security'],
-            array_map(static fn ($item): string => $item->getLabel(), $navigation),
+            array_map(static fn ($item): string => (string) $item->getLabel(), $navigation),
         );
         self::assertSame(
             [false, false, true, false],
