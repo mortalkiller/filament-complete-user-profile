@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
 
+async function waitForInteractivePage(page) {
+    await page.waitForFunction(() => {
+        const pageElement = document.querySelector('.fi-page[wire\\:id]');
+        const livewireId = pageElement?.getAttribute('wire:id');
+
+        return Boolean(livewireId && window.Livewire?.find(livewireId));
+    });
+}
+
 test('routed account page keeps actions, active navigation and browser history', async ({ page }, testInfo) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -9,6 +18,7 @@ test('routed account page keeps actions, active navigation and browser history',
     await expect(page.getByRole('heading', { name: 'Billing', exact: true })).toBeVisible();
     await expect(page.locator('[data-fph-sub-navigation]')).toHaveCount(1);
     await expect(page.locator('.fi-page-sub-navigation-tabs .fi-active')).toContainText('Billing');
+    await waitForInteractivePage(page);
     await page.getByRole('button', { name: 'Refresh demo', exact: true }).click();
     await expect(page.getByText('Demo refreshes: 1', { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('billing-desktop.png'), fullPage: true });
@@ -34,6 +44,8 @@ test('routed account page uses the mobile account menu without overflow', async 
     await expect(dropdown).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
     await page.screenshot({ path: testInfo.outputPath('billing-mobile.png'), fullPage: true });
+    await waitForInteractivePage(page);
+    await expect.poll(() => dropdown.evaluate(element => Boolean(element._x_dataStack))).toBe(true);
     await dropdown.getByRole('button').first().click();
     await dropdown.getByRole('link', { name: 'Profile', exact: true })
         .or(dropdown.getByRole('menuitem', { name: 'Profile', exact: true }))
