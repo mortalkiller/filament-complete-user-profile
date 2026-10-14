@@ -4,8 +4,9 @@ async function waitForInteractivePage(page) {
     await page.waitForFunction(() => {
         const pageElement = document.querySelector('.fi-page[wire\\:id]');
         const livewireId = pageElement?.getAttribute('wire:id');
+        const header = document.querySelector('[data-fph-root]');
 
-        return Boolean(livewireId && window.Livewire?.find(livewireId));
+        return Boolean(livewireId && window.Livewire?.find(livewireId) && header?._x_dataStack?.length);
     });
 }
 
@@ -13,6 +14,7 @@ test('routed account page keeps actions, active navigation and browser history',
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/demo/profile?section=profile');
+    await waitForInteractivePage(page);
     await page.locator('.fi-page-sub-navigation-tabs').getByRole('link', { name: 'Billing', exact: true }).click();
     await expect(page).toHaveURL(/\/demo\/profile\/billing$/);
     await expect(page.getByRole('heading', { name: 'Billing', exact: true })).toBeVisible();
