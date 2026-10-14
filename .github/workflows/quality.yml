@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   quality:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-quality.yml@ab75c479985ea2281b3a551ef70881b3b7094a51
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-quality.yml@c2d3c5d978aa12a9ba60219eccb8fdbbbc0279b0
     with:
       php-version: '8.4'
       static-analysis: true
