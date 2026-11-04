@@ -113,7 +113,7 @@ final class AccountPresentation
         return $user;
     }
 
-    public static function avatar(Model&Authenticatable $user): string
+    public static function avatar(Model&Authenticatable $user): ?string
     {
         $avatar = app(ProfileStorage::class)->get($user, 'avatar');
 
@@ -124,7 +124,10 @@ final class AccountPresentation
             return $filesystem->url($avatar);
         }
 
-        // Older Filament versions may return null when no avatar is available.
-        return (string) Filament::getUserAvatarUrl($user);
+        // Filament's facade return annotation varies across supported versions.
+        /** @var string|null $avatarUrl */
+        $avatarUrl = Filament::getUserAvatarUrl($user);
+
+        return $avatarUrl;
     }
 }
