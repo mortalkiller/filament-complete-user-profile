@@ -124,6 +124,7 @@ final class AccountPresentation
             return $filesystem->url($avatar);
         }
 
-        return Filament::getUserAvatarUrl($user);
+        // Older Filament versions may return null when no avatar is available.
+        return (string) Filament::getUserAvatarUrl($user);
     }
 }
