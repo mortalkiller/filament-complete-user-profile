@@ -113,7 +113,7 @@ final class AccountPresentation
         return $user;
     }
 
-    public static function avatar(Model&Authenticatable $user): ?string
+    public static function avatar(Model&Authenticatable $user): string
     {
         $avatar = app(ProfileStorage::class)->get($user, 'avatar');
 
