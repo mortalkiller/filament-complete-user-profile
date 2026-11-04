@@ -61,7 +61,7 @@ trait InteractsWithAccountSection
         return $schema->components([
             AccountPresentation::header(
                 $this,
-                fn (): string => AccountPresentation::avatar(AccountPresentation::user()),
+                fn (): ?string => AccountPresentation::avatar(AccountPresentation::user()),
                 fn (): string => (string) AccountPresentation::user()->getAttribute('name'),
             ),
         ]);
