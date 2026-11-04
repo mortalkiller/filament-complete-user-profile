@@ -124,6 +124,10 @@ final class AccountPresentation
             return $filesystem->url($avatar);
         }
 
-        return Filament::getUserAvatarUrl($user);
+        // Filament's facade return annotation varies across supported versions.
+        /** @var string|null $avatarUrl */
+        $avatarUrl = Filament::getUserAvatarUrl($user);
+
+        return $avatarUrl;
     }
 }
