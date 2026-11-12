@@ -21,10 +21,11 @@ permissions:
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || (github.event.release.draft == false && github.event.release.prerelease == false && vars.DOCS_DEPLOY_ENABLED == 'true')
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@c331dbb3a1ff6f2b75dd42f29435556acfb2e5d4
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs-release.yml@50aa14ee7a84caf7a0065a5937d5fd98c5298600
     with:
       standard-ref: 830e5953c0a1244b4e7a772b6e728492bdd8ef9f
       artifact-name: filament-complete-user-profile-release-docs
+      node-version: '22.23.4'
       release-tag: ${{ inputs.release-tag || github.event.release.tag_name }}
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
 
@@ -46,7 +47,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: '22.20.0'
+          node-version: '22.23.4'
           package-manager-cache: false
 
       - name: Download verified artifacts
