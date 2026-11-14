@@ -4,6 +4,16 @@ All notable changes to Filament Complete User Profile are documented here.
 
 The project follows Semantic Versioning.
 
+## [1.3.0] - 2026-11-14
+
+### Added
+
+- `modifyHeaderUsing()` on the plugin adjusts the page header of every account page, for example to match a panel's own headers.
+
+### Fixed
+
+- The account pages' styles sit in Filament's `components` cascade layer and take their colours from the panel palette, so a custom panel theme is no longer overridden by them.
+
 ## [1.0.0] - 2026-09-21
 
 Initial stable release.

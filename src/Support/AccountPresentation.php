@@ -93,13 +93,13 @@ final class AccountPresentation
 
     public static function header(Page $page, Closure $avatar, Closure $initials): Header
     {
-        return Header::make()
+        return CompleteUserProfilePlugin::get()->modifyHeader(Header::make()
             ->heading(fn () => $page->getHeading())
             ->description(fn () => $page->getSubheading())
             ->avatar($avatar)
             ->initials($initials)
             ->breadcrumbs(BreadcrumbPosition::Inside)
-            ->subNavigation();
+            ->subNavigation());
     }
 
     public static function user(): Model&Authenticatable
