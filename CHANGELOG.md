@@ -4,7 +4,7 @@ All notable changes to Filament Complete User Profile are documented here.
 
 The project follows Semantic Versioning.
 
-## [Unreleased]
+## [1.3.0] - 2026-11-14
 
 ### Added
 
