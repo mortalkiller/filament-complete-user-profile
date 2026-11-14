@@ -11,16 +11,16 @@ class StylesheetTest extends TestCase
         return (string) file_get_contents(__DIR__.'/../../resources/css/profile.css');
     }
 
-    public function test_the_styles_sit_in_filaments_components_layer_so_a_panel_theme_can_restyle_them(): void
+    public function test_the_styles_sit_in_their_own_layer_after_filaments_components_so_a_panel_theme_can_restyle_them(): void
     {
         $css = $this->stylesheet();
 
-        // The layer order comes before any rule, as Tailwind declares it.
-        $order = strpos($css, '@layer theme, base, components, utilities;');
+        // The layer order comes before any rule, with the package layer between Filament's components and utilities.
+        $order = strpos($css, '@layer theme, base, components, fcup-profile, utilities;');
         $this->assertNotFalse($order);
         $this->assertLessThan(strpos($css, '{'), $order);
-        $this->assertStringContainsString('@layer components {', $css);
-        $this->assertSame(1, substr_count($css, '@layer components'));
+        $this->assertSame(1, substr_count($css, '@layer fcup-profile {'));
+        $this->assertStringNotContainsString('@layer components {', $css);
     }
 
     public function test_every_colour_comes_from_the_panel_palette(): void

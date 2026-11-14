@@ -12,7 +12,7 @@ The project follows Semantic Versioning.
 
 ### Fixed
 
-- The account pages' styles sit in Filament's `components` cascade layer and take their colours from the panel palette, so a custom panel theme is no longer overridden by them.
+- The account pages' styles sit in their own `fcup-profile` cascade layer, after Filament's `components` layer, and take their colours from the panel palette: they still win over Filament's stock styles, and a panel theme's own rules can now restyle them.
 
 ## [1.0.0] - 2026-09-21
 

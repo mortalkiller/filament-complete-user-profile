@@ -1,11 +1,12 @@
 /*
- * Complete User Profile styles. They sit in Filament's `components` cascade layer, after the
- * same layer order Tailwind declares, so a panel theme (its own rules, layered or not) can
- * restyle them, and every colour comes from the panel's palette variables.
+ * Complete User Profile styles. They sit in their own `fcup-profile` cascade layer, declared after
+ * Filament's `components` layer, so they win over Filament's stock component rules whatever their
+ * specificity, while a panel theme's own unlayered rules still restyle them. Every colour comes
+ * from the panel's palette variables.
  */
-@layer theme, base, components, utilities;
+@layer theme, base, components, fcup-profile, utilities;
 
-@layer components {
+@layer fcup-profile {
     .fcup-account-security > .fi-section {
         background: linear-gradient(135deg, white, var(--gray-50));
         border-radius: 0.75rem;
