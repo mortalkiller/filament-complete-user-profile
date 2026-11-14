@@ -227,6 +227,22 @@ This uses native Filament and `filament-page-header` components and requires no 
 
 There is no way to opt out of the header (no `pageHeader(false)`). An application that wants Filament's stock profile heading instead must subclass `CompleteUserProfile` and override `headerSchema()`.
 
+## Header
+
+Every account page gets the same page header: its heading and description, the user's avatar, breadcrumbs inside the header and the account tabs. To match a panel's own headers, adjust it with `modifyHeaderUsing()`, which receives the header after the package has configured it:
+
+```php
+use MortalKiller\FilamentPageHeader\Components\Header;
+use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
+
+CompleteUserProfilePlugin::make()
+    ->modifyHeaderUsing(fn (Header $header): Header => $header
+        ->heading(__('My account'))
+        ->breadcrumbs(BreadcrumbPosition::Hidden));
+```
+
+The callback may return the header or nothing. It applies to the built-in page and to every account section page.
+
 ## Content width
 
 Configure the default account page width per panel:

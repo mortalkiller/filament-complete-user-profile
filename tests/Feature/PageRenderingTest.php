@@ -25,6 +25,8 @@ use Mortalkiller\FilamentCompleteUserProfile\Features\Security;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\Fixtures\User;
 use Mortalkiller\FilamentCompleteUserProfile\Tests\TestCase;
+use MortalKiller\FilamentPageHeader\Components\Header;
+use MortalKiller\FilamentPageHeader\Enums\BreadcrumbPosition;
 
 /**
  * This page's entire purpose is visual: the account navigation is meant to
@@ -109,6 +111,26 @@ class PageRenderingTest extends TestCase
         Filament::setCurrentPanel($panel);
 
         $this->actingAs(User::query()->create(['name' => 'Pedro', 'email' => 'pedro@example.test']));
+    }
+
+    public function test_a_panel_can_adjust_the_account_header(): void
+    {
+        CompleteUserProfilePlugin::get()->modifyHeaderUsing(
+            fn (Header $header): Header => $header->heading('My account')->breadcrumbs(BreadcrumbPosition::Hidden),
+        );
+
+        Livewire::test(CompleteUserProfile::class)
+            ->assertSuccessful()
+            ->assertSee('My account')
+            ->assertDontSeeHtml('fi-breadcrumbs');
+    }
+
+    public function test_without_an_adjustment_the_header_keeps_its_defaults(): void
+    {
+        $header = Header::make()->heading('Overview');
+
+        self::assertSame($header, CompleteUserProfilePlugin::make()->modifyHeader($header));
+        self::assertSame($header, CompleteUserProfilePlugin::make()->modifyHeaderUsing(fn (Header $header) => null)->modifyHeader($header));
     }
 
     public function test_the_page_renders_the_header_and_a_single_sub_navigation(): void

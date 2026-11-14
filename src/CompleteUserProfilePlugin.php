@@ -20,6 +20,7 @@ use Mortalkiller\FilamentCompleteUserProfile\Http\Middleware\SetUserLocale;
 use Mortalkiller\FilamentCompleteUserProfile\Pages\CompleteUserProfile;
 use Mortalkiller\FilamentCompleteUserProfile\Security\EmailAuthentication\EmailAuthentication;
 use Mortalkiller\FilamentCompleteUserProfile\Tenancy\TenancyManager;
+use MortalKiller\FilamentPageHeader\Components\Header;
 use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 
 class CompleteUserProfilePlugin implements Plugin
@@ -33,6 +34,9 @@ class CompleteUserProfilePlugin implements Plugin
     protected PageHeaderPlugin|Closure|null $pageHeader = null;
 
     protected Width|string|null $maxContentWidth = null;
+
+    /** @var (Closure(Header): (Header|null))|null */
+    protected ?Closure $modifyHeaderUsing = null;
 
     /** @var TenancyResolver|Closure(): (Model|null)|string|null */
     protected TenancyResolver|Closure|string|null $tenancyResolver = null;
@@ -173,6 +177,29 @@ class CompleteUserProfilePlugin implements Plugin
     public function getMaxContentWidth(): Width|string|null
     {
         return $this->maxContentWidth;
+    }
+
+    /**
+     * Adjusts the page header of every account page, after the package has set its heading,
+     * description, avatar, breadcrumbs and tabs: for example to match a panel's own headers.
+     * The callback receives the header and may return it (or nothing).
+     *
+     * @param  (Closure(Header): (Header|null))|null  $callback
+     */
+    public function modifyHeaderUsing(?Closure $callback): static
+    {
+        $this->modifyHeaderUsing = $callback;
+
+        return $this;
+    }
+
+    public function modifyHeader(Header $header): Header
+    {
+        if ($this->modifyHeaderUsing === null) {
+            return $header;
+        }
+
+        return ($this->modifyHeaderUsing)($header) ?? $header;
     }
 
     /**

@@ -59,6 +59,15 @@ than a cached flag, so it returns `false` if the application later registers its
 `PageHeaderPlugin` on the same panel and overwrites this plugin's registration. This backs
 the `Page header` row in the `filament-complete-user-profile:check` diagnostics.
 
+## Header
+
+```php
+modifyHeaderUsing(?Closure $callback): static
+modifyHeader(Header $header): Header
+```
+
+`modifyHeaderUsing()` adjusts the page header of every account page (the built-in page and every section page) after the package has set its heading, description, avatar, breadcrumbs and tabs. The callback receives the `MortalKiller\FilamentPageHeader\Components\Header` and may return it or nothing. `modifyHeader()` applies it; without a callback it returns the header unchanged. Configuration is isolated per panel.
+
 ## Content width
 
 ```php
