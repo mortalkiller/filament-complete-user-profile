@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   docs:
-    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs.yml@50aa14ee7a84caf7a0065a5937d5fd98c5298600
+    uses: mortalkiller/filament-package-template/.github/workflows/reusable-docs.yml@03e45bebb4be1b76b6fa25c77a9e6f8a2c86c84f
     with:
       artifact-name: filament-complete-user-profile-docs
       node-version: '22.23.4'
